@@ -2,16 +2,18 @@
   "expo": {
     "name": "mimis",
     "slug": "mimis",
+    "owner": "jhonsebastian",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mimis",
+    "scheme": "com.jhonsebastian.mimis",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.jhonsebastian.mimis",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -33,10 +35,18 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-video",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e606c480-1fd9-4f34-a836-f518243d816c"
+      }
     }
   }
 }
