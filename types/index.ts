@@ -144,6 +144,7 @@ export type SeasonResultsProps = {
 
 export type LeagueTableProps = {
   standings: TeamStanding[];
+  matches?: LiveMatch[];
   teamId?: string;
   selectedTeam?: string;
   setSelectedTeam: (value: React.SetStateAction<string | null>) => void;
@@ -1097,7 +1098,9 @@ export type PlayerLineup = {
   name: string;
   number: number;
   pos: string;
+  photo: string;
   grid: string;
+  rating?: number
 };
 
 export type LiveMatch = {
@@ -1187,6 +1190,7 @@ export type PlayerLive = {
   name: string;
   number: number;
   pos: string;
+  photo?: string;
   grid: string;
   isSub?: boolean;
 };
@@ -1325,3 +1329,50 @@ export type SyntheticMatch = {
   score: string;
   date: string;
 };
+
+//teamsummary
+
+export type SeasonProgress = {
+  matchday: number;       // número de jornada
+  points: number;         // puntos acumulados hasta esa jornada
+  opponent: string;       // nombre del rival
+  result: "W" | "D" | "L"; // resultado
+  score: string;          // marcador (ej: "2-1")
+  date: string;           // fecha del partido
+  position: number;       // posición en la tabla
+}
+
+export type TopPlayer = {
+  name: string;
+  photo: string;
+  goals: number;
+  assists: number;
+}
+
+export type NextMatch = {
+  opponent: string;
+  date: string;
+  home: boolean;
+}
+
+export type TeamSummary = {
+  teamId: number;
+  season: number;
+  name: string;
+  logoUrl: string;
+  position: number;
+  points: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  recentForm: string[];
+  topPlayer: TopPlayer | null;
+  nextMatch: NextMatch | null;
+  seasonProgress: SeasonProgress[];
+  lastUpdated: string | Date;
+}
+
+// fin teamsummary

@@ -25,6 +25,7 @@ import {
   Team,
   TeamPlayerStatsByLeague,
   TeamStanding,
+  TeamSummary,
   User,
   VideoYoutube,
 } from "@/types";
@@ -32,7 +33,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext } from "react";
 
 // const apiUrl = Constants.expoConfig?.extra?.API_URL;
-const apiUrl = "http://192.168.101.16:3001/api";
+const apiUrl = "http://192.168.20.17:3001/api";
 
 type FetchContextType = {
   getCountries: (isRetry?: boolean) => Promise<{
@@ -95,6 +96,7 @@ type FetchContextType = {
   }>;
   getLeaguesByTeam: (
     teamId: string,
+    season: string,
     isRetry?: boolean
   ) => Promise<{
     success: boolean;
@@ -103,14 +105,17 @@ type FetchContextType = {
   }>;
   getStangingsLeague: (
     leagueId: string,
+    season: string,
     isRetry?: boolean
   ) => Promise<{
     success: boolean;
     message?: string;
     standings: TeamStanding[];
+    matches: LiveMatch[]
   }>;
   getStangingsCup: (
     leagueId: string,
+    season: string,
     isRetry?: boolean
   ) => Promise<{
     success: boolean;
@@ -121,6 +126,7 @@ type FetchContextType = {
   }>;
   getFriendlyMatches: (
     teamId: string,
+    season: string,
     isRetry?: boolean
   ) => Promise<{
     success: boolean;
@@ -371,6 +377,26 @@ type FetchContextType = {
     message?: string;
     matches: LiveMatch[];
   }>;
+  getTeamSummary: (
+    teamId: string,
+    leagueId: string,
+    season: number,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    teamSummaty: TeamSummary | null;
+  }>;
+  getLeagues: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    leagues: LeagueB[];
+  }>;
+  isLiveMatch: (fixtureId: string, isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    isLive: boolean
+  }>;
 };
 
 const FetchContext = createContext<FetchContextType | undefined>(undefined);
@@ -481,7 +507,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     isRetry?: boolean
   ): Promise<{ success: boolean; data: Team[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
+    const season = 0;
     try {
       const response = await fetch(
         `${apiUrl}/team/teams/${leagueId}/${season}`,
@@ -565,7 +591,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     isRetry?: boolean
   ): Promise<{ success: boolean; data: Coach[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
+    const season = 0;
     try {
       const response = await fetch(
         `${apiUrl}/coach/coachesByLeague/${leagueId}/${season}`,
@@ -992,7 +1018,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     upcomingFixtures: Fixture[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
+    const season = 0;
     try {
       const response = await fetch(
         `${apiUrl}/fixture/previousMatches/${teamId}/${season}`,
@@ -1049,6 +1075,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLeaguesByTeam = async (
     teamId: string,
+    season: string,
     isRetry?: boolean
   ): Promise<{
     success: boolean;
@@ -1056,7 +1083,6 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     competitions: Competitions[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
     try {
       const response = await fetch(
         `${apiUrl}/league/leaguesByTeam/${teamId}/${season}`,
@@ -1071,7 +1097,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await getLeaguesByTeam(teamId, true);
+          return await getLeaguesByTeam(teamId, season, true);
         } catch (error) {
           return {
             success: false,
@@ -1107,14 +1133,15 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getStangingsLeague = async (
     leagueId: string,
+    season: string,
     isRetry?: boolean
   ): Promise<{
     success: boolean;
     message?: string;
     standings: TeamStanding[];
+    matches: LiveMatch[]
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
     try {
       const response = await fetch(
         `${apiUrl}/league/getLeagueStandings/${leagueId}/${season}`,
@@ -1129,12 +1156,13 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await getStangingsLeague(leagueId, true);
+          return await getStangingsLeague(leagueId, season, true);
         } catch (error) {
           return {
             success: false,
             message: "Iniciar sesión",
             standings: [],
+            matches: [],
           };
         }
       }
@@ -1146,25 +1174,29 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           success: false,
           message: data.message,
           standings: [],
+          matches: [],
         };
       }
 
-      const { standings } = data;
+      const { standings, matches } = data;
       return {
         success: true,
         standings,
+        matches
       };
     } catch (error: any) {
       return {
         success: false,
         message: error.message,
         standings: [],
+        matches: [],
       };
     }
   };
 
   const getStangingsCup = async (
     leagueId: string,
+    season: string,
     isRetry?: boolean
   ): Promise<{
     success: boolean;
@@ -1174,7 +1206,6 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     knockoutPhase: CupStanding[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
     try {
       const response = await fetch(
         `${apiUrl}/league/getCupStandings/${leagueId}/${season}`,
@@ -1189,7 +1220,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await getStangingsCup(leagueId, true);
+          return await getStangingsCup(leagueId, season, true);
         } catch (error) {
           return {
             success: false,
@@ -1232,6 +1263,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getFriendlyMatches = async (
     teamId: string,
+    season: string,
     isRetry?: boolean
   ): Promise<{
     success: boolean;
@@ -1239,7 +1271,6 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     fixtures: Fixture[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
     try {
       const response = await fetch(
         `${apiUrl}/league/getFriendlyStandings/${teamId}/${season}`,
@@ -1254,7 +1285,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await getFriendlyMatches(teamId, true);
+          return await getFriendlyMatches(teamId, season, true);
         } catch (error) {
           return {
             success: false,
@@ -1296,7 +1327,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     stats: TeamPlayerStatsByLeague[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
+    const season = 0;
     try {
       const response = await fetch(
         `${apiUrl}/team/teamStats/${teamId}/${season}`,
@@ -1547,7 +1578,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     player: PlayerB | null;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
+    const season = 0;
     try {
       const response = await fetch(
         `${apiUrl}/player/infoPlayer/${playerId}/${season}`,
@@ -3027,7 +3058,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           return {
             success: false,
             message: "Iniciar sesión",
-            matches: []
+            matches: [],
           };
         }
       }
@@ -3037,7 +3068,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         return {
           success: false,
           message: data.message,
-          matches: []
+          matches: [],
         };
       }
 
@@ -3045,13 +3076,185 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
       return {
         success: true,
-        matches
+        matches,
       };
     } catch (error: any) {
       return {
         success: false,
         message: error.message,
-        matches: []
+        matches: [],
+      };
+    }
+  };
+
+  const getTeamSummary = async (
+    teamId: string,
+    leagueId: string,
+    season: number,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    teamSummaty: TeamSummary | null;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/teamSummary/getInfo/${teamId}/${leagueId}/${season}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getTeamSummary(teamId, leagueId, season, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            teamSummaty: null,
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          teamSummaty: null,
+        };
+      }
+
+      const { summary } = data;
+
+      return {
+        success: true,
+        teamSummaty: summary,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        teamSummaty: null,
+      };
+    }
+  };
+
+  const getLeagues = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    leagues: LeagueB[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/league/leagues`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getLeagues(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            leagues: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          leagues: [],
+        };
+      }
+
+      const { leagues } = data;
+
+      return {
+        success: true,
+        leagues,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        leagues: [],
+      };
+    }
+  };
+
+  const isLiveMatch = async (
+    fixtureId: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    isLive: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/fixture/isLiveMatch/${fixtureId}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await isLiveMatch(fixtureId, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            isLive: false
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          isLive: false
+        };
+      }
+
+      const { isLive } = data;
+
+      return {
+        success: true,
+        isLive,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        isLive: false
       };
     }
   };
@@ -3106,6 +3309,9 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         getUser,
         saveSyntheticMatches,
         getMatchesToday,
+        getTeamSummary,
+        getLeagues,
+        isLiveMatch
       }}
     >
       {children}

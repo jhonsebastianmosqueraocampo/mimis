@@ -1,301 +1,354 @@
-import React, { Fragment, useState } from "react";
+import React, { useState } from "react";
 import {
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card, Divider } from "react-native-paper";
+import { Button, Divider } from "react-native-paper";
 import type { LeagueTableProps } from "../types";
-
-const descriptionColors: Record<string, string> = {
-  "Champions League": "#1e90ff",
-  "Europa League": "#ff7f50",
-  "Conference League": "#9370db",
-  Promotion: "#6a5acd",
-  Relegation: "#dc143c",
-  "Play-offs": "#ffa500",
-  "": "transparent",
-};
 
 export default function LeagueTable({
   standings,
+  matches,
   selectedTeam,
   setSelectedTeam,
   teamId,
 }: LeagueTableProps) {
-  const [expandedTeam, setExpandedTeam] = useState<string | null>(
-    selectedTeam ?? null
-  );
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedTeamData, setSelectedTeamData] = useState<any>(null);
 
-  const handleTeamClick = (id: string) => {
-    setExpandedTeam((prev) => (prev === id ? null : id));
-    setSelectedTeam((prev) => (prev === id ? null : id));
+  const handleTeamClick = (team: any) => {
+    const teamIdStr = team.team.id.toString();
+    setSelectedTeam((prev) => (prev === teamIdStr ? null : teamIdStr));
+    setSelectedTeamData(team);
+    setModalVisible(true);
   };
 
-  const normalizeDescription = (desc?: string | null): string => {
-    if (!desc) return "";
+  // 🟢 Verificar si un equipo está jugando en vivo y devolver su marcador
+  const getLiveScore = (teamId: number) => {
+    const match = matches?.find(
+      (m) =>
+        (m.teams.home.id === teamId || m.teams.away.id === teamId) &&
+        ["1H", "HT", "2H", "ET", "BT", "P", "INT", "LIVE"].includes(
+          m.status.short
+        )
+    );
 
-    if (desc.includes("Champions League")) return "Champions League";
-    if (desc.includes("Europa League")) return "Europa League";
-    if (desc.includes("Conference League")) return "Conference League";
-    if (desc.includes("Promotion")) return "Promotion";
-    if (desc.toLowerCase().includes("relegation")) return "Relegation";
-    if (desc.includes("Play-offs")) return "Play-offs";
+    if (!match) return null;
 
-    return "";
+    const isHome = match.teams.home.id === teamId;
+    const goalsFor = isHome ? match.goals.home : match.goals.away;
+    const goalsAgainst = isHome ? match.goals.away : match.goals.home;
+
+    return `${goalsFor}-${goalsAgainst}`;
   };
 
   return (
     <>
-      <ScrollView horizontal>
-        <View style={styles.table}>
-          <View style={styles.headerRow}>
-            {["#", "", "Equipo", "PJ", "PTS", "GF", "GC", "DG"].map((label) => (
-              <Text key={label} style={styles.headerText}>
-                {label}
-              </Text>
-            ))}
+      <View style={styles.tableContainer}>
+        {/* 🧱 Columna fija */}
+        <View style={styles.fixedColumn}>
+          <View style={styles.headerFixed}>
+            <Text style={[styles.headerText, { width: 30 }]}>#</Text>
+            <Text style={[styles.headerText, { width: 100 }]}>Equipo</Text>
           </View>
 
           {standings?.map((team) => {
-            const isUserTeam = team.team.id.toString() == teamId;
-            const isExpanded = team.team.id.toString() == expandedTeam;
-            const normalizedDesc = normalizeDescription(team.description);
-            const hasDescription = !!normalizedDesc;
-            const color = hasDescription
-              ? descriptionColors[normalizedDesc] ?? "#ccc"
-              : "transparent";
+            const color = "transparent";
+            const isUserTeam = team.team.id.toString() === teamId;
+            const isSelected = selectedTeam === team.team.id.toString();
+
+            const liveScore = getLiveScore(team.team.id);
 
             return (
-              <Fragment key={team.team.id}>
-                <TouchableOpacity
-                  onPress={() => handleTeamClick(team.team.id.toString())}
+              <TouchableOpacity
+                key={team.team.id}
+                onPress={() => handleTeamClick(team)}
+              >
+                <View
+                  style={[
+                    styles.fixedRow,
+                    isUserTeam && styles.userRow,
+                    isSelected && styles.selectedRow,
+                    { borderLeftColor: color },
+                    styles.hasDescription,
+                  ]}
                 >
-                  <View
-                    style={[
-                      styles.row,
-                      isUserTeam && styles.userRow,
-                      { borderLeftColor: color },
-                      hasDescription && styles.hasDescription,
-                    ]}
-                  >
-                    <Text style={styles.rank}>{team.rank}</Text>
-                    <Image
-                      source={{ uri: team.team.logo }}
-                      style={styles.logo}
-                    />
+                  <Text style={styles.rank}>{team.rank}</Text>
+                  <Image source={{ uri: team.team.logo }} style={styles.logo} />
+
+                  {/* 🟢 Nombre + marcador si está en vivo */}
+                  <View style={styles.teamInfo}>
                     <Text
-                      style={[styles.teamName, isUserTeam && styles.userText]}
+                      style={[
+                        styles.teamName,
+                        (isUserTeam || isSelected) && styles.userText,
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
                     >
                       {team.team.name}
                     </Text>
-                    <Text style={styles.cell}>{team.all.played}</Text>
+
+                    {liveScore && (
+                      <Text style={styles.liveScore}>{liveScore}</Text>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 📊 Scroll de estadísticas */}
+        <ScrollView horizontal>
+          <View style={styles.scrollSection}>
+            <View style={styles.headerScroll}>
+              {["PTS", "PJ", "GF", "GC", "DG"].map((label) => (
+                <Text key={label} style={styles.headerText}>
+                  {label}
+                </Text>
+              ))}
+            </View>
+
+            {standings?.map((team) => {
+              const isUserTeam = team.team.id.toString() === teamId;
+              const isSelected = selectedTeam === team.team.id.toString();
+              return (
+                <TouchableOpacity
+                  key={`scroll-${team.team.id}`}
+                  onPress={() => handleTeamClick(team)}
+                >
+                  <View
+                    style={[
+                      styles.scrollRow,
+                      isUserTeam && styles.userRow,
+                      isSelected && styles.selectedRow,
+                    ]}
+                  >
                     <Text style={styles.cell}>{team.points}</Text>
+                    <Text style={styles.cell}>{team.all.played}</Text>
                     <Text style={styles.cell}>{team.all.goals.for}</Text>
                     <Text style={styles.cell}>{team.all.goals.against}</Text>
                     <Text style={styles.cell}>{team.goalsDiff}</Text>
                   </View>
                 </TouchableOpacity>
-
-                {isExpanded && (
-                  <Card style={styles.expandedCard}>
-                    <Card.Content>
-                      <Text style={styles.title}>Detalles del equipo</Text>
-
-                      <Text style={styles.subtitle}>Forma reciente:</Text>
-                      <View style={styles.formContainer}>
-                        {team.form
-                          ?.split("")
-                          .map((char: string, idx: number) => (
-                            <View
-                              key={idx}
-                              style={[
-                                styles.formCircle,
-                                char === "W"
-                                  ? { backgroundColor: "green" }
-                                  : char === "L"
-                                  ? { backgroundColor: "red" }
-                                  : { backgroundColor: "gray" },
-                              ]}
-                            />
-                          ))}
-                      </View>
-
-                      <Divider style={{ marginVertical: 8 }} />
-
-                      <Text style={styles.subtitle}>Resumen general</Text>
-                      <Text>Posición: #{team.rank}</Text>
-                      <Text>Puntos: {team.points}</Text>
-                      <Text>
-                        Diferencia de goles:{" "}
-                        {team.all.goals.for - team.all.goals.against}
-                      </Text>
-                      <Text>
-                        Total jugados: {team.all.played} ({team.home.played}{" "}
-                        local / {team.away.played} visitante)
-                      </Text>
-
-                      <Divider style={{ marginVertical: 8 }} />
-
-                      <Text style={styles.subtitle}>Local</Text>
-                      <Text>Ganados: {team.home.win}</Text>
-                      <Text>Empatados: {team.home.draw}</Text>
-                      <Text>Perdidos: {team.home.lose}</Text>
-                      <Text>
-                        Goles: {team.home.goals.for} / Recibidos:{" "}
-                        {team.home.goals.against}
-                      </Text>
-
-                      <Divider style={{ marginVertical: 8 }} />
-
-                      <Text style={styles.subtitle}>Visitante</Text>
-                      <Text>Ganados: {team.away.win}</Text>
-                      <Text>Empatados: {team.away.draw}</Text>
-                      <Text>Perdidos: {team.away.lose}</Text>
-                      <Text>
-                        Goles: {team.away.goals.for} / Recibidos:{" "}
-                        {team.away.goals.against}
-                      </Text>
-                    </Card.Content>
-                  </Card>
-                )}
-              </Fragment>
-            );
-          })}
-        </View>
-      </ScrollView>
-      <View style={styles.legendContainer}>
-        {Object.entries(descriptionColors).map(([desc, color]) => {
-          if (!desc) return null; // ignora descripciones vacías
-          return (
-            <View key={desc} style={styles.legendItem}>
-              <View style={[styles.colorBox, { backgroundColor: color }]} />
-              <Text style={styles.legendText}>{desc}</Text>
-            </View>
-          );
-        })}
+              );
+            })}
+          </View>
+        </ScrollView>
       </View>
+
+      {/* 🪄 Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            {selectedTeamData && (
+              <>
+                <Text style={styles.modalTitle}>
+                  {selectedTeamData.team.name}
+                </Text>
+
+                <View style={styles.formContainer}>
+                  {selectedTeamData.form
+                    ?.split("")
+                    .map((char: string, idx: number) => (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.formCircle,
+                          char === "W"
+                            ? { backgroundColor: "green" }
+                            : char === "L"
+                            ? { backgroundColor: "red" }
+                            : { backgroundColor: "gray" },
+                        ]}
+                      />
+                    ))}
+                </View>
+
+                <Divider style={{ marginVertical: 8 }} />
+
+                <Text style={styles.subtitle}>Resumen general</Text>
+                <Text>Posición: #{selectedTeamData.rank}</Text>
+                <Text>Puntos: {selectedTeamData.points}</Text>
+                <Text>Diferencia de goles: {selectedTeamData.goalsDiff}</Text>
+                <Text>
+                  Total jugados: {selectedTeamData.all.played} (Local:{" "}
+                  {selectedTeamData.home.played} / Visitante:{" "}
+                  {selectedTeamData.away.played})
+                </Text>
+
+                <Divider style={{ marginVertical: 8 }} />
+
+                <Text style={styles.subtitle}>Local</Text>
+                <Text>Ganados: {selectedTeamData.home.win}</Text>
+                <Text>Empatados: {selectedTeamData.home.draw}</Text>
+                <Text>Perdidos: {selectedTeamData.home.lose}</Text>
+
+                <Divider style={{ marginVertical: 8 }} />
+
+                <Text style={styles.subtitle}>Visitante</Text>
+                <Text>Ganados: {selectedTeamData.away.win}</Text>
+                <Text>Empatados: {selectedTeamData.away.draw}</Text>
+                <Text>Perdidos: {selectedTeamData.away.lose}</Text>
+
+                <Button
+                  mode="contained"
+                  style={{ marginTop: 16, backgroundColor: "#1db954" }}
+                  onPress={() => setModalVisible(false)}
+                >
+                  Cerrar
+                </Button>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
+
 const styles = StyleSheet.create({
-  table: {
-    width: 780,
-    paddingHorizontal: 10,
+  tableContainer: {
+    flexDirection: "row",
     paddingBottom: 30,
   },
-  headerRow: {
+  fixedColumn: {
+    width: 200,
+    backgroundColor: "#fff",
+    borderRightWidth: 1,
+    borderColor: "#ddd",
+    zIndex: 2,
+    elevation: 5,
+  },
+  headerFixed: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#181a20",
+    height: 44,
+  },
+  scrollSection: {
+    backgroundColor: "#fff",
+  },
+  headerScroll: {
     flexDirection: "row",
     backgroundColor: "#20232a",
-    paddingVertical: 10,
-    borderRadius: 6,
-    marginBottom: 8,
+    height: 44,
+    alignItems: "center",
   },
   headerText: {
-    flex: 1,
-    color: "#ffffff",
+    color: "#fff",
     fontWeight: "600",
     textAlign: "center",
     fontSize: 13,
+    width: 60,
   },
-  row: {
+  fixedRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 6,
-    marginBottom: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
     borderLeftWidth: 4,
-    elevation: 1,
+    height: 44,
+  },
+  scrollRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+    height: 44,
+  },
+  logo: {
+    width: 22,
+    height: 22,
+    marginHorizontal: 6,
+  },
+  rank: {
+    width: 30,
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#444",
+  },
+  teamInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  teamName: {
+    width: 110,
+    fontSize: 13,
+    color: "#333",
+  },
+  liveScore: {
+    backgroundColor: "#00c853",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 11,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  cell: {
+    width: 60,
+    textAlign: "center",
+    fontSize: 13,
+    color: "#333",
   },
   userRow: {
     backgroundColor: "#e3fcec",
+  },
+  selectedRow: {
+    backgroundColor: "#d6f5ff",
   },
   userText: {
     fontWeight: "bold",
     color: "#1db954",
   },
-  rank: {
-    flex: 0.5,
-    textAlign: "center",
-    fontWeight: "bold",
-    color: "#444",
+  hasDescription: {
+    borderLeftWidth: 6,
   },
-  logo: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginHorizontal: 6,
-  },
-  teamName: {
-    flex: 2,
-    fontSize: 13,
-    color: "#333",
-  },
-  cell: {
+  modalOverlay: {
     flex: 1,
-    textAlign: "center",
-    fontSize: 13,
-    color: "#333",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  expandedCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    marginVertical: 6,
-    marginHorizontal: 4,
-    elevation: 2,
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    width: "85%",
+    maxHeight: "80%",
   },
-  title: {
+  modalTitle: {
+    fontSize: 18,
     fontWeight: "bold",
-    fontSize: 15,
-    marginBottom: 6,
+    marginBottom: 10,
+    textAlign: "center",
   },
   subtitle: {
     fontWeight: "600",
     marginTop: 6,
   },
-  legendContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 0,
-    paddingHorizontal: 10,
-    gap: 12,
-    paddingBottom: 20,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 12,
-    marginBottom: 8,
-  },
-  colorBox: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: "#ccc",
-  },
-  legendText: {
-    fontSize: 13,
-    color: "#444",
-  },
-  hasDescription: {
-    borderLeftWidth: 6,
-  },
   formContainer: {
-  flexDirection: "row",
-  gap: 6,
-  marginVertical: 6,
-},
-
-formCircle: {
-  width: 14,
-  height: 14,
-  borderRadius: 7,
-},
+    flexDirection: "row",
+    gap: 6,
+    marginVertical: 6,
+    justifyContent: "center",
+  },
+  formCircle: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
 });

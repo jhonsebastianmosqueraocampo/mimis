@@ -36,7 +36,7 @@ export default function Coach() {
     const getCoach = async () => {
       setLoading(true);
       try {
-        const season = new Date().getFullYear();
+        const season = 0;
         const { success, coach, message } = await getCoachInfo(id, season);
 
         if (!isMounted) return;

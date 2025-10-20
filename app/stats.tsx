@@ -1,11 +1,23 @@
-// Stats.tsx
-import React from "react";
+import { useFetch } from "@/hooks/FetchContext";
+import { LeagueB, Team } from "@/types";
+import React, { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Avatar, Button, Card, Chip, Text, useTheme } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Avatar,
+  Button,
+  Card,
+  Chip, Menu, Text,
+  TextInput
+} from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
+const PRIMARY = "#1DB954"; // 💚 color principal
+const currentYear = new Date().getFullYear();
+
 type TeamSummary = {
-  id: string;
+  teamId: number;
+  season: number;
   name: string;
   logoUrl: string;
   position: number;
@@ -22,87 +34,33 @@ type TeamSummary = {
     photo: string;
     goals: number;
     assists: number;
-  };
+  } | null;
   nextMatch: {
     opponent: string;
     date: string;
     home: boolean;
-  };
-  seasonProgress: Array<{ matchday: number; points: number; position: number }>;
+  } | null;
+  seasonProgress: Array<{
+    matchday: number;
+    points: number;
+    position: number;
+    opponent: string;
+    result: string;
+    score: string;
+    date: string;
+  }>;
 };
 
-const dummyTeams: TeamSummary[] = [
-  {
-    id: "1",
-    name: "FC Barcelona",
-    logoUrl:
-      "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
-    position: 2,
-    points: 78,
-    played: 35,
-    wins: 24,
-    draws: 6,
-    losses: 5,
-    goalsFor: 72,
-    goalsAgainst: 34,
-    recentForm: ["W", "W", "L", "D", "W"],
-    topPlayer: {
-      name: "Lewandowski",
-      photo:
-        "https://img.a.transfermarkt.technology/portrait/big/38253-1694790513.jpg?lm=1",
-      goals: 23,
-      assists: 6,
-    },
-    nextMatch: {
-      opponent: "Real Betis",
-      date: "2025-06-12",
-      home: true,
-    },
-    seasonProgress: Array.from({ length: 35 }, (_, i) => ({
-      matchday: i + 1,
-      points: 2 * (i + 1),
-      position: Math.max(1, Math.ceil(5 - Math.sin(i / 5) * 3)),
-    })),
-  },
-  {
-    id: "2",
-    name: "Liverpool FC",
-    logoUrl: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
-    position: 3,
-    points: 74,
-    played: 36,
-    wins: 22,
-    draws: 8,
-    losses: 6,
-    goalsFor: 69,
-    goalsAgainst: 40,
-    recentForm: ["D", "W", "W", "L", "W"],
-    topPlayer: {
-      name: "Mohamed Salah",
-      photo:
-        "https://img.a.transfermarkt.technology/portrait/big/148455-1706203637.jpg?lm=1",
-      goals: 19,
-      assists: 10,
-    },
-    nextMatch: {
-      opponent: "Manchester City",
-      date: "2025-06-15",
-      home: false,
-    },
-    seasonProgress: Array.from({ length: 35 }, (_, i) => ({
-      matchday: i + 1,
-      points: 2 * (i + 1),
-      position: Math.max(1, Math.ceil(5 - Math.sin(i / 5) * 3)),
-    })),
-  },
-];
-
 const FormChip = ({ result }: { result: string }) => {
-  const color = result === "W" ? "green" : result === "D" ? "orange" : "red";
+  const color =
+    result === "W" ? "#2ecc71" : result === "D" ? "#f39c12" : "#e74c3c";
   return (
     <Chip
-      style={{ marginRight: 4, backgroundColor: color }}
-      textStyle={{ color: "white" }}
+      style={{
+        marginRight: 4,
+        backgroundColor: color,
+      }}
+      textStyle={{ color: "white", fontWeight: "bold" }}
     >
       {result}
     </Chip>
@@ -110,19 +68,279 @@ const FormChip = ({ result }: { result: string }) => {
 };
 
 export default function Stats() {
-  const theme = useTheme();
+  const { getLeagues, getTeamsFromLeague, getTeamSummary } = useFetch();
+
+  const [search, setSearch] = useState("");
+  const [leagues, setLeagues] = useState<LeagueB[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [summary, setSummary] = useState<TeamSummary | null>(null);
+
+  const [selectedLeague, setSelectedLeague] = useState<LeagueB | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
+  const [season, setSeason] = useState<number>(currentYear);
+
+  const [loading, setLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const seasons = Array.from({ length: 11 }, (_, i) => currentYear - i);
+
+  // 1️⃣ Obtener ligas
+  useEffect(() => {
+    const fetchLeagues = async () => {
+      setLoading(true);
+      try {
+        const { leagues } = await getLeagues();
+        setLeagues(leagues);
+      } catch (error) {
+        console.error("Error cargando ligas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeagues();
+  }, []);
+
+  // 2️⃣ Obtener equipos
+  const handleSelectLeague = async (l: LeagueB) => {
+    setSelectedLeague(l);
+    setSelectedTeam(null);
+    setSummary(null);
+    setLoading(true);
+    try {
+      const { data } = await getTeamsFromLeague(l.league.id);
+      setTeams(data);
+    } catch (error) {
+      console.error("Error cargando equipos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3️⃣ Obtener resumen
+  const handleSelectTeam = async (
+    team: Team,
+    leagueId: string,
+    season: number
+  ) => {
+    setSelectedTeam(team);
+    setLoading(true);
+    try {
+      const { teamSummaty } = await getTeamSummary(
+        team.teamId,
+        leagueId,
+        season
+      );
+      setSummary(teamSummaty);
+    } catch (error) {
+      console.error("Error obteniendo resumen:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4️⃣ Refrescar al cambiar temporada
+  useEffect(() => {
+    if (selectedTeam)
+      handleSelectTeam(
+        selectedTeam,
+        selectedLeague!.league.id.toString(),
+        season
+      );
+  }, [season]);
+
+  const filteredLeagues = leagues.filter((l) =>
+    l.league.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <PrivateLayout>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {dummyTeams.map((team) => {
-          const pointsData = team.seasonProgress.map((d, i) => ({
-            x: i,
-            y: d.points,
-          }));
+        {/* 🔍 Buscar liga */}
+        {!selectedLeague && (
+          <>
+            <TextInput
+              mode="outlined"
+              label="Buscar liga"
+              value={search}
+              onChangeText={setSearch}
+              outlineColor={PRIMARY}
+              activeOutlineColor={PRIMARY}
+              style={{ marginBottom: 12 }}
+              right={<TextInput.Icon icon="magnify" color={PRIMARY} />}
+            />
 
-          return (
-            <Card key={team.id} style={{ marginBottom: 16 }}>
+            {loading ? (
+              <ActivityIndicator animating color={PRIMARY} />
+            ) : (
+              filteredLeagues.map((l) => (
+                <Card
+                  key={l.league.id}
+                  style={{
+                    marginBottom: 12,
+                    borderLeftColor: PRIMARY,
+                    borderLeftWidth: 4,
+                  }}
+                >
+                  <Card.Title
+                    title={l.league.name}
+                    subtitle={l.country.name}
+                    left={(props) => (
+                      <Avatar.Image
+                        {...props}
+                        source={{ uri: l.league.logo || l.country.flag }}
+                      />
+                    )}
+                    right={() => (
+                      <Button
+                        textColor="white"
+                        buttonColor={PRIMARY}
+                        onPress={() => handleSelectLeague(l)}
+                      >
+                        Ver equipos
+                      </Button>
+                    )}
+                  />
+                </Card>
+              ))
+            )}
+          </>
+        )}
+
+        {/* ⚽ Equipos */}
+        {selectedLeague && !selectedTeam && (
+          <>
+            <Button
+              icon="arrow-left"
+              mode="outlined"
+              textColor={PRIMARY}
+              style={{
+                borderColor: PRIMARY,
+                marginBottom: 10,
+              }}
+              onPress={() => setSelectedLeague(null)}
+            >
+              Volver a ligas
+            </Button>
+
+            {loading ? (
+              <ActivityIndicator animating color={PRIMARY} />
+            ) : (
+              teams.map((t) => (
+                <Card
+                  key={t.teamId}
+                  style={{
+                    marginBottom: 12,
+                    borderLeftColor: PRIMARY,
+                    borderLeftWidth: 4,
+                  }}
+                >
+                  <Card.Title
+                    title={t.name}
+                    subtitle={t.country}
+                    left={(props) => (
+                      <Avatar.Image {...props} source={{ uri: t.logo }} />
+                    )}
+                    right={() => (
+                      <Button
+                        textColor="white"
+                        buttonColor={PRIMARY}
+                        onPress={() =>
+                          handleSelectTeam(
+                            t,
+                            selectedLeague.league.id.toString(),
+                            season
+                          )
+                        }
+                      >
+                        Ver info
+                      </Button>
+                    )}
+                  />
+                </Card>
+              ))
+            )}
+          </>
+        )}
+
+        {/* 📊 Info del equipo */}
+        {summary && (
+          <>
+            <Button
+              icon="arrow-left"
+              mode="outlined"
+              textColor={PRIMARY}
+              style={{
+                borderColor: PRIMARY,
+                marginBottom: 10,
+              }}
+              onPress={() => setSelectedTeam(null)}
+            >
+              Volver a equipos
+            </Button>
+
+            {/* Selector de temporada */}
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: PRIMARY,
+                borderRadius: 8,
+                marginBottom: 16,
+                paddingHorizontal: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: PRIMARY,
+                  fontWeight: "600",
+                  paddingVertical: 8,
+                }}
+              >
+                Temporada
+              </Text>
+
+              <Menu
+                visible={menuVisible}
+                onDismiss={() => setMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="text"
+                    onPress={() => setMenuVisible(true)}
+                    textColor="#000"
+                    icon="calendar"
+                    contentStyle={{ flexDirection: "row-reverse" }}
+                    style={{
+                      borderColor: PRIMARY,
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    {season}
+                  </Button>
+                }
+              >
+                {seasons.map((year) => (
+                  <Menu.Item
+                    key={year}
+                    onPress={() => {
+                      setSeason(year);
+                      setMenuVisible(false);
+                    }}
+                    title={`${year}`}
+                    titleStyle={{
+                      color: year === season ? PRIMARY : "#333",
+                      fontWeight: year === season ? "bold" : "normal",
+                    }}
+                    leadingIcon={year === season ? "check" : undefined}
+                  />
+                ))}
+              </Menu>
+            </View>
+
+            <Card
+              style={{
+                marginBottom: 16,
+                borderLeftColor: PRIMARY,
+                borderLeftWidth: 4,
+              }}
+            >
               <Card.Content>
                 {/* Header */}
                 <View
@@ -132,16 +350,15 @@ export default function Stats() {
                     marginBottom: 8,
                   }}
                 >
-                  <Avatar.Image size={48} source={{ uri: team.logoUrl }} />
+                  <Avatar.Image size={48} source={{ uri: summary.logoUrl }} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text variant="titleMedium">{team.name}</Text>
-                    <Text variant="bodySmall" style={{ color: "#222222" }}>
-                      Posición #{team.position} · {team.points} pts
+                    <Text variant="titleMedium" style={{ color: "#000" }}>
+                      {summary.name}
+                    </Text>
+                    <Text variant="bodySmall" style={{ color: "#555" }}>
+                      Posición #{summary.position} · {summary.points} pts
                     </Text>
                   </View>
-                  <Chip icon="trophy" mode="outlined">
-                    #{team.position}
-                  </Chip>
                 </View>
 
                 {/* Estadísticas */}
@@ -153,12 +370,12 @@ export default function Stats() {
                     marginBottom: 8,
                   }}
                 >
-                  <Text>PJ: {team.played}</Text>
-                  <Text>G: {team.wins}</Text>
-                  <Text>E: {team.draws}</Text>
-                  <Text>P: {team.losses}</Text>
-                  <Text>GF: {team.goalsFor}</Text>
-                  <Text>GC: {team.goalsAgainst}</Text>
+                  <Text>PJ: {summary.played}</Text>
+                  <Text>G: {summary.wins}</Text>
+                  <Text>E: {summary.draws}</Text>
+                  <Text>P: {summary.losses}</Text>
+                  <Text>GF: {summary.goalsFor}</Text>
+                  <Text>GC: {summary.goalsAgainst}</Text>
                 </View>
 
                 {/* Racha */}
@@ -166,68 +383,129 @@ export default function Stats() {
                   Últimos partidos:
                 </Text>
                 <View style={{ flexDirection: "row", marginBottom: 8 }}>
-                  {team.recentForm.map((r, i) => (
+                  {summary.recentForm?.map((r, i) => (
                     <FormChip key={i} result={r} />
                   ))}
                 </View>
 
                 {/* Jugador destacado */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <Avatar.Image
-                    size={40}
-                    source={{ uri: team.topPlayer.photo }}
-                  />
-                  <View style={{ marginLeft: 8 }}>
-                    <Text>{team.topPlayer.name}</Text>
-                    <Text variant="bodySmall" style={{ color: "#222222" }}>
-                      {team.topPlayer.goals} G / {team.topPlayer.assists} A
-                    </Text>
-                  </View>
-                  <Chip
-                    icon="trending-up"
-                    mode="outlined"
-                    style={{ marginLeft: "auto" }}
+                {summary.topPlayer && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
                   >
-                    Jugador Clave
-                  </Chip>
-                </View>
+                    <Avatar.Image
+                      size={40}
+                      source={{ uri: summary.topPlayer.photo }}
+                    />
+                    <View style={{ marginLeft: 8 }}>
+                      <Text>{summary.topPlayer.name}</Text>
+                      <Text variant="bodySmall" style={{ color: "#555" }}>
+                        {summary.topPlayer.goals} G /{" "}
+                        {summary.topPlayer.assists} A
+                      </Text>
+                    </View>
+                    <Chip
+                      icon="trending-up"
+                      mode="outlined"
+                      textStyle={{ color: PRIMARY }}
+                      style={{ borderColor: PRIMARY, marginLeft: "auto" }}
+                    >
+                      Jugador Clave
+                    </Chip>
+                  </View>
+                )}
 
                 {/* Próximo partido */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginVertical: 8,
-                  }}
-                >
-                  <Text>
-                    📅 Próximo partido vs {team.nextMatch.opponent} (
-                    {team.nextMatch.home ? "Local" : "Visita"}) –{" "}
-                    {new Date(team.nextMatch.date).toLocaleDateString()}
-                  </Text>
-                </View>
+                {summary.nextMatch && (
+                  <View style={{ marginVertical: 8 }}>
+                    <Text>
+                      📅 Próximo partido vs {summary.nextMatch.opponent} (
+                      {summary.nextMatch.home ? "Local" : "Visita"}) –{" "}
+                      {new Date(summary.nextMatch.date).toLocaleDateString()}
+                    </Text>
+                  </View>
+                )}
 
-                {/* Botones */}
-                <View
-                  style={{ flexDirection: "row", justifyContent: "flex-end" }}
-                >
-                  <Button mode="outlined" style={{ marginRight: 8 }} compact>
-                    Ver equipo
-                  </Button>
-                  <Button mode="contained" icon="soccer" compact>
-                    Estadísticas
-                  </Button>
-                </View>
+                {/* Progreso */}
+                {summary.seasonProgress &&
+                  summary.seasonProgress.length > 0 && (
+                    <View
+                      style={{
+                        backgroundColor: "#f9f9f9",
+                        borderRadius: 8,
+                        padding: 10,
+                        marginTop: 10,
+                        borderWidth: 1,
+                        borderColor: PRIMARY,
+                      }}
+                    >
+                      <Text
+                        variant="titleSmall"
+                        style={{
+                          marginBottom: 8,
+                          color: PRIMARY,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Progreso de la temporada
+                      </Text>
+                      {summary.seasonProgress.slice(-10).map((match, index) => (
+                        <View
+                          key={`${match.matchday}-${index}`}
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            borderBottomWidth: 0.5,
+                            borderColor: "#ddd",
+                            paddingVertical: 4,
+                          }}
+                        >
+                          <Text style={{ flex: 1 }}>
+                            J{match.matchday} - {match.opponent}
+                          </Text>
+                          <Text
+                            style={{
+                              width: 60,
+                              textAlign: "center",
+                            }}
+                          >
+                            {match.score}
+                          </Text>
+                          <Text
+                            style={{
+                              width: 30,
+                              textAlign: "center",
+                              color:
+                                match.result === "W"
+                                  ? "#2ecc71"
+                                  : match.result === "D"
+                                  ? "#f39c12"
+                                  : "#e74c3c",
+                            }}
+                          >
+                            {match.result}
+                          </Text>
+                          <Text
+                            style={{
+                              width: 60,
+                              textAlign: "right",
+                              color: "#333",
+                            }}
+                          >
+                            {match.points} pts
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
               </Card.Content>
             </Card>
-          );
-        })}
+          </>
+        )}
       </ScrollView>
     </PrivateLayout>
   );

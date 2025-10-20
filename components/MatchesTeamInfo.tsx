@@ -104,13 +104,13 @@ export default function MatchesTeamInfo({ teamId }: MatchesTeamInfoProps) {
 
       {selectedItem.name.toLowerCase() === "partidos anteriores" && (
         <View style={styles.section}>
-          <PastMatchesList previousMatches={previousMatches} teamId={teamId} fixtureId={nextMatch?.fixtureId!} actionMatch={actionMatch}/>
+          <PastMatchesList previousMatches={previousMatches} teamId={teamId} actionMatch={actionMatch}/>
         </View>
       )}
 
       {selectedItem.name.toLowerCase() === "siguientes partidos" && (
         <View style={styles.section}>
-          <UpcomingMatchesList upcomingMatches={upcomingMatches} teamId={teamId} fixtureId={nextMatch?.fixtureId!} actionMatch={actionMatch}/>
+          <UpcomingMatchesList upcomingMatches={upcomingMatches} teamId={teamId} actionMatch={actionMatch}/>
         </View>
       )}
     </ScrollView>

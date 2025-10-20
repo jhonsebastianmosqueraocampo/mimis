@@ -171,15 +171,15 @@ export default function Profile() {
   }
 
   const handlePlayer = (id: string) => {
-    navigation.navigate('team', {id})
+    navigation.navigate('player', {id})
   }
 
   const handleCoach = (id: string) => {
-    navigation.navigate('team', {id})
+    navigation.navigate('coach', {id})
   }
 
   const handleLeague = (id: string) => {
-    navigation.navigate('team', {id})
+    navigation.navigate('tournament', {id})
   }
 
   return (

@@ -9,7 +9,7 @@ import React, {
 } from "react";
 
 // const apiUrl = Constants.expoConfig?.extra?.API_URL;
-const apiUrl = "http://192.168.101.16:3001/api";
+const apiUrl = "http://192.168.20.17:3001/api";
 
 type GoogleUser = {
   id: string;

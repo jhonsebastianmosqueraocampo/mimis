@@ -65,7 +65,8 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
       const now = new Date();
       const diffMs = matchDate.getTime() - now.getTime();
       const diffHours = diffMs / (1000 * 60 * 60);
-      if (diffHours <= 24 && diffHours > 0) {
+      console.log(diffHours)
+      if (diffHours <= 24) {
         try {
           const { success, videos, message } = await getVideoFromYoutube(query);
 
@@ -240,40 +241,33 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
         >
           {selectedItem.name.toUpperCase()}
         </Text>
-        {
-          (selectedItem.name.toLowerCase() === "entrevistas") &&  (
-            showBlock ? 
-            (
-              <VerticalScroll
-                listItems={videoPreviewInterviews!}
-                actionGeneralList={actionInterviews}
-              />
-            )
-            :
-            (
-              <Text
-            variant="titleSmall"
-            style={{ fontWeight: "bold", color: "#333" }}
-          >
-            Pronto estarán listas las entrevistas del partido
-          </Text>
-            )
-          )
-
-        }
+        {selectedItem.name.toLowerCase() === "entrevistas" &&
+          (showBlock ? (
+            <VerticalScroll
+              listItems={videoPreviewInterviews!}
+              actionGeneralList={actionInterviews}
+            />
+          ) : (
+            <Text
+              variant="titleSmall"
+              style={{ fontWeight: "bold", color: "#333" }}
+            >
+              Pronto estarán listas las entrevistas del partido
+            </Text>
+          ))}
         {selectedItem.name.toLowerCase() === "predicciones" && (
-          <MatchPredictions fixtureId={fixtureId}/>
+          <MatchPredictions fixtureId={fixtureId} />
         )}
         {selectedItem.name.toLowerCase() === "estadísticas" && (
-          <MatchStatsPreview fixtureId={fixtureId}/>
+          <MatchStatsPreview fixtureId={fixtureId} />
         )}
         {selectedItem.name.toLowerCase() === "análisis de partidos" && (
           <MatchAnalysisPreview />
         )}
         {selectedItem.name.toLowerCase() === "historial de resultados" && (
-          <MatchHistoryPreview fixtureId={fixtureId}/>
+          <MatchHistoryPreview fixtureId={fixtureId} />
         )}
-        {selectedItem.name.toLowerCase() === "Alineaciones" && (
+        {selectedItem.name.toLowerCase() === "alineaciones" && (
           <FixtureLineups fixtureId={fixtureId} />
         )}
       </View>

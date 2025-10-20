@@ -4,13 +4,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import {
-    ActivityIndicator,
-    Appbar,
-    Card,
-    Chip,
-    DataTable,
-    Divider,
-    Text,
+  ActivityIndicator,
+  Appbar,
+  Card,
+  Chip,
+  DataTable,
+  Divider,
+  Text,
 } from "react-native-paper";
 
 type Props = {
@@ -49,7 +49,7 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
     const getStatsLeague = async () => {
       setLoading(true);
       try {
-        const season = new Date().getFullYear();
+        const season = 0;
         const { success, stats, message } = await getLeagueStats(
           leagueId,
           season

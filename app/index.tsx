@@ -345,10 +345,12 @@ export default function home() {
   };
 
   const actionLeague = (name: string) => {
-      const league = leagues.filter((league) => league.name.toLowerCase() === name.toLowerCase())[0]
-      const id = league.id.toString()
-      navigation.navigate("tournament", { id });
-    };
+    const league = leagues.filter(
+      (league) => league.name.toLowerCase() === name.toLowerCase()
+    )[0];
+    const id = league.id.toString();
+    navigation.navigate("tournament", { id });
+  };
 
   return (
     <PrivateLayout>

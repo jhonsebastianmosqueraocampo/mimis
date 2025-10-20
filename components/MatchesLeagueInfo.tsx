@@ -1,9 +1,11 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Chip } from "react-native-paper";
-import { Fixture } from "../types";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import { Fixture, RootStackParamList } from "../types";
 import PastMatchesList from "./PastMatchesList";
 import UpcomingMatchesList from "./UpcomingMatchesList";
 
@@ -24,6 +26,7 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
   const [selectedItem, setSelectedItem] = useState(items[0]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let isMounted = true;
@@ -31,7 +34,7 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
     const leagueMatches = async () => {
       setLoading(true);
       try {
-        const season = new Date().getFullYear();
+        const season = 0;
         const { success, pastFixtures, upcomingFixtures, message } =
           await getPreviousAndPostLeagueMatches(leagueId, season);
 
@@ -58,6 +61,10 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
       isMounted = false;
     };
   }, [leagueId]);
+
+  const actionMatch = (id:string) => {
+    navigation.navigate("match", { id });
+  }
 
   return (
     <ScrollView>
@@ -86,7 +93,7 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
 
       {selectedItem.name.toLowerCase() === "partidos anteriores" && (
         <View style={styles.section}>
-          <PastMatchesList previousMatches={previousMatches} />
+          <PastMatchesList actionMatch={actionMatch} previousMatches={previousMatches} />
         </View>
       )}
 
@@ -94,6 +101,7 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
         <View style={styles.section}>
           <UpcomingMatchesList
             upcomingMatches={upcomingMatches}
+            actionMatch={actionMatch}
           />
         </View>
       )}

@@ -1,13 +1,22 @@
 import { useFetch } from "@/hooks/FetchContext";
 import { Picker } from "@react-native-picker/picker";
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AppState,
+  AppStateStatus,
+  LayoutAnimation,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Chip } from "react-native-paper";
 import {
   Competitions,
   CupStanding,
   Fixture,
   GroupStanding,
+  LiveMatch,
   TeamStanding,
   type SeasonResultsProps,
 } from "../types";
@@ -44,6 +53,13 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
     competitions[0]?.league.id || ""
   );
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [allMatches, setAllMatches] = useState<LiveMatch[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState(0); // 0 = temporada actual
+  const currentYear = new Date().getFullYear();
+  const seasons = Array.from({ length: 11 }, (_, i) => currentYear - i);
+
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (competitions.length > 0 && !selectedCompetition) {
@@ -53,7 +69,7 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
 
   useEffect(() => {
     getLeagues();
-  }, [teamId]);
+  }, [teamId, selectedSeason]);
 
   useEffect(() => {
     const league = selectedComp?.league;
@@ -103,21 +119,27 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
 
   const getLeagues = async () => {
     if (teamId) {
-      const { success, competitions, message } = await getLeaguesByTeam(teamId);
+      const { success, competitions, message } = await getLeaguesByTeam(teamId, selectedSeason.toString());
       success ? setCompetitions(competitions) : setError(message!);
     }
   };
 
   const getStandings = async () => {
-    const { success, standings, message } = await getStangingsLeague(
-      selectedCompetition
+    const { success, standings, matches, message } = await getStangingsLeague(
+      selectedCompetition,
+      selectedSeason.toString()
     );
-    success ? setStandings(standings) : setError(message!);
+    if (success) {
+      setStandings(standings);
+      setAllMatches(matches);
+    } else {
+      setError(message!);
+    }
   };
 
   const getCupStandings = async () => {
     const { success, hasGroupPhase, groupPhase, knockoutPhase, message } =
-      await getStangingsCup(selectedCompetition);
+      await getStangingsCup(selectedCompetition, selectedSeason.toString());
     if (success) {
       setCupGroupStandings(groupPhase);
       setCupStandings(knockoutPhase);
@@ -129,7 +151,7 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
 
   const getFriendlies = async () => {
     if (teamId) {
-      const { success, fixtures, message } = await getFriendlyMatches(teamId);
+      const { success, fixtures, message } = await getFriendlyMatches(teamId, selectedSeason.toString());
       if (success) {
         setFriendlyStandings(fixtures);
       } else {
@@ -137,6 +159,44 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
       }
     }
   };
+
+  // 🕒 Inicia polling (solo si es LEAGUE)
+  const startPolling = useCallback(() => {
+    const compType = selectedComp?.league.leagueType;
+
+    if (compType !== "League") return; // 🧠 solo si es liga
+    if (intervalRef.current) return; // evitar duplicados
+
+    intervalRef.current = setInterval(async () => {
+      await getStandings();
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }, 60 * 1000); // cada minuto
+  }, [selectedComp, getStandings]);
+
+  // 🕓 Detiene polling
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  // 🧭 controla ciclo de vida (app en background / foreground)
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next === "active") startPolling();
+      else if (next.match(/inactive|background/)) stopPolling();
+      appState.current = next;
+    });
+
+    // inicia si es League
+    startPolling();
+
+    return () => {
+      stopPolling();
+      sub.remove();
+    };
+  }, [startPolling, stopPolling]);
 
   return (
     <ScrollView style={styles.container}>
@@ -163,6 +223,23 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
         </View>
       </View>
 
+      <View style={styles.row}>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={selectedSeason}
+            onValueChange={(value) => setSelectedSeason(value)}
+            style={styles.picker}
+            dropdownIconColor="#444"
+          >
+            <Picker.Item label={`Actual (${currentYear})`} value={0} />
+            {/* envía 0 */}
+            {seasons.slice(1).map((year) => (
+              <Picker.Item key={year} label={year.toString()} value={year} />
+            ))}
+          </Picker>
+        </View>
+      </View>
+
       {selectedComp?.league.leagueType.toLowerCase() === "friendlies" && (
         <FriendlyMatches standings={friendlyStandings} teamId={teamId} />
       )}
@@ -175,6 +252,7 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
       {selectedComp?.league.leagueType.toLowerCase() === "league" && (
         <LeagueTable
           standings={standings}
+          matches={allMatches}
           selectedTeam={selectedTeam ?? ""}
           setSelectedTeam={setSelectedTeam}
           teamId={teamId}

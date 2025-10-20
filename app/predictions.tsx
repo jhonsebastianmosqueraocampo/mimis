@@ -1,51 +1,86 @@
 import { useFetch } from "@/hooks/FetchContext";
 import { PredictionOddsItem } from "@/types";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, View } from "react-native";
+import { Image, RefreshControl, ScrollView, View } from "react-native";
 import {
   ActivityIndicator,
+  Button,
   Card,
   Chip,
   Divider,
   List,
-  Text
+  Text,
 } from "react-native-paper";
+import PrivateLayout from "./privateLayout";
+
+/** Normaliza la forma de predicciones:
+ *  - pred: detalle (winner, percent, goals, under_over, win_or_draw…)
+ *  - h2h: array de enfrentamientos
+ *  - comparison: objeto con form, att, def, etc.
+ *  Soporta:
+ *    A) { predictions: { ... }, comparison: {...}, h2h: [...] }
+ *    B) { ...camposDePred } (plano)
+ */
+function normalizePredictions(raw: any) {
+  const base = raw ?? {};
+  const hasWrapper =
+    typeof base === "object" &&
+    (base.predictions || base.comparison || base.h2h);
+
+  const pred =
+    (hasWrapper ? base.predictions : base) ||
+    null; // detalle (winner, goals, under_over, percent…)
+
+  const h2h =
+    (hasWrapper ? base.h2h : base.h2h) ||
+    []; // siempre array
+
+  const comparison =
+    (hasWrapper ? base.comparison : base.comparison) ||
+    null;
+
+  return { pred, h2h, comparison };
+}
 
 export default function PredictionsFull() {
-  const { getPredictionOdds } = useFetch()
+  const { getPredictionOdds } = useFetch();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [predictionOdds, setPredictionOdds] = useState<PredictionOddsItem[]>([]);
-  const [ error, setError ] = useState('');
+  const [error, setError] = useState("");
+  const [selectedHouse, setSelectedHouse] = useState<string | null>(null);
+
+  const loadPredictionOdds = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const { success, predictionOdds, message } = await getPredictionOdds();
+
+      if (success && predictionOdds?.length > 0) {
+        setPredictionOdds(predictionOdds);
+      } else {
+        setPredictionOdds([]);
+        setError(message || "No se encontró información disponible.");
+      }
+    } catch (err) {
+      setError("Error al cargar las predicciones.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-      let isMounted = true;
-      const predictionOdds = async () => {
-        setLoading(true);
-        try {
-          const { success, predictionOdds, message } = await getPredictionOdds();
-  
-          if (!isMounted) return;
-  
-          if (success) {
-            setPredictionOdds(predictionOdds!);
-          } else {
-            setError(message!);
-          }
-        } catch (err) {
-          if (isMounted) setError("Error al cargar el predictionOdds");
-        } finally {
-          if (isMounted) setLoading(false);
-        }
-      };
+    loadPredictionOdds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      predictionOdds();
-  
-      return () => {
-        isMounted = false;
-      };
-    }, []);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadPredictionOdds();
+    setRefreshing(false);
+  };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator animating size="large" />
@@ -53,157 +88,305 @@ export default function PredictionsFull() {
     );
   }
 
+  if (error || predictionOdds.length === 0) {
+    return (
+      <PrivateLayout>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <Text
+            variant="bodyLarge"
+            style={{ textAlign: "center", opacity: 0.8, marginBottom: 10 }}
+          >
+            {error ||
+              "No se ha cargado la información. Intenta nuevamente más tarde."}
+          </Text>
+          <Button mode="contained" onPress={loadPredictionOdds}>
+            Reintentar
+          </Button>
+        </View>
+      </PrivateLayout>
+    );
+  }
+
   return (
-    <ScrollView style={{ flex: 1, padding: 10 }}>
-      {predictionOdds.map((item) => {
-        const { fixture, predictions, odds } = item;
-        const matchDate = new Date(fixture.date);
-        const isLive = ["1H", "2H", "HT", "ET"].includes(fixture!.status!.short);
-        const elapsed = fixture.status.elapsed;
+    <PrivateLayout>
+      <ScrollView
+        style={{ padding: 10 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {predictionOdds.map((item) => {
+          const { fixture, predictions, odds } = item;
 
-        return (
-          <Card key={fixture.fixtureId} style={{ marginBottom: 20 }}>
-            {/* Encabezado */}
-            <Card.Title
-              title={`${fixture.teams.home.name} vs ${fixture.teams.away.name}`}
-              subtitle={`${fixture.league.name} · ${fixture.league.round || ""}`}
-              left={() => (
-                <Image
-                  source={{ uri: fixture.league.logo }}
-                  style={{ width: 40, height: 40 }}
-                />
-              )}
-            />
-            <Card.Content>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text variant="bodyMedium">
-                  🕒 {matchDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </Text>
-                <Text variant="bodyMedium">📍 {fixture.venue?.city || ""}</Text>
-              </View>
-              <Text variant="bodySmall">Estadio: {fixture.venue?.name || "Por definir"}</Text>
-              <Text variant="bodySmall">Árbitro: {fixture.referee || "No asignado"}</Text>
+          // 🔧 Normalización: saca pred (detalle), h2h y comparison del wrapper
+          const { pred, h2h, comparison } = normalizePredictions(predictions);
 
-              {isLive ? (
-                <Chip
-                  style={{ marginTop: 6 }}
-                  textStyle={{ color: "white" }}
+          const matchDate = new Date(fixture?.date || "");
+          const isLive = ["1H", "2H", "HT", "ET"].includes(
+            fixture?.status?.short || ""
+          );
+          const elapsed = fixture?.status?.elapsed;
+
+          return (
+            <Card
+              key={fixture?.fixtureId || Math.random()}
+              style={{
+                marginBottom: 20,
+                borderRadius: 12,
+                overflow: "hidden",
+              }}
+            >
+              <Card.Title
+                title={`${fixture?.teams?.home?.name ?? "Equipo local"} vs ${
+                  fixture?.teams?.away?.name ?? "Equipo visitante"
+                }`}
+                subtitle={`${fixture?.league?.name ?? "Liga desconocida"} · ${
+                  fixture?.league?.round || ""
+                }`}
+                left={() =>
+                  fixture?.league?.logo ? (
+                    <Image
+                      source={{ uri: fixture.league.logo }}
+                      style={{ width: 40, height: 40 }}
+                    />
+                  ) : null
+                }
+              />
+
+              <Card.Content>
+                {/* INFO PARTIDO */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
                 >
-                  EN VIVO · {elapsed ?? ""}′
-                </Chip>
-              ) : (
-                <Text variant="bodySmall" style={{ marginTop: 6 }}>
-                  {fixture.status.long}
+                  <Text variant="bodyMedium">
+                    🕒{" "}
+                    {matchDate.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                  <Text variant="bodyMedium">
+                    📍 {fixture?.venue?.city || ""}
+                  </Text>
+                </View>
+                <Text variant="bodySmall">
+                  Estadio: {fixture?.venue?.name || "Por definir"}
                 </Text>
-              )}
+                <Text variant="bodySmall">
+                  Árbitro: {fixture?.referee || "No asignado"}
+                </Text>
 
-              <Divider style={{ marginVertical: 10 }} />
+                {isLive ? (
+                  <Chip
+                    style={{ marginTop: 6, backgroundColor: "#E53935" }}
+                    textStyle={{ color: "white" }}
+                  >
+                    EN VIVO · {elapsed ?? ""}′
+                  </Chip>
+                ) : (
+                  <Text
+                    variant="bodySmall"
+                    style={{ marginTop: 6, color: "#666" }}
+                  >
+                    {fixture?.status?.long || "Sin información del estado"}
+                  </Text>
+                )}
 
-              {/* Secciones colapsables */}
-              <List.Section>
-                {/* Predicciones */}
-                <List.Accordion title="📊 Predicción general" id={`pred-${fixture.fixtureId}`}>
-                  {predictions ? (
-                    <View style={{ paddingLeft: 10, paddingVertical: 5 }}>
-                      <Text>Ganador esperado: {predictions.winner?.name}</Text>
-                      <Text>Consejo: {predictions.advice}</Text>
-                      <View style={{ flexDirection: "row", justifyContent: "space-around", marginVertical: 6 }}>
-                        <Chip>🏠 {predictions.percent?.home}</Chip>
-                        <Chip>🤝 {predictions.percent?.draw}</Chip>
-                        <Chip>🚩 {predictions.percent?.away}</Chip>
-                      </View>
-                      {predictions.win_or_draw && (
-                        <Text>Opción segura: Win or Draw</Text>
-                      )}
-                      {predictions.goals && (
-                        <Text>Predicción de goles → Home: {predictions.goals.home} | Away: {predictions.goals.away}</Text>
-                      )}
-                    </View>
-                  ) : (
-                    <Text>No hay predicciones disponibles</Text>
-                  )}
-                </List.Accordion>
+                <Divider style={{ marginVertical: 10 }} />
 
-                {/* Forma reciente */}
-                <List.Accordion title="📝 Forma reciente" id={`form-${fixture.fixtureId}`}>
-                  {predictions?.teams?.home?.last_5 && predictions?.teams?.away?.last_5 ? (
-                    <View style={{ paddingLeft: 10, paddingVertical: 5 }}>
-                      <Text>{fixture.teams.home.name} – {predictions.teams.home.last_5.form}</Text>
-                      <Text>Ataque: {predictions.teams.home.last_5.att} · Defensa: {predictions.teams.home.last_5.def}</Text>
-                      <Text>Goles: {predictions.teams.home.last_5.goals.for.total} / {predictions.teams.home.last_5.goals.against.total}</Text>
-                      <Divider style={{ marginVertical: 6 }} />
-                      <Text>{fixture.teams.away.name} – {predictions.teams.away.last_5.form}</Text>
-                      <Text>Ataque: {predictions.teams.away.last_5.att} · Defensa: {predictions.teams.away.last_5.def}</Text>
-                      <Text>Goles: {predictions.teams.away.last_5.goals.for.total} / {predictions.teams.away.last_5.goals.against.total}</Text>
-                    </View>
-                  ) : (
-                    <Text>No hay datos de forma reciente</Text>
-                  )}
-                </List.Accordion>
+                {/* 💵 CUOTAS (mismo front que tu página actual) */}
+                <Card style={{ marginBottom: 16 }}>
+                  <Card.Title title="Cuotas disponibles" />
+                  <Card.Content>
+                    {!odds?.length || !odds[0]?.bookmakers?.length ? (
+                      <Text>No hay cuotas disponibles para este partido.</Text>
+                    ) : (
+                      <List.Section>
+                        {odds[0].bookmakers.map((bm: any) => {
+                          // Filtrar solo los bets que interesan
+                          const filteredBets = (bm.bets || []).filter(
+                            (b: any) => {
+                              const name = (b?.name || "").toLowerCase();
+                              return (
+                                name.includes("match winner") || // 1X2
+                                name.includes("over/under") || // total goles
+                                name.includes("correct score") // marcador exacto
+                              );
+                            }
+                          );
 
-                {/* Goles por minuto */}
-                <List.Accordion title="⏱ Distribución de goles" id={`goals-${fixture.fixtureId}`}>
-                  {predictions?.teams?.home?.league?.goals?.for?.minute &&
-                  Object.entries(predictions.teams.home.league.goals.for.minute).map(([range, stats]: any) => (
-                    <Text key={range}>
-                      {fixture.teams.home.name} {range}: {stats.total ?? 0} goles ({stats.percentage || "0%"})
-                    </Text>
-                  ))}
-                  <Divider style={{ marginVertical: 6 }} />
-                  {predictions?.teams?.away?.league?.goals?.for?.minute &&
-                  Object.entries(predictions.teams.away.league.goals.for.minute).map(([range, stats]: any) => (
-                    <Text key={range}>
-                      {fixture.teams.away.name} {range}: {stats.total ?? 0} goles ({stats.percentage || "0%"})
-                    </Text>
-                  ))}
-                </List.Accordion>
-
-                {/* Under/Over */}
-                <List.Accordion title="⚖️ Under / Over" id={`uo-${fixture.fixtureId}`}>
-                  {predictions?.teams?.home?.league?.goals?.for?.under_over &&
-                  Object.entries(predictions.teams.home.league.goals.for.under_over).map(([key, val]: any) => (
-                    <Text key={key}>
-                      {fixture.teams.home.name} +{key}: Over {val.over} / Under {val.under}
-                    </Text>
-                  ))}
-                  <Divider style={{ marginVertical: 6 }} />
-                  {predictions?.teams?.away?.league?.goals?.for?.under_over &&
-                  Object.entries(predictions.teams.away.league.goals.for.under_over).map(([key, val]: any) => (
-                    <Text key={key}>
-                      {fixture.teams.away.name} +{key}: Over {val.over} / Under {val.under}
-                    </Text>
-                  ))}
-                </List.Accordion>
-
-                {/* Odds */}
-                <List.Accordion title="💵 Odds (casas de apuestas)" id={`odds-${fixture.fixtureId}`}>
-                  {odds?.bookmakers?.length > 0 ? (
-                    odds.bookmakers.slice(0, 5).map((bm: any) => (
-                      <View key={bm.id} style={{ marginBottom: 10 }}>
-                        <Text variant="titleSmall">🏦 {bm.name}</Text>
-                        {bm.bets.slice(0, 3).map((bet: any) => (
-                          <View key={bet.id} style={{ marginLeft: 10 }}>
-                            <Text variant="bodyMedium">{bet.name}</Text>
-                            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                              {bet.values.map((v: any, i: number) => (
-                                <Chip key={i} style={{ margin: 2 }}>
-                                  {v.value}: {v.odd}
-                                </Chip>
+                          return (
+                            <List.Accordion
+                              key={bm.id}
+                              title={bm.name}
+                              left={(props) => (
+                                <List.Icon {...props} icon="cash" />
+                              )}
+                            >
+                              {filteredBets.map((bet: any) => (
+                                <View key={bet.id} style={{ marginBottom: 12 }}>
+                                  <Text
+                                    style={{
+                                      fontWeight: "bold",
+                                      marginBottom: 6,
+                                    }}
+                                  >
+                                    {bet.name}
+                                  </Text>
+                                  <View
+                                    style={{
+                                      flexDirection: "row",
+                                      flexWrap: "wrap",
+                                    }}
+                                  >
+                                    {(bet.values || []).map(
+                                      (v: any, i: number) => (
+                                        <Chip
+                                          key={i}
+                                          selected={
+                                            selectedHouse ===
+                                            `${bm.name}-${bet.name}-${v.value}`
+                                          }
+                                          onPress={() =>
+                                            setSelectedHouse(
+                                              selectedHouse ===
+                                                `${bm.name}-${bet.name}-${v.value}`
+                                                ? null
+                                                : `${bm.name}-${bet.name}-${v.value}`
+                                            )
+                                          }
+                                          style={{ margin: 4 }}
+                                        >
+                                          {v.value}: {v.odd}
+                                        </Chip>
+                                      )
+                                    )}
+                                  </View>
+                                </View>
                               ))}
-                            </View>
+                            </List.Accordion>
+                          );
+                        })}
+                      </List.Section>
+                    )}
+                  </Card.Content>
+                </Card>
+
+                {/* 📊 PREDICCIONES */}
+                <Card style={{ marginBottom: 16 }}>
+                  <Card.Title title="Predicciones" />
+                  <Card.Content>
+                    {pred ? (
+                      <>
+                        {pred.winner?.name && (
+                          <Text>Favorito: {pred.winner.name}</Text>
+                        )}
+                        {pred.goals?.advice && (
+                          <Text>Consejo: {pred.goals.advice}</Text>
+                        )}
+                        {pred.win_or_draw !== undefined && (
+                          <Text>
+                            ¿Empate posible?: {pred.win_or_draw ? "Sí" : "No"}
+                          </Text>
+                        )}
+                        {pred.under_over && (
+                          <Text>Under/Over sugerido: {pred.under_over}</Text>
+                        )}
+                        {pred.percent && (
+                          <Text>
+                            Probabilidades → Local: {pred.percent.home} | Empate:{" "}
+                            {pred.percent.draw} | Visitante: {pred.percent.away}
+                          </Text>
+                        )}
+                      </>
+                    ) : (
+                      <Text>Sin predicción disponible</Text>
+                    )}
+                  </Card.Content>
+                </Card>
+
+                {/* 🤝 H2H (del wrapper, NO de pred) */}
+                <Card style={{ marginBottom: 16 }}>
+                  <Card.Title title="Historial de enfrentamientos (H2H)" />
+                  <Card.Content>
+                    {Array.isArray(h2h) && h2h.length > 0 ? (
+                      h2h.slice(0, 5).map((match: any, i: number) => (
+                        <View
+                          key={i}
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            marginBottom: 6,
+                          }}
+                        >
+                          <Text>
+                            {match?.teams?.home?.name} {match?.goals?.home} -{" "}
+                            {match?.goals?.away} {match?.teams?.away?.name}
+                          </Text>
+                          <Text style={{ color: "gray" }}>
+                            {match?.fixture?.date
+                              ? new Date(
+                                  match.fixture.date
+                                ).toLocaleDateString()
+                              : ""}
+                          </Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text>No hay historial disponible</Text>
+                    )}
+                  </Card.Content>
+                </Card>
+
+                {/* ⚖️ COMPARACIÓN (del wrapper, NO de pred) */}
+                <Card style={{ marginBottom: 16 }}>
+                  <Card.Title title="Comparación de equipos" />
+                  <Card.Content>
+                    {comparison ? (
+                      Object.entries(comparison).map(
+                        ([key, val]: [string, any]) => (
+                          <View
+                            key={key}
+                            style={{
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                              marginBottom: 4,
+                            }}
+                          >
+                            <Text
+                              style={{ flex: 1, textTransform: "capitalize" }}
+                            >
+                              {key.replaceAll("_", " ")}
+                            </Text>
+                            <Text style={{ flex: 1, textAlign: "center" }}>
+                              {val?.home}
+                            </Text>
+                            <Text style={{ flex: 1, textAlign: "right" }}>
+                              {val?.away}
+                            </Text>
                           </View>
-                        ))}
-                      </View>
-                    ))
-                  ) : (
-                    <Text>No hay odds disponibles</Text>
-                  )}
-                </List.Accordion>
-              </List.Section>
-            </Card.Content>
-          </Card>
-        );
-      })}
-    </ScrollView>
+                        )
+                      )
+                    ) : (
+                      <Text>No hay datos de comparación</Text>
+                    )}
+                  </Card.Content>
+                </Card>
+              </Card.Content>
+            </Card>
+          );
+        })}
+      </ScrollView>
+    </PrivateLayout>
   );
 }
