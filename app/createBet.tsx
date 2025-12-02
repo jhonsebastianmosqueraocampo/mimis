@@ -98,6 +98,10 @@ export default function CreateBetScreen() {
     }
   };
 
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
+
   return (
     <PrivateLayout>
       <View>
@@ -264,7 +268,7 @@ export default function CreateBetScreen() {
                   }}
                 >
                   {/* Equipo local */}
-                  <View style={{ alignItems: "center", flex: 1 }}>
+                  <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(selectedMatch.fixture.teams.home.id)}>
                     <Image
                       source={{ uri: selectedMatch.fixture.teams.home.logo }}
                       style={{ width: 60, height: 60, marginBottom: 6 }}
@@ -279,7 +283,7 @@ export default function CreateBetScreen() {
                     >
                       {selectedMatch.fixture.teams.home.name}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
                   {/* VS */}
                   <View style={{ flex: 0.5, alignItems: "center" }}>
@@ -304,7 +308,7 @@ export default function CreateBetScreen() {
                   </View>
 
                   {/* Equipo visitante */}
-                  <View style={{ alignItems: "center", flex: 1 }}>
+                  <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(selectedMatch.fixture.teams.away.id)}>
                     <Image
                       source={{ uri: selectedMatch.fixture.teams.away.logo }}
                       style={{ width: 60, height: 60, marginBottom: 6 }}
@@ -319,7 +323,7 @@ export default function CreateBetScreen() {
                     >
                       {selectedMatch.fixture.teams.away.name}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
 
                 {/* Info liga y estadio */}

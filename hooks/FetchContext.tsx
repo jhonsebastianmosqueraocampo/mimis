@@ -12,6 +12,10 @@ import {
   LeagueB,
   Lineup,
   LiveMatch,
+  NationalLeague,
+  NewsItem,
+  NewsPayload,
+  OneByOne,
   PlayerB,
   PlayerCareer,
   PlayerFixtureStats,
@@ -19,6 +23,7 @@ import {
   PredictionOddsItem,
   PreMatchStats,
   SelectionBet,
+  setBet,
   StatsByCategory,
   swiperItem,
   SyntheticMatch,
@@ -28,6 +33,8 @@ import {
   TeamSummary,
   User,
   VideoYoutube,
+  WeeklyGoalVideo,
+  WeeklyWorldTopVideo,
 } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext } from "react";
@@ -111,7 +118,7 @@ type FetchContextType = {
     success: boolean;
     message?: string;
     standings: TeamStanding[];
-    matches: LiveMatch[]
+    matches: LiveMatch[];
   }>;
   getStangingsCup: (
     leagueId: string,
@@ -123,6 +130,7 @@ type FetchContextType = {
     hasGroupPhase: boolean;
     groupPhase: GroupStanding[];
     knockoutPhase: CupStanding[];
+    matches: LiveMatch[];
   }>;
   getFriendlyMatches: (
     teamId: string,
@@ -165,6 +173,12 @@ type FetchContextType = {
     message?: string;
     newSigns: swiperItem[];
     newRumor: swiperItem[];
+  }>;
+  getNewsSignAndRumorFavoritesAndGeneral: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    newsFavorites: swiperItem[];
+    newsGeneral: swiperItem[];
   }>;
   getInfoPlayer: (
     playerId: string,
@@ -267,6 +281,43 @@ type FetchContextType = {
     message?: string;
     videos: VideoYoutube[];
   }>;
+  getVideoTeamFromYoutube: (
+    team: string,
+    query: string,
+    season?: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    videos: VideoYoutube[];
+  }>;
+  getVideoMatchFromYoutube: (
+    teamA: string,
+    teamB: string,
+    query: string,
+    season?: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    videos: VideoYoutube[];
+  }>;
+  getVideoPlayerFromYoutube: (
+    player: string,
+    query: string,
+    season?: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    videos: VideoYoutube[];
+  }>;
+  getFavoritesVideos: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    videosTeams: VideoYoutube[];
+    videosPlayers: VideoYoutube[];
+  }>;
   getFixturePrediction: (
     fixtureId: string,
     isRetry?: boolean
@@ -355,6 +406,14 @@ type FetchContextType = {
     message?: string;
     bets: BetInfo[];
   }>;
+  betSetResults: (
+    betId: string,
+    bet: setBet[],
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
   getSyntheticMatches: (isRetry?: boolean) => Promise<{
     success: boolean;
     message?: string;
@@ -372,7 +431,20 @@ type FetchContextType = {
     message?: string;
     user: User | null;
   }>;
+  getUsers: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    users: User[];
+  }>;
   getMatchesToday: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    matches: LiveMatch[];
+  }>;
+  getMatchesTodayFromLeague: (
+    leagueId: string,
+    isRetry?: boolean
+  ) => Promise<{
     success: boolean;
     message?: string;
     matches: LiveMatch[];
@@ -392,10 +464,202 @@ type FetchContextType = {
     message?: string;
     leagues: LeagueB[];
   }>;
-  isLiveMatch: (fixtureId: string, isRetry?: boolean) => Promise<{
+  isLiveMatch: (
+    fixtureId: string,
+    isRetry?: boolean
+  ) => Promise<{
     success: boolean;
     message?: string;
-    isLive: boolean
+    isLive: boolean;
+  }>;
+  getLeaguesCountry: (
+    country: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    leaguesCountry: NationalLeague[];
+  }>;
+  getNationalTournaments: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    leaguesCountry: NationalLeague[];
+  }>;
+  getNationalMatchesToday: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    matches: LiveMatch[];
+  }>;
+  searchPlayers: (
+    search: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    players: PlayerB[];
+  }>;
+  searchCoaches: (
+    search: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    coaches: Coach[];
+  }>;
+  searchTeams: (
+    search: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    teams: Team[];
+  }>;
+  ratePlayer: (
+    rate: number,
+    fixtureId: string,
+    playerId: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  loadWorldTop10: (
+    formData: FormData,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getVideosWorldTop10: (isRetry?: boolean) => Promise<{
+    videos: WeeklyWorldTopVideo[];
+    success: boolean;
+    message?: string;
+  }>;
+  editWorldTop10: (
+    id: string,
+    formData: FormData,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  deleteWorldTop10: (
+    id: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  loadSyntheticVideo: (
+    formData: FormData,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getSyntheticVideo: (
+    week: string,
+    isRetry?: boolean
+  ) => Promise<{
+    videos: WeeklyGoalVideo[];
+    success: boolean;
+    message?: string;
+  }>;
+  editSyntheticVideo: (
+    id: string,
+    formData: FormData,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  deleteSyntheticVideo: (
+    id: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  toggleFavoriteVideo: (
+    id: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    favorites: number;
+    isFavorite: boolean;
+    canVote: boolean;
+    votesUsed: number;
+    message?: string;
+  }>;
+  getUsersNews: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    userNews: NewsItem[];
+    message?: string;
+  }>;
+  deleteUsersNews: (
+    id: string,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    userNews: NewsItem[];
+    message?: string;
+  }>;
+  createUserNew: (
+    userNew: NewsPayload,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  editUserNew: (
+    id: string,
+    userNew: NewsPayload,
+    isRetry?: boolean
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getGeneralUsersNews: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    userNews: NewsItem[];
+    message?: string;
+  }>;
+  getUserNew: (id: string, isRetry?: boolean) => Promise<{
+    success: boolean;
+    userNews: NewsItem | null;
+    message?: string;
+  }>;
+  getOneByOne: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    oneByOneList: OneByOne[];
+    message?: string;
+  }>;
+  deleteOneByOneItem: (id: string, isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getFinishedMatches: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    fixtures: LiveMatch[];
+    message?: string;
+  }>;
+  editOneByOne: (id: string, item: OneByOne, isRetry?: boolean) => Promise<{
+    success: boolean;
+    oneByOneItem: OneByOne | null;
+    message?: string;
+  }>;
+  saveOneByOne: (item: OneByOne, isRetry?: boolean) => Promise<{
+    success: boolean;
+    oneByOneItem: OneByOne | null;
+    message?: string;
+  }>;
+  sendComment: (id: string, text: string, isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  likeShort: (id: string, isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
   }>;
 };
 
@@ -1139,7 +1403,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     success: boolean;
     message?: string;
     standings: TeamStanding[];
-    matches: LiveMatch[]
+    matches: LiveMatch[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -1182,7 +1446,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       return {
         success: true,
         standings,
-        matches
+        matches,
       };
     } catch (error: any) {
       return {
@@ -1204,6 +1468,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     hasGroupPhase: boolean;
     groupPhase: GroupStanding[];
     knockoutPhase: CupStanding[];
+    matches: LiveMatch[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -1228,6 +1493,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             hasGroupPhase: false,
             groupPhase: [],
             knockoutPhase: [],
+            matches: [],
           };
         }
       }
@@ -1241,6 +1507,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           hasGroupPhase: false,
           groupPhase: [],
           knockoutPhase: [],
+          matches: [],
         };
       }
 
@@ -1249,6 +1516,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         hasGroupPhase: data.hasGroupPhase,
         groupPhase: data.groupPhase,
         knockoutPhase: data.knockoutPhase,
+        matches: data.liveMatches,
       };
     } catch (error: any) {
       return {
@@ -1257,6 +1525,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         hasGroupPhase: false,
         groupPhase: [],
         knockoutPhase: [],
+        matches: [],
       };
     }
   };
@@ -1565,6 +1834,96 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         message: error.message,
         newSigns: [],
         newRumor: [],
+      };
+    }
+  };
+
+  const getNewsSignAndRumorFavoritesAndGeneral = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    newsFavorites: swiperItem[];
+    newsGeneral: swiperItem[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/news/rumorNewsFavoritesGeneral`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getNewsSignAndRumorFavoritesAndGeneral(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            newsFavorites: [],
+            newsGeneral: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          newsFavorites: [],
+          newsGeneral: [],
+        };
+      }
+      const newsFavorites: swiperItem[] = data.newsFavorites.map(
+        (item: any) => ({
+          id: item._id || item.url,
+          title: item.title,
+          img: "",
+          pathTo: item.url,
+          description: "",
+          date: item.publishedAt
+            ? new Date(item.publishedAt).toLocaleDateString("es-ES", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : undefined,
+          source: item.source,
+        })
+      );
+
+      const newsGeneral: swiperItem[] = data.generalNews.map((item: any) => ({
+        id: item._id || item.url,
+        title: item.title,
+        img: "",
+        pathTo: item.url,
+        description: "",
+        date: item.publishedAt
+          ? new Date(item.publishedAt).toLocaleDateString("es-ES", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : undefined,
+        source: item.source,
+      }));
+
+      return {
+        success: true,
+        newsFavorites,
+        newsGeneral,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        newsFavorites: [],
+        newsGeneral: [],
       };
     }
   };
@@ -2249,17 +2608,13 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     videos: VideoYoutube[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-    const season = new Date().getFullYear();
     try {
-      const response = await fetch(
-        `${apiUrl}/youtube/videos/${season}/${query}`,
-        {
-          method: "GET",
-          headers: {
-            authorization: token,
-          },
-        }
-      );
+      const response = await fetch(`${apiUrl}/youtube/videos/${query}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
 
       if (response.status === 403 && !isRetry) {
         try {
@@ -2295,6 +2650,252 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         success: false,
         message: error.message,
         videos: [],
+      };
+    }
+  };
+
+  const getVideoTeamFromYoutube = async (
+    team: string,
+    query: string,
+    season?: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    videos: VideoYoutube[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/youtube/videosTeam/${team}/${query}/${season}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getVideoTeamFromYoutube(query, team, season, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            videos: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          videos: [],
+        };
+      }
+
+      const { videos } = data;
+
+      return {
+        success: true,
+        videos,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        videos: [],
+      };
+    }
+  };
+
+  const getVideoMatchFromYoutube = async (
+    teamA: string,
+    teamB: string,
+    query: string,
+    season?: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    videos: VideoYoutube[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/youtube/videosMatch/${teamA}/${teamB}/${query}/${season}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getVideoMatchFromYoutube(
+            teamA,
+            teamB,
+            query,
+            season,
+            true
+          );
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            videos: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          videos: [],
+        };
+      }
+
+      const { videos } = data;
+
+      return {
+        success: true,
+        videos,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        videos: [],
+      };
+    }
+  };
+
+  const getVideoPlayerFromYoutube = async (
+    player: string,
+    query: string,
+    season?: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    videos: VideoYoutube[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/youtube/videosPlayer/${player}/${query}/${season}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getVideoTeamFromYoutube(player, query, season, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            videos: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          videos: [],
+        };
+      }
+
+      const { videos } = data;
+
+      return {
+        success: true,
+        videos,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        videos: [],
+      };
+    }
+  };
+
+  const getFavoritesVideos = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    videosTeams: VideoYoutube[];
+    videosPlayers: VideoYoutube[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/youtube/videosFavorites`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getFavoritesVideos(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            videosTeams: [],
+            videosPlayers: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          videosTeams: [],
+          videosPlayers: [],
+        };
+      }
+
+      const { videosTeams, videosPlayers } = data;
+
+      return {
+        success: true,
+        videosTeams,
+        videosPlayers,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        videosTeams: [],
+        videosPlayers: [],
       };
     }
   };
@@ -2897,6 +3498,55 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const betSetResults = async (
+    betId: string,
+    bet: setBet[],
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/bet/betSetResults/${betId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify({
+          betResume: bet,
+        }),
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await betSetResults(betId, bet, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
   const getSyntheticMatches = async (
     isRetry?: boolean
   ): Promise<{
@@ -2992,6 +3642,53 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const getUsers = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    users: User[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/user/getUsers`, {
+        headers: {
+          authorization: token,
+        },
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getUsers(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            users: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      const { users } = data;
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          users: [],
+        };
+      }
+      return { success: true, users };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        users: [],
+      };
+    }
+  };
+
   const saveSyntheticMatches = async (
     score: string,
     isRetry?: boolean
@@ -3054,6 +3751,63 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         try {
           await refreshToken();
           return await getMatchesToday(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            matches: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          matches: [],
+        };
+      }
+
+      const { matches } = data;
+
+      return {
+        success: true,
+        matches,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        matches: [],
+      };
+    }
+  };
+
+  const getMatchesTodayFromLeague = async (
+    leagueId: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    matches: LiveMatch[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/fixture/getMatchesTodayFromLeague`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getMatchesTodayFromLeague(leagueId, true);
         } catch (error) {
           return {
             success: false,
@@ -3155,15 +3909,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
-      const response = await fetch(
-        `${apiUrl}/league/leagues`,
-        {
-          method: "GET",
-          headers: {
-            authorization: token,
-          },
-        }
-      );
+      const response = await fetch(`${apiUrl}/league/leagues`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
 
       if (response.status === 403 && !isRetry) {
         try {
@@ -3230,7 +3981,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           return {
             success: false,
             message: "Iniciar sesión",
-            isLive: false
+            isLive: false,
           };
         }
       }
@@ -3240,7 +3991,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         return {
           success: false,
           message: data.message,
-          isLive: false
+          isLive: false,
         };
       }
 
@@ -3254,7 +4005,1589 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       return {
         success: false,
         message: error.message,
-        isLive: false
+        isLive: false,
+      };
+    }
+  };
+
+  const getLeaguesCountry = async (
+    country: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    leaguesCountry: NationalLeague[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/nationLeague/getTournamentsFromCountry/${country}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getLeaguesCountry(country, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            leaguesCountry: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          leaguesCountry: [],
+        };
+      }
+
+      const { tournaments } = data;
+
+      return {
+        success: true,
+        leaguesCountry: tournaments,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        leaguesCountry: [],
+      };
+    }
+  };
+
+  const getNationalTournaments = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    leaguesCountry: NationalLeague[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/nationLeague/getTournaments`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getNationalTournaments(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            leaguesCountry: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          leaguesCountry: [],
+        };
+      }
+
+      const { tournaments } = data;
+
+      return {
+        success: true,
+        leaguesCountry: tournaments,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        leaguesCountry: [],
+      };
+    }
+  };
+
+  const getNationalMatchesToday = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    matches: LiveMatch[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/fixture/getMatchesNationalDay`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getNationalMatchesToday(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            matches: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          matches: [],
+        };
+      }
+
+      const { matches } = data;
+
+      return {
+        success: true,
+        matches,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        matches: [],
+      };
+    }
+  };
+
+  const searchPlayers = async (
+    search: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    players: PlayerB[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/player/search/${search}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await searchPlayers(search, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            players: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          players: [],
+        };
+      }
+
+      const { players } = data;
+
+      return {
+        success: true,
+        players,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        players: [],
+      };
+    }
+  };
+
+  const searchCoaches = async (
+    search: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    coaches: Coach[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/coach/search/${search}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await searchCoaches(search, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            coaches: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          coaches: [],
+        };
+      }
+
+      const { coaches } = data;
+
+      return {
+        success: true,
+        coaches,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        coaches: [],
+      };
+    }
+  };
+
+  const searchTeams = async (
+    search: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    teams: Team[];
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/team/search/${search}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await searchTeams(search, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            teams: [],
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          teams: [],
+        };
+      }
+
+      const { teams } = data;
+
+      return {
+        success: true,
+        teams,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        teams: [],
+      };
+    }
+  };
+
+  const ratePlayer = async (
+    rate: number,
+    fixtureId: string,
+    playerId: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/fixture/ratePlayer/${fixtureId}/${playerId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+          body: JSON.stringify({ rate }),
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await ratePlayer(rate, fixtureId, playerId, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const loadWorldTop10 = async (
+    formData: FormData,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/weeklyWorldTop/save`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+        },
+        body: formData,
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await loadWorldTop10(formData, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const getVideosWorldTop10 = async (
+    isRetry?: boolean
+  ): Promise<{
+    videos: WeeklyWorldTopVideo[];
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/weeklyWorldTop/videos`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getVideosWorldTop10(true);
+        } catch (error) {
+          return {
+            videos: [],
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          videos: [],
+          success: false,
+          message: data.message,
+        };
+      }
+
+      const videos = data.videos;
+
+      return {
+        videos,
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        videos: [],
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const editWorldTop10 = async (
+    id: string,
+    formData: FormData,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/weeklyWorldTop/weekVideo/${id}`, {
+        method: "PUT",
+        headers: {
+          authorization: token,
+        },
+        body: formData,
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await editWorldTop10(id, formData, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const deleteWorldTop10 = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/weeklyWorldTop/weekVideo/${id}`, {
+        method: "Delete",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await deleteWorldTop10(id, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const loadSyntheticVideo = async (
+    formData: FormData,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/weeklySyntheticTop/save`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+        },
+        body: formData,
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await loadSyntheticVideo(formData, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const getSyntheticVideo = async (
+    week: string,
+    isRetry?: boolean
+  ): Promise<{
+    videos: WeeklyGoalVideo[];
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/weeklySyntheticTop/weekVideo/${week}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getSyntheticVideo(week, true);
+        } catch (error) {
+          return {
+            videos: [],
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          videos: [],
+          success: false,
+          message: data.message,
+        };
+      }
+
+      const videos = data.videos;
+
+      return {
+        videos,
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        videos: [],
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const editSyntheticVideo = async (
+    id: string,
+    formData: FormData,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/weeklySyntheticTop/weekVideo/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            authorization: token,
+          },
+          body: formData,
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await editSyntheticVideo(id, formData, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const deleteSyntheticVideo = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/weeklySyntheticTop/weekVideo/${id}`,
+        {
+          method: "Delete",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        }
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await deleteSyntheticVideo(id, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const toggleFavoriteVideo = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    videoId: string;
+    isFavorite: boolean;
+    favorites: number;
+    canVote: boolean;
+    votesUsed: number;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/weeklySyntheticTop/setFavorite/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        }
+      );
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await toggleFavoriteVideo(id, true);
+        } catch {
+          return {
+            success: false,
+            videoId: id,
+            isFavorite: false,
+            canVote: false,
+            votesUsed: 0,
+            favorites: 0,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          videoId: id,
+          isFavorite: false,
+          canVote: false,
+          votesUsed: 0,
+          favorites: 0,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        videoId: data.videoId,
+        isFavorite: data.isFavorite,
+        canVote: true,
+        votesUsed: data.votesUsed,
+        favorites: data.favorites,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        videoId: id,
+        isFavorite: false,
+        favorites: 0,
+        canVote: false,
+        votesUsed: 0,
+        message: error.message,
+      };
+    }
+  };
+
+  const getUsersNews = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    userNews: NewsItem[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/userNews/getNews/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getUsersNews(true);
+        } catch {
+          return {
+            success: false,
+            userNews: [],
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          userNews: [],
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        userNews: data.news,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        userNews: [],
+        message: error.message,
+      };
+    }
+  };
+
+  const deleteUsersNews = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    userNews: NewsItem[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/userNews/deleteNew/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await deleteUsersNews(id, true);
+        } catch {
+          return {
+            success: false,
+            userNews: [],
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          userNews: [],
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        userNews: data.news,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        userNews: [],
+        message: error.message,
+      };
+    }
+  };
+
+  const createUserNew = async (
+    userNew: NewsPayload,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/userNews/createNew`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify(userNew),
+      });
+
+      // Token expirado → refrescar y reintentar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await createUserNew(userNew, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const editUserNew = async (
+    id: string,
+    userNew: NewsPayload,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/userNews/editNew/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify(userNew),
+      });
+
+      // Token expirado → refrescar y reintentar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await editUserNew(id, userNew, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const getGeneralUsersNews = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    userNews: NewsItem[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/userNews/getGeneralNews/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getGeneralUsersNews(true);
+        } catch {
+          return {
+            success: false,
+            userNews: [],
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          userNews: [],
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        userNews: data.news,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        userNews: [],
+        message: error.message,
+      };
+    }
+  };
+
+  const getUserNew = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    userNews: NewsItem | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/userNews/getUserNew/${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getUserNew(id, true);
+        } catch {
+          return {
+            success: false,
+            userNews: null,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          userNews: null,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        userNews: data.news,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        userNews: null,
+        message: error.message,
+      };
+    }
+  };
+
+  const getOneByOne = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    oneByOneList: OneByOne[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/oneByOne/getOneByOne`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getOneByOne(true);
+        } catch {
+          return {
+            success: false,
+            oneByOneList: [],
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          oneByOneList: [],
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        oneByOneList: data.oneByOneList,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        oneByOneList: [],
+        message: error.message,
+      };
+    }
+  };
+
+  const deleteOneByOneItem = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/oneByOne/deleteOneByOne/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await deleteOneByOneItem(id, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const getFinishedMatches = async (
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    fixtures: LiveMatch[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/match/finishedMatches`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+      });
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getFinishedMatches(true);
+        } catch {
+          return {
+            success: false,
+            fixtures: [],
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          fixtures: [],
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        fixtures: data.fixtures,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        fixtures: [],
+        message: error.message,
+      };
+    }
+  };
+
+  const editOneByOne = async (
+    id: string,
+    item: OneByOne,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    oneByOneItem: OneByOne | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/oneByOne/edit/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+          body: JSON.stringify(item)
+        }
+      );
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await editOneByOne(id, item, true);
+        } catch {
+          return {
+            success: false,
+            oneByOneItem: null,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          oneByOneItem: null,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        oneByOneItem: data.oneByOne,
+        message: ''
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        oneByOneItem: null,
+        message: error.message,
+      };
+    }
+  };
+
+  const saveOneByOne = async (
+    item: OneByOne,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    oneByOneItem: OneByOne | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/oneByOne/save/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+          body: JSON.stringify(item)
+        }
+      );
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await saveOneByOne(item, true);
+        } catch {
+          return {
+            success: false,
+            oneByOneItem: null,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          oneByOneItem: null,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        oneByOneItem: data.oneByOne,
+        message: ''
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        oneByOneItem: null,
+        message: error.message,
+      };
+    }
+  };
+
+  const sendComment = async (
+    id: string,
+    text: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/shorts/comment/${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        }
+      );
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await sendComment(id, text, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        message: ''
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const likeShort = async (
+    id: string,
+    isRetry?: boolean
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/shorts/like/${id}`,
+        {
+          method: "POST",
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await likeShort(id, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        message: ''
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
       };
     }
   };
@@ -3282,6 +5615,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         getSquadByTeam,
         getCoachByTeam,
         getNewsSignAndRumorTeam,
+        getNewsSignAndRumorFavoritesAndGeneral,
         getInfoPlayer,
         getPlayerNews,
         getPlayerSeasons,
@@ -3294,6 +5628,10 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         getCoachNews,
         getFixture,
         getVideoFromYoutube,
+        getVideoMatchFromYoutube,
+        getVideoTeamFromYoutube,
+        getVideoPlayerFromYoutube,
+        getFavoritesVideos,
         getFixturePrediction,
         getFeaturedPlayerByTeamLeague,
         getPreMatchStats,
@@ -3305,13 +5643,45 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         getBetAndPredictionOddsByCode,
         joinBet,
         myBets,
+        betSetResults,
         getSyntheticMatches,
         getUser,
+        getUsers,
         saveSyntheticMatches,
         getMatchesToday,
         getTeamSummary,
         getLeagues,
-        isLiveMatch
+        isLiveMatch,
+        getLeaguesCountry,
+        getNationalTournaments,
+        getNationalMatchesToday,
+        searchPlayers,
+        searchCoaches,
+        searchTeams,
+        ratePlayer,
+        getMatchesTodayFromLeague,
+        loadWorldTop10,
+        getVideosWorldTop10,
+        deleteWorldTop10,
+        editWorldTop10,
+        loadSyntheticVideo,
+        getSyntheticVideo,
+        editSyntheticVideo,
+        deleteSyntheticVideo,
+        toggleFavoriteVideo,
+        getUsersNews,
+        deleteUsersNews,
+        createUserNew,
+        editUserNew,
+        getGeneralUsersNews,
+        getUserNew,
+        getOneByOne,
+        deleteOneByOneItem,
+        getFinishedMatches,
+        editOneByOne,
+        saveOneByOne,
+        sendComment,
+        likeShort
       }}
     >
       {children}

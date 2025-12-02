@@ -38,6 +38,7 @@ export default function TeamScreen() {
   const [team, setTeam] = useState<Team>();
   const [news, setNews] = useState<swiperItem[]>([]);
   const [error, setError] = useState("");
+  
   const route = useRoute<TeamScreenRouteProp>();
   const { id } = route.params;
 

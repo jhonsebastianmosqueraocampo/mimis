@@ -1,5 +1,6 @@
 import { useFetch } from "@/hooks/FetchContext";
-import { LeagueB, Team } from "@/types";
+import { LeagueB, RootStackParamList, Team } from "@/types";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import {
@@ -10,6 +11,7 @@ import {
   Chip, Menu, Text,
   TextInput
 } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
 const PRIMARY = "#1DB954"; // 💚 color principal
@@ -82,6 +84,7 @@ export default function Stats() {
   const [loading, setLoading] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const seasons = Array.from({ length: 11 }, (_, i) => currentYear - i);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // 1️⃣ Obtener ligas
   useEffect(() => {
@@ -151,6 +154,14 @@ export default function Stats() {
     l.league.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const actionLeague = (id: string) => {
+    navigation.navigate("tournament", { id });
+  };
+
+  const actionTeam = (id: string) => {
+    navigation.navigate("team", { id });
+  };
+
   return (
     <PrivateLayout>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -179,6 +190,7 @@ export default function Stats() {
                     borderLeftColor: PRIMARY,
                     borderLeftWidth: 4,
                   }}
+                  onPress={()=>actionLeague(l.league.id.toString())}
                 >
                   <Card.Title
                     title={l.league.name}
@@ -232,6 +244,7 @@ export default function Stats() {
                     borderLeftColor: PRIMARY,
                     borderLeftWidth: 4,
                   }}
+                  onPress={()=>actionTeam(t.teamId.toString())}
                 >
                   <Card.Title
                     title={t.name}
@@ -465,7 +478,7 @@ export default function Stats() {
                           }}
                         >
                           <Text style={{ flex: 1 }}>
-                            J{match.matchday} - {match.opponent}
+                            {match.matchday} - {match.opponent}
                           </Text>
                           <Text
                             style={{

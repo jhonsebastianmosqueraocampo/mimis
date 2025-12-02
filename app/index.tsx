@@ -9,12 +9,9 @@ import React, {
   useState,
 } from "react";
 import {
-  Animated,
   AppState,
   AppStateStatus,
   Dimensions,
-  Easing,
-  FlatList,
   Image,
   LayoutAnimation,
   Modal,
@@ -28,8 +25,6 @@ import {
 import { ScrollView } from "react-native-gesture-handler";
 import { Button, Chip, Searchbar } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
-import Video from "react-native-video";
-import { WebView } from "react-native-webview";
 import PrivateLayout from "./privateLayout";
 
 // Habilitar animaciones en Android
@@ -39,25 +34,6 @@ if (
 ) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-// ------- MOCK VIDEOS -------
-const MOCK_VIDEOS = [
-  {
-    id: "v1",
-    title: "Chelsea vs Liverpool",
-    url: "https://www.scorebat.com/embed/v/671234/?s=3",
-  },
-  {
-    id: "v2",
-    title: "Real Madrid vs Sevilla",
-    url: "https://www.scorebat.com/embed/v/671567/?s=3",
-  },
-  {
-    id: "v3",
-    title: "Arsenal vs Man City",
-    url: "https://www.scorebat.com/embed/v/671890/?s=3",
-  },
-];
 
 // ------- HELPERS -------
 const LIVE_STATUSES = ["1H", "2H", "ET", "HT", "LIVE"];
@@ -130,18 +106,14 @@ export default function home() {
   const [query, setQuery] = useState("");
   const [selectedLeague, setSelectedLeague] = useState<number | "ALL">("ALL");
   const [selectedLeagueName, setSelectedLeagueName] = useState<string>("Todas");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [events, setEvents] = useState<string[]>();
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
 
-  const [showVideos, setShowVideos] = useState(false);
   const [selectedSection, setSelectedSection] = useState<
     "ALL" | "LIVE" | "NS" | "FT"
   >("ALL");
   const [leagueSearch, setLeagueSearch] = useState("");
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -167,7 +139,6 @@ export default function home() {
       const { matches } = await getMatchesToday();
       return matches;
     } catch (error) {
-      console.error("Error al obtener partidos:", error);
       return []; // fallback seguro
     }
   };
@@ -352,6 +323,10 @@ export default function home() {
     navigation.navigate("tournament", { id });
   };
 
+  const actionVideos = () => {
+    navigation.navigate("weekResumeVideos");
+  };
+
   return (
     <PrivateLayout>
       <View style={styles.container}>
@@ -406,7 +381,7 @@ export default function home() {
         {/* Botón Ver Resúmenes */}
         <Button
           mode="contained"
-          onPress={() => setShowVideos(true)}
+          onPress={() => actionVideos()}
           style={{ margin: 16, backgroundColor: PRIMARY }}
         >
           Ver Resúmenes
@@ -481,107 +456,23 @@ export default function home() {
                   <MatchRow
                     key={item.fixtureId} // más confiable que _id
                     match={item}
-                    openVideo={(url) => setVideoUrl(url)}
                   />
                 ))}
               </View>
             ))
           )}
         </View>
-
-        {/* Modal de Video Partido */}
-        <Modal visible={!!videoUrl} animationType="slide">
-          <View style={{ flex: 1 }}>
-            <WebView
-              source={{
-                uri: videoUrl ?? "https://www.scorebat.com/video-api/v1/",
-              }}
-            />
-            <Button onPress={() => setVideoUrl(null)} style={{ margin: 12 }}>
-              Cerrar
-            </Button>
-          </View>
-        </Modal>
-
-        {/* Modal TikTok de Resúmenes */}
-        <Modal visible={showVideos} animationType="slide">
-          <FlatList
-            data={MOCK_VIDEOS}
-            keyExtractor={(item) => item.id}
-            pagingEnabled
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item, index }) => (
-              <View style={{ height, backgroundColor: "#000" }}>
-                <Video
-                  source={{ uri: item.url }}
-                  style={{ width, height }}
-                  resizeMode="cover"
-                  paused={currentIndex !== index}
-                  repeat
-                />
-                <View style={styles.videoOverlay}>
-                  <Text style={styles.videoTitle}>{item.title}</Text>
-                </View>
-              </View>
-            )}
-            onMomentumScrollEnd={(ev) => {
-              const index = Math.round(ev.nativeEvent.contentOffset.y / height);
-              setCurrentIndex(index);
-            }}
-          />
-          <Button onPress={() => setShowVideos(false)} style={{ margin: 12 }}>
-            Cerrar Resúmenes
-          </Button>
-        </Modal>
       </View>
     </PrivateLayout>
   );
 }
 
-// ------- Barra LIVE -------
-const LiveBar = () => {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 0,
-          duration: 1500,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, [anim]);
-
-  const translateX = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-20, 20],
-  });
-
-  return (
-    <View style={styles.barContainer}>
-      <Animated.View
-        style={[styles.liveBar, { transform: [{ translateX }] }]}
-      />
-    </View>
-  );
-};
-
 // ------- ROW -------
 const MatchRow = React.memo(
   ({
-    match,
-    openVideo,
+    match
   }: {
-    match: LiveMatch;
-    openVideo: (url: string) => void;
+    match: LiveMatch
   }) => {
     const [showName, setShowName] = useState<string | null>(null);
     const [showStats, setShowStats] = useState(false);
@@ -694,21 +585,6 @@ const MatchRow = React.memo(
 
             {/* --- Segunda fila: acciones --- */}
             <View style={styles.actionsRow}>
-              {isLive && (
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() =>
-                    openVideo("https://www.scorebat.com/video-api/v1/")
-                  }
-                >
-                  <Image
-                    source={{
-                      uri: "https://img.icons8.com/ios-filled/50/play-button-circled.png",
-                    }}
-                    style={{ width: 20, height: 20, tintColor: PRIMARY }}
-                  />
-                </TouchableOpacity>
-              )}
               <TouchableOpacity
                 onPress={() => setShowStats(true)}
                 style={styles.actionBtn}

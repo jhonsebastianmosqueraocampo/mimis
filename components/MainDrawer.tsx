@@ -26,20 +26,49 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
+  // INICIO
   { label: "Inicio", icon: "home", to: "index" },
-  { label: "Crear apuesta", icon: "currency-usd-circle", to: "createBet" },
-  { label: "Mis apuestas", icon: "ticket-percent", to: "bets" },
-  { label: "Mi perfil", icon: "account-circle", to: "profile" },
-  { label: "Favoritos", icon: "heart", to: "favorites" },
-  { label: "Equipos seguidos", icon: "shield", to: "favoriteTeams" },
-  { label: "Jugadores seguidos", icon: "account-star", to: "favoritePlayers" },
+
+  // VIDEOS / HIGHLIGHTS
+  { label: "Subir Shorts", icon: "video-upload", to: "loadShorts" },
+  { label: "Shorts", icon: "video", to: "shorts" },
+  { label: "Subir Top 10 Ligas", icon: "upload", to: "loadWorldResumeVideos" },
+  { label: "Subir Top 10 Sintético", icon: "upload", to: "loadSyntheticResumeVideos" },
+  { label: "Top 10 Ligas", icon: "trophy-outline", to: "worldResumeVideos" },
+  { label: "Top 10 Sintético", icon: "fire", to: "weekResumeVideos" },
+
+  // BÚSQUEDA / NOTICIAS
+  { label: "Buscar", icon: "magnify", to: "search" },
+  { label: "Agregar Manual (1x1)", icon: "playlist-plus", to: "loadOneByOne" },
+  { label: "Lista Manual", icon: "playlist-check", to: "oneByOne" },
+  { label: "Agregar Noticia", icon: "newspaper-plus", to: "addNews" },
+  { label: "Noticias", icon: "newspaper-variant-multiple-outline", to: "news" },
+  { label: "Fichajes y Rumores", icon: "swap-horizontal-bold", to: "transferNews" },
+  { label: "Resúmenes y Goles", icon: "soccer", to: "resumeAndGoals" },
+  { label: "Entrevistas", icon: "microphone-outline", to: "interviews" },
+
+  // FAVORITOS
+  { label: "Favoritos", icon: "heart-outline", to: "favorites" },
+  { label: "Equipos Seguidos", icon: "shield-star-outline", to: "favoriteTeams" },
+  { label: "Jugadores Seguidos", icon: "account-star-outline", to: "favoritePlayers" },
+
+  // APUESTAS / PUNTOS / PREDICCIONES
+  { label: "Ganar Puntos", icon: "coin", to: "earnPoints" },
+  { label: "Crear Apuesta", icon: "dice-multiple", to: "createBet" },
+  { label: "Mis Apuestas", icon: "ticket-confirmation-outline", to: "bets" },
+  { label: "Predicciones", icon: "lightbulb-on-outline", to: "predictions" },
+
+  // ESTADÍSTICAS / SELECCIONES
   { label: "Estadísticas", icon: "chart-line", to: "stats" },
-  { label: "Predicciones", icon: "lightbulb-on", to: "predictions" },
-  { label: "Entrevistas", icon: "microphone-variant", to: "interviews" },
+  { label: "Selecciones y Torneos", icon: "earth", to: "countries" },
+
+  // PERFIL
+  { label: "Mi Perfil", icon: "account-circle-outline", to: "profile" },
+
+  // ENTRENAMIENTO
   { label: "Entrenamiento", icon: "dumbbell", to: "training" },
-  { label: "Resúmenes y goles", icon: "soccer", to: "resumeAndGoals" },
-  { label: "Fichajes y rumores", icon: "transfer", to: "transferNews" },
 ];
+
 
 export default function MainDrawer({
   active,

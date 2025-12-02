@@ -1,7 +1,8 @@
+import { TeamPlayer } from "@/types";
 import type { ReactNode } from "react";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Avatar, Card, Chip, Text } from "react-native-paper";
+import { Card, Chip, Text } from "react-native-paper";
 
 type PlayerProfileProps = {
   name: string;
@@ -12,7 +13,7 @@ type PlayerProfileProps = {
   height: string; // cm
   weight: string; // kg
   jerseyNumber?: string;
-  currentClub?: string;
+  currentClub?: TeamPlayer;
   dominantFoot?: "Derecha" | "Izquierda" | "Ambas" | "";
   marketValue?: string;
   avatarUrl?: string;
@@ -27,13 +28,10 @@ export default function PlayerProfileCard({
   height,
   weight,
   jerseyNumber,
-  currentClub,
   dominantFoot,
   marketValue,
-  avatarUrl,
 }: PlayerProfileProps) {
   const renderChip = (
-    icon: string,
     label: string,
     key?: string | number
   ): ReactNode => (
@@ -51,18 +49,13 @@ export default function PlayerProfileCard({
     <Card style={styles.card}>
       <Card.Content>
         <View style={styles.header}>
-          <Avatar.Image
-            source={{ uri: avatarUrl || "https://picsum.photos/200" }}
-            size={80}
-          />
           <View style={{ marginLeft: 12 }}>
             <Text variant="titleLarge" style={styles.name}>
               {name}
             </Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              {currentClub
-                ? `${currentClub} • #${jerseyNumber ?? "-"}`
-                : `#${jerseyNumber ?? "-"}`}
+              #${jerseyNumber ?? "-"}`
+                : `#${jerseyNumber ?? "-"}`
             </Text>
           </View>
         </View>
@@ -112,5 +105,18 @@ const styles = StyleSheet.create({
     borderColor: "#1DB954",
     marginRight: 8,
     marginBottom: 8,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  teamImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 8,
   },
 });

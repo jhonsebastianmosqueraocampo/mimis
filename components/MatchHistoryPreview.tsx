@@ -1,7 +1,8 @@
 import { useFetch } from "@/hooks/FetchContext";
-import { GoalEvent, PreMatchStats } from "@/types";
+import { GoalEvent, PreMatchStats, RootStackParamList } from "@/types";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import {
   ActivityIndicator,
   Avatar,
@@ -9,6 +10,7 @@ import {
   Divider,
   Text,
 } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 type MatchHistoryPreviewProps = { fixtureId: string };
 
@@ -19,6 +21,7 @@ export default function MatchHistoryPreview({
   const [stats, setStats] = useState<PreMatchStats>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let isMounted = true;
@@ -52,6 +55,10 @@ export default function MatchHistoryPreview({
   if (loading) {
     return <ActivityIndicator animating={true} style={{ marginTop: 20 }} />;
   }
+
+  const handleFixture = (id: string) => {
+    navigation.navigate("match", { id });
+  };
 
   const GoalRow = ({ goal, isHome }: { goal: GoalEvent; isHome: boolean }) => (
     <View
@@ -129,7 +136,8 @@ export default function MatchHistoryPreview({
             </Text>
 
             {/* ---- Equipos y marcador ---- */}
-            <View
+            <TouchableOpacity
+              onPress={() => handleFixture(match.fixture.id.toString())}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -138,11 +146,16 @@ export default function MatchHistoryPreview({
               }}
             >
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Avatar.Image size={36} source={{ uri: match.teams.home.logo }} />
+                <Avatar.Image
+                  size={36}
+                  source={{ uri: match.teams.home.logo }}
+                />
                 <Text style={{ fontSize: 12, marginTop: 4 }} numberOfLines={1}>
                   {match.teams.home.name}
                 </Text>
-                <Text style={{ fontWeight: "bold", fontSize: 16, marginTop: 2 }}>
+                <Text
+                  style={{ fontWeight: "bold", fontSize: 16, marginTop: 2 }}
+                >
                   {match.goals.home ?? "-"}
                 </Text>
               </View>
@@ -150,15 +163,20 @@ export default function MatchHistoryPreview({
               <Text style={{ fontWeight: "bold", fontSize: 14 }}>vs</Text>
 
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Avatar.Image size={36} source={{ uri: match.teams.away.logo }} />
+                <Avatar.Image
+                  size={36}
+                  source={{ uri: match.teams.away.logo }}
+                />
                 <Text style={{ fontSize: 12, marginTop: 4 }} numberOfLines={1}>
                   {match.teams.away.name}
                 </Text>
-                <Text style={{ fontWeight: "bold", fontSize: 16, marginTop: 2 }}>
+                <Text
+                  style={{ fontWeight: "bold", fontSize: 16, marginTop: 2 }}
+                >
                   {match.goals.away ?? "-"}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
             {/* ---- Goleadores ---- */}
             {match.goalscorers.length > 0 ? (

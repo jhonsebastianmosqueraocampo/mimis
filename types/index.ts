@@ -198,6 +198,20 @@ export type RootStackParamList = {
   bets: undefined;
   liveBet: { id: string };
   registerSyntheticMatch: undefined;
+  countries: undefined;
+  search: undefined;
+  earnPoints: undefined;
+  syntheticMatch: undefined;
+  weekResumeVideos: undefined;
+  worldResumeVideos: undefined;
+  loadWorldResumeVideos: undefined;
+  loadSyntheticResumeVideos: undefined;
+  addNews: undefined;
+  news: undefined;
+  loadOneByOne: undefined;
+  oneByOne: undefined;
+  loadShorts: undefined;
+  shorts: undefined;
 };
 
 export type paramsProduct = {
@@ -207,7 +221,7 @@ export type paramsProduct = {
 };
 
 export type Country = {
-  _id: string;
+  _id?: string;
   name: string;
   code: string;
   flag: string;
@@ -395,7 +409,11 @@ export type Fixture = {
   fixtureId: number;
   date: Date;
   referee: string;
-  status?: string;
+  status?: {
+    short: string;
+    long: string;
+    elapsed: number
+  };
   venue: {
     id: number;
     name: string;
@@ -406,11 +424,13 @@ export type Fixture = {
       id: number;
       name: string;
       logo: string;
+      winner?: boolean
     };
     away: {
       id: number;
       name: string;
       logo: string;
+      winner?: boolean
     };
   };
   league: {
@@ -1193,6 +1213,7 @@ export type PlayerLive = {
   photo?: string;
   grid: string;
   isSub?: boolean;
+  rating?: number
 };
 
 export type TeamLineupLive = {
@@ -1288,7 +1309,13 @@ export type Product = {
   details?: string;
 };
 
+export type setBet = {
+  userId: string;
+  winner: boolean
+}
+
 export type UserBet = {
+  userId: string
   name: string;
   result: string;
   selection: SelectionBet;
@@ -1376,3 +1403,140 @@ export type TeamSummary = {
 }
 
 // fin teamsummary
+
+export type Season = {
+  year: number;
+  start: string;
+  end: string;
+  current: boolean;
+};
+
+export type NationalLeague = {
+  _id?: string;
+  leagueId: number;
+  name: string;
+  type: string;
+  logo: string;
+  country: Country;
+  team?: TeamInfo | null; // null si es torneo global (sin selección específica)
+  seasons: Season[];
+  updatedAt: string | Date;
+};
+
+
+export type WeeklyGoalVideo = {
+  id: string;
+  video: string;
+  thumbail: string;
+  user?: {
+    id: string;
+    name: string;
+  };
+  fixture: {
+    teamA: string;
+    teamB: string;
+  };
+  views: number;
+  favorites: number;
+  isFavorite: boolean;
+  date: string;
+  week: string;
+};
+
+export type WeeklyWorldTopVideo = {
+  id: string;
+  week: string;
+  thumbail: string;
+  video: string;
+};
+
+export type NewsItem = {
+  id: string;
+  titulo: string;
+  entidad: string;
+  user: { id: string; name: string };
+  fotoPrincipal: string;
+  urlFotoPrincipal: string;
+  desarrolloInicialNoticia: string;
+  carruselFotos: { foto: string; url: string }[];
+  desarrolloFinalNoticia: string;
+  fecha?: string;
+};
+
+export type NewsPayload = {
+  titulo: string;
+  entidad: string;
+  fotoPrincipal: string;
+  urlFotoPrincipal: string;
+  desarrolloInicialNoticia: string;
+  carruselFotos: { foto: string; url: string }[];
+  desarrolloFinalNoticia: string;
+};
+
+export type PlayerOneByOne = {
+  playerId: number; // PlayerLive.id
+  name: string; // PlayerLive.name (full name)
+  number: number;
+  pos: string;
+  photo: string;
+  grid?: string | null;
+  isSub: boolean;
+};
+
+export type SquadOneByOne = {
+  titulares: PlayerOneByOne[];
+  suplentes: PlayerOneByOne[];
+};
+
+export type PlayerRating = {
+  playerId: number;
+  teamId: number;
+  rating: number;
+  title: string;
+  description: string;
+};
+
+export type TeamOneByOne = {
+  teamId: number;
+  name: string;
+  logo: string;
+  players: SquadOneByOne;
+  winner: boolean;
+};
+
+export type OneByOne = {
+  id: string;
+
+  fixtureId: number;
+
+  result: {
+    home: number;
+    away: number;
+  };
+
+  teams: {
+    home: TeamOneByOne;
+    away: TeamOneByOne;
+  };
+
+  playerRatings?: PlayerRating[];
+
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LoadShortItem = {
+  video: string;
+  thumbnail: string;
+  fecha: string;
+  descripcion: string;
+};
+
+export type ShortItem = LoadShortItem & {
+  id: string;
+  favoritos: number;
+  comentarios: {
+    user: User;
+    comment: string;
+  }[];
+};

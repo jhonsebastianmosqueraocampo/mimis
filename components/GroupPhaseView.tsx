@@ -1,11 +1,8 @@
+import type { LiveMatch, RootStackParamList } from "@/types"; // ✅ asegúrate de importar correctamente
+import { useNavigation } from "expo-router";
 import React from "react";
-import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 type GroupStanding = {
   leagueId: number;
@@ -33,9 +30,36 @@ type GroupStanding = {
 type Props = {
   standings: GroupStanding[];
   teamId?: string;
+  matches?: LiveMatch[]; // ✅ nuevo prop opcional
 };
 
-const GroupPhaseView = ({ standings, teamId }: Props) => {
+const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  // 🔍 Crear un mapa rápido para buscar si un equipo está en un partido en vivo
+  const liveMatchMap = React.useMemo(() => {
+    const map: Record<number, { opponent: string; goals: { home: number; away: number }; isHome: boolean; elapsed?: number }> = {};
+    for (const match of matches) {
+      if (!match?.status?.short) continue;
+      const isLive = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"].includes(match.status.short);
+      if (!isLive) continue;
+
+      // Asocia ambos equipos al partido
+      map[match.teams.home.id] = {
+        opponent: match.teams.away.name,
+        goals: match.goals,
+        isHome: true,
+        elapsed: match.status.elapsed,
+      };
+      map[match.teams.away.id] = {
+        opponent: match.teams.home.name,
+        goals: match.goals,
+        isHome: false,
+        elapsed: match.status.elapsed,
+      };
+    }
+    return map;
+  }, [matches]);
+
   const grouped = standings.reduce((acc, curr) => {
     const groupKey = `${curr.group}-${curr.leagueId}-${curr.season}`;
     if (!acc[groupKey]) acc[groupKey] = { name: curr.group, teams: [] };
@@ -44,6 +68,10 @@ const GroupPhaseView = ({ standings, teamId }: Props) => {
   }, {} as Record<string, { name: string; teams: GroupStanding[] }>);
 
   const seenGroups = new Set();
+
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -73,48 +101,73 @@ const GroupPhaseView = ({ standings, teamId }: Props) => {
                   .sort((a, b) => a.rank - b.rank)
                   .map((team) => {
                     const isFavorite = team.team.id.toString() === teamId;
+
+                    // ⚽️ Buscar si el equipo está jugando en vivo
+                    const live = liveMatchMap[team.team.id];
+                    const isLive = !!live;
+
+                    // 📊 Mostrar resultado si está en vivo
+                    const scoreDisplay = isLive
+                      ? live.isHome
+                        ? `${live.goals.home} - ${live.goals.away}`
+                        : `${live.goals.away} - ${live.goals.home}`
+                      : null;
+
                     return (
-                      <View
+                      <TouchableOpacity
                         key={team.team.id}
                         style={[
                           styles.row,
                           styles.teamRow,
                           isFavorite && styles.favoriteRow,
+                          isLive && styles.liveRow,
                         ]}
+                        onPress={()=>handleTeam(team.team.id.toString())}
                       >
                         <Text
                           style={[
                             styles.cellRank,
                             isFavorite && styles.favoriteText,
+                            isLive && styles.liveText,
                           ]}
                         >
                           {team.rank}
                         </Text>
+
                         <View style={styles.teamCell}>
-                          <Image
-                            source={{ uri: team.team.logo }}
-                            style={styles.logo}
-                          />
-                          <Text
-                            numberOfLines={1}
-                            style={[
-                              styles.teamName,
-                              isFavorite && styles.favoriteText,
-                            ]}
-                          >
-                            {team.team.name}
-                          </Text>
+                          <Image source={{ uri: team.team.logo }} style={styles.logo} />
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                            <Text
+                              numberOfLines={1}
+                              style={[
+                                styles.teamName,
+                                isFavorite && styles.favoriteText,
+                                isLive && styles.liveText,
+                              ]}
+                            >
+                              {team.team.name}
+                            </Text>
+
+                            {/* ⚡ Mostrar marcador si el equipo está en vivo */}
+                            {isLive && (
+                              <View style={styles.liveBadge}>
+                                <Text style={styles.liveScore}>{scoreDisplay}</Text>
+                                <Text style={styles.liveElapsed}>
+                                  {live.elapsed ? `${live.elapsed}'` : ""}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
+
                         <Text style={styles.cell}>{team.all.played}</Text>
                         <Text style={styles.cell}>{team.all.win}</Text>
                         <Text style={styles.cell}>{team.all.draw}</Text>
                         <Text style={styles.cell}>{team.all.lose}</Text>
                         <Text style={styles.cell}>{team.all.goals.for}</Text>
                         <Text style={styles.cell}>{team.all.goals.against}</Text>
-                        <Text style={[styles.cell, styles.bold]}>
-                          {team.points}
-                        </Text>
-                      </View>
+                        <Text style={[styles.cell, styles.bold]}>{team.points}</Text>
+                      </TouchableOpacity>
                     );
                   })}
               </View>
@@ -164,6 +217,11 @@ const styles = StyleSheet.create({
     borderColor: "#2196f3",
     borderWidth: 1,
   },
+  liveRow: {
+    backgroundColor: "#fff6f6",
+    borderColor: "#ff4d4f",
+    borderWidth: 0.5,
+  },
   cellRank: {
     width: 26,
     fontWeight: "600",
@@ -203,6 +261,29 @@ const styles = StyleSheet.create({
   favoriteText: {
     color: "#007bff",
     fontWeight: "bold",
+  },
+  liveText: {
+    color: "#e53935",
+    fontWeight: "700",
+  },
+  liveBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff0f0",
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginLeft: 4,
+  },
+  liveScore: {
+    fontSize: 12,
+    color: "#d32f2f",
+    fontWeight: "700",
+  },
+  liveElapsed: {
+    fontSize: 11,
+    color: "#d32f2f",
+    marginLeft: 3,
   },
 });
 

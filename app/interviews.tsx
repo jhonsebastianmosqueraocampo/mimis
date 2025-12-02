@@ -69,8 +69,9 @@ export default function Interviews() {
 
           // 🔹 Videos por equipo
           const eqVideos: Record<string, Video[]> = {};
+          const year = new Date().getFullYear();
           for (const team of teams) {
-            const query = `${team.title} entrevista futbol`;
+            const query = `${team.title} entrevista post partido declaraciones rueda de prensa ${year} fútbol`;
             const { success, videos } = await getVideoFromYoutube(query);
             eqVideos[team.title] = success ? videos.map(mapYoutubeToVideo) : [];
           }
@@ -79,7 +80,7 @@ export default function Interviews() {
           // 🔹 Videos por jugador
           const plVideos: Record<string, Video[]> = {};
           for (const player of players) {
-            const query = `${player.title} entrevista futbol`;
+            const query = `${player.title} entrevista post partido declaraciones rueda de prensa ${year} fútbol`;
             const { success, videos } = await getVideoFromYoutube(query);
             plVideos[player.title] = success ? videos.map(mapYoutubeToVideo) : [];
           }

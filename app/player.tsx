@@ -3,10 +3,12 @@ import PlayerStatisticsView from "@/components/PlayerSeasonStatsTable";
 import PlayerTeamsHistory from "@/components/PlayerTeamsHistory";
 import { useFetch } from "@/hooks/FetchContext";
 import { RouteProp, useRoute } from "@react-navigation/native";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { ActivityIndicator, Chip, Text } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import AvatarCard from "../components/AvatarCard";
 import VerticalScroll from "../components/VerticalScroll";
 import type { PlayerB, RootStackParamList, swiperItem } from "../types";
@@ -31,6 +33,7 @@ export default function Player() {
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState(items[0]);
   const route = useRoute<PlayerScreenRouteProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { id } = route.params;
 
   useEffect(() => {
@@ -110,6 +113,10 @@ export default function Player() {
 
   const actionGeneralListNews = (id: string) => console.log(id);
 
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
+
   return (
     <PrivateLayout>
       {player && (
@@ -120,13 +127,13 @@ export default function Player() {
             typographyProps={{ variant: "titleLarge" }}
           />
 
-          <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.headerRow} onPress={()=>handleTeam(player.team?.id.toString() ?? '')}>
             <Image
               source={{ uri: player?.team?.logo ?? "" }}
               style={styles.teamImage}
             />
             <Chip style={styles.clubChip}>{player?.team?.name}</Chip>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.tabBar}>
             <ScrollView
@@ -170,7 +177,6 @@ export default function Player() {
                 height={player?.height!}
                 weight={player?.weight!}
                 jerseyNumber={""}
-                currentClub={player?.team?.name}
                 dominantFoot=""
                 marketValue="-"
                 avatarUrl={player?.photo!}

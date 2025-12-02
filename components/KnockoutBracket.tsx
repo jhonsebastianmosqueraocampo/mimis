@@ -1,5 +1,6 @@
-import { CupStanding } from "@/types";
-import React, { useState } from "react";
+import { CupStanding, LiveMatch, RootStackParamList } from "@/types";
+import { useNavigation } from "expo-router";
+import React, { useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -8,9 +9,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 type KnockoutBracketProps = {
   standings: CupStanding[];
+  matches?: LiveMatch[];
   teamId?: string;
 };
 
@@ -28,21 +31,14 @@ function groupMatchesByKey(matches: CupStanding[]) {
   return grouped;
 }
 
-function MatchDateStatus(date: string){
+function MatchDateStatus(date: string) {
   const parsedDate = new Date(date);
   const now = new Date();
-
   const diffMinutes = (now.getTime() - parsedDate.getTime()) / 60000;
-  let status = "Próximo";
-  let color = "green";
 
-  if (diffMinutes >= 0 && diffMinutes <= 120) {
-    status = "En curso";
-    color = "orange";
-  } else if (diffMinutes > 120) {
-    status = "Finalizado";
-    color = "gray";
-  }
+  let status = "Próximo";
+  if (diffMinutes >= 0 && diffMinutes <= 120) status = "En curso";
+  else if (diffMinutes > 120) status = "Finalizado";
 
   const formattedDate = parsedDate.toLocaleString("es-CO", {
     weekday: "short",
@@ -52,17 +48,52 @@ function MatchDateStatus(date: string){
     minute: "2-digit",
     hour12: true,
   });
-  return `${formattedDate} - ${status}`
+
+  return `${formattedDate} - ${status}`;
 }
 
-export function KnockoutBracket({ standings, teamId }: KnockoutBracketProps) {
+export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBracketProps) {
   const grouped = groupMatchesByKey(standings);
   const rounds = Array.from(new Set(standings.map((m) => m.round)));
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  // 🧠 Crear mapa rápido de partidos en vivo por IDs de equipos
+  const liveMap = useMemo(() => {
+    const map: Record<
+      number,
+      { goals: { home: number; away: number }; isHome: boolean; elapsed?: number; fixtureId: number }
+    > = {};
+
+    for (const match of matches) {
+      if (!match || !match.status) continue;
+      const liveStatuses = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"];
+      if (!liveStatuses.includes(match.status.short)) continue;
+
+      map[match.teams.home.id] = {
+        goals: match.goals,
+        isHome: true,
+        elapsed: match.status.elapsed,
+        fixtureId: match.fixtureId,
+      };
+      map[match.teams.away.id] = {
+        goals: match.goals,
+        isHome: false,
+        elapsed: match.status.elapsed,
+        fixtureId: match.fixtureId,
+      };
+    }
+
+    return map;
+  }, [matches]);
 
   const toggleExpand = (key: string) => {
     setExpandedKey((prev) => (prev === key ? null : key));
   };
+
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
 
   return (
     <ScrollView
@@ -71,7 +102,7 @@ export function KnockoutBracket({ standings, teamId }: KnockoutBracketProps) {
       contentContainerStyle={styles.scroll}
     >
       {rounds.map((round) => {
-        const roundMatches = Object.entries(grouped).filter(([key, _]) =>
+        const roundMatches = Object.entries(grouped).filter(([key]) =>
           key.startsWith(round)
         );
 
@@ -82,8 +113,9 @@ export function KnockoutBracket({ standings, teamId }: KnockoutBracketProps) {
               const match = matches[0];
               const homeTeam = match.homeTeam;
               const awayTeam = match.awayTeam;
+              const isExpanded = expandedKey === key;
 
-              // Total de goles por ID
+              // 🏟️ Total de goles sumados
               const goalsByTeamId: Record<number, number> = {};
               matches.forEach((m) => {
                 goalsByTeamId[m.homeTeam.id] =
@@ -92,12 +124,27 @@ export function KnockoutBracket({ standings, teamId }: KnockoutBracketProps) {
                   (goalsByTeamId[m.awayTeam.id] ?? 0) + (m.goals.away ?? 0);
               });
 
-              const isExpanded = expandedKey === key;
+              // ⚡ Verificar si alguno de los equipos está jugando en vivo
+              const homeLive = liveMap[homeTeam.id];
+              const awayLive = liveMap[awayTeam.id];
+              const isLive = !!homeLive || !!awayLive;
+
+              // 📊 Marcador actual si está en vivo
+              let liveScore = null;
+              let liveElapsed = null;
+              if (isLive) {
+                const source = homeLive || awayLive;
+                liveScore = `${source.goals.home} - ${source.goals.away}`;
+                liveElapsed = source.elapsed ? `${source.elapsed}'` : "";
+              }
 
               return (
                 <TouchableOpacity
                   key={key}
-                  style={styles.matchBox}
+                  style={[
+                    styles.matchBox,
+                    isLive && styles.liveMatchBox, // 🔥 color si está en vivo
+                  ]}
                   activeOpacity={0.8}
                   onPress={() => toggleExpand(key)}
                 >
@@ -105,23 +152,31 @@ export function KnockoutBracket({ standings, teamId }: KnockoutBracketProps) {
                     const isHighlighted = team.id.toString() === teamId;
                     const score = goalsByTeamId[team.id] ?? "-";
 
+                    // 🟢 Si está en vivo, usar el marcador actual
+                    const showScore = isLive
+                      ? homeLive?.isHome && team.id === homeTeam.id
+                        ? liveScore
+                        : awayLive?.isHome === false && team.id === awayTeam.id
+                        ? liveScore
+                        : score
+                      : score;
+
                     return (
-                      <View
+                      <TouchableOpacity
                         key={team.id}
                         style={[
                           styles.teamRow,
                           isHighlighted && styles.highlighted,
                         ]}
+                        onPress={()=>handleTeam(team.id.toString())}
                       >
-                        <Image
-                          source={{ uri: team.logo }}
-                          style={styles.avatar}
-                        />
+                        <Image source={{ uri: team.logo }} style={styles.avatar} />
                         <Text
                           numberOfLines={1}
                           style={[
                             styles.teamName,
                             isHighlighted && styles.textWhite,
+                            isLive && styles.liveText,
                           ]}
                         >
                           {team.name}
@@ -130,29 +185,38 @@ export function KnockoutBracket({ standings, teamId }: KnockoutBracketProps) {
                           style={[
                             styles.teamScore,
                             isHighlighted && styles.textWhite,
+                            isLive && styles.liveText,
                           ]}
                         >
-                          {score}
+                          {showScore}
                         </Text>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
 
+                  {/* ⚡ Detalle expandido con información en vivo */}
                   {isExpanded && (
                     <View style={styles.details}>
                       {matches.map((m, i) => (
                         <View key={i} style={styles.detailRow}>
                           <Text style={styles.detailText}>
-                            {m.homeTeam.name} {m.goals.home ?? "-"} -{" "}
-                            {m.goals.away ?? "-"} {m.awayTeam.name}
+                            {m.homeTeam.name} {m.goals.home ?? "-"} - {m.goals.away ?? "-"}{" "}
+                            {m.awayTeam.name}
                           </Text>
                           <Text style={styles.detailSub}>
-                            {
-                            MatchDateStatus(m.date.toString())
-                            }
+                            {MatchDateStatus(m.date.toString())}
                           </Text>
                         </View>
                       ))}
+
+                      {/* Indicador de partido en vivo */}
+                      {isLive && (
+                        <View style={styles.liveInfo}>
+                          <Text style={styles.liveNow}>
+                            🟢 En vivo {liveElapsed ? `(${liveElapsed})` : ""}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   )}
                 </TouchableOpacity>
@@ -189,6 +253,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     width: "100%",
     elevation: 2,
+  },
+  liveMatchBox: {
+    backgroundColor: "#fff6f6",
+    borderColor: "#ff4d4f",
+    borderWidth: 1,
   },
   teamRow: {
     flexDirection: "row",
@@ -235,5 +304,18 @@ const styles = StyleSheet.create({
   detailSub: {
     fontSize: 10,
     color: "#777",
+  },
+  liveInfo: {
+    marginTop: 6,
+    alignItems: "center",
+  },
+  liveNow: {
+    fontSize: 12,
+    color: "#d32f2f",
+    fontWeight: "700",
+  },
+  liveText: {
+    color: "#d32f2f",
+    fontWeight: "700",
   },
 });

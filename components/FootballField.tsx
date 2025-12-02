@@ -1,7 +1,10 @@
-import type { LiveEvent, PlayerLineup, TeamLineup } from "@/types";
+import { useFetch } from "@/hooks/FetchContext";
+import type { LiveEvent, PlayerLive, RootStackParamList, TeamLineup } from "@/types";
+import { useNavigation } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Dimensions,
+  GestureResponderEvent,
   Image,
   Modal,
   Pressable,
@@ -9,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { Avatar, Divider, IconButton, Text } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import Svg, { Circle, Rect } from "react-native-svg";
 import StarRating from "./StarRating";
 
@@ -17,20 +21,79 @@ const FIELD_WIDTH = width - 40;
 const FIELD_HEIGHT = (FIELD_WIDTH * 3) / 2; // proporción vertical 2:3
 
 type Props = {
+  fixtureId: string;
   lineup: TeamLineup[];
   liveEvents?: LiveEvent[]; // opcional
+  status: {
+    long: string;
+    short: string;
+    elapsed?: number | null;
+  };
 };
+
+const LIVE_STATUSES = [
+  "1H",
+  "HT",
+  "2H",
+  "ET",
+  "P",
+  "BT",
+  "LIVE",
+  "INT",
+  "BREAK",
+  "SUSP",
+  "INTERRUPTED",
+];
+
+type PlayerModalProps = {
+  fixtureId: string;
+  player: PlayerLive & { minutes?: number }; // ✅ añadimos minutes opcional
+  visible: boolean;
+  onClose: (event: GestureResponderEvent) => void;
+  canRate: boolean;
+};
+
+function calculatePlayedMinutes(
+  player: PlayerLive,
+  events: LiveEvent[],
+  elapsed: number | null | undefined
+): number {
+  if (!events?.length) return elapsed ?? 0;
+
+  const subIn = events.find(
+    (e) => e.type === "Substitution" && e.player?.id === player.id
+  );
+  const subOut = events.find(
+    (e) => e.type === "Substitution" && e.assist?.id === player.id
+  );
+
+  const inMin = subIn?.time?.elapsed;
+  const outMin = subOut?.time?.elapsed;
+
+  // Caso 1: Titular y salió
+  if (!inMin && outMin) return outMin;
+  // Caso 2: Entró y ya salió
+  if (inMin && outMin) return Math.max(outMin - inMin, 0);
+  // Caso 3: Entró y sigue jugando
+  if (inMin && !outMin) return Math.max((elapsed ?? 0) - inMin, 0);
+  // Caso 4: Titular y sigue jugando
+  if (!inMin && !outMin) return elapsed ?? 0;
+
+  return 0;
+}
 
 // 🟩 Íconos de evento sobre jugador
 const PlayerEventIcons = ({
   goals = 0,
   yellow = false,
   red = false,
+  entered = false,
   substituted = false,
 }: {
   goals?: number;
   yellow?: boolean;
   red?: boolean;
+  entered?: boolean;
   substituted?: boolean;
 }) => {
   return (
@@ -84,20 +147,42 @@ const PlayerEventIcons = ({
           }}
         />
       )}
-      {substituted && <Text style={{ fontSize: 12, marginLeft: 2 }}>🔄</Text>}
+      {entered && <Text style={{ fontSize: 12, marginLeft: 2 }}>⬆️</Text>}
+      {substituted && <Text style={{ fontSize: 12, marginLeft: 2 }}>⬇️</Text>}
     </View>
   );
 };
 
 // 🧤 Modal con info del jugador
-const PlayerModal = ({ player, visible, onClose }: any) => {
+const PlayerModal = ({
+  player,
+  visible,
+  onClose,
+  canRate,
+  fixtureId,
+}: PlayerModalProps) => {
+  const { ratePlayer } = useFetch();
   const [userRating, setUserRating] = useState<number | null>(null);
-  const mockAverage = useMemo(
-    () => (Math.random() * 2 + 3).toFixed(1),
-    [player]
-  );
-
+  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   if (!player) return null;
+
+  const handleRate = async (newValue: number) => {
+    setUserRating(newValue);
+    setLoading(true);
+
+    await ratePlayer(
+      newValue,
+      fixtureId,
+      player.id.toString()
+    );
+
+    setLoading(false);
+  };
+
+  const handlePlayer = (id: string) => {
+    navigation.navigate('player', {id})
+  }
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -120,7 +205,6 @@ const PlayerModal = ({ player, visible, onClose }: any) => {
             alignItems: "center",
           }}
         >
-          {/* Foto */}
           {player.photo ? (
             <Image
               source={{ uri: player.photo }}
@@ -130,7 +214,6 @@ const PlayerModal = ({ player, visible, onClose }: any) => {
             <Avatar.Text size={90} label={String(player.number)} />
           )}
 
-          {/* Nombre e info */}
           <Text style={{ marginTop: 10, fontWeight: "bold", fontSize: 17 }}>
             {player.name}
           </Text>
@@ -141,32 +224,33 @@ const PlayerModal = ({ player, visible, onClose }: any) => {
             Tiempo jugado: {player.minutes ?? 0}'
           </Text>
 
-          {/* Puntuación promedio */}
           <Text style={{ color: "#555", marginTop: 6, fontSize: 13 }}>
             Promedio global:{" "}
-            <Text style={{ fontWeight: "600" }}>{mockAverage}</Text>
+            <Text style={{ fontWeight: "600" }}>{player.rating}</Text>
           </Text>
 
-          {/* ⭐ Calificación del usuario */}
-          <View style={{ marginTop: 10, alignItems: "center" }}>
-            <Text style={{ color: "#222", fontWeight: "600", marginBottom: 4 }}>
-              Tu calificación:
-            </Text>
-            <StarRating
-              editable
-              rating={userRating || 0}
-              onChange={(v) => setUserRating(v)}
-            />
-            {userRating && (
-              <Text style={{ color: "#777", marginTop: 4, fontSize: 13 }}>
-                ({userRating.toFixed(1)} estrellas)
+          {canRate && (
+            <View style={{ marginTop: 10, alignItems: "center" }}>
+              <Text
+                style={{ color: "#222", fontWeight: "600", marginBottom: 4 }}
+              >
+                Tu calificación:
               </Text>
-            )}
-          </View>
+              <StarRating
+                editable
+                rating={userRating || 0}
+                onChange={(v) => handleRate(v)}
+              />
+              {userRating && (
+                <Text style={{ color: "#777", marginTop: 4, fontSize: 13 }}>
+                  ({userRating.toFixed(1)} estrellas)
+                </Text>
+              )}
+            </View>
+          )}
 
-          {/* Botón de acción */}
           <Pressable
-            onPress={() => console.log("Ver detalle o enviar rating:")}
+            onPress={() => handlePlayer(player.id.toString())}
             style={{
               backgroundColor: "#388E3C",
               paddingVertical: 10,
@@ -181,7 +265,6 @@ const PlayerModal = ({ player, visible, onClose }: any) => {
             </Text>
           </Pressable>
 
-          {/* Botón cerrar */}
           <IconButton
             icon="close"
             onPress={onClose}
@@ -193,29 +276,49 @@ const PlayerModal = ({ player, visible, onClose }: any) => {
   );
 };
 
-// 🧩 Marcador de jugador con eventos y modal
+// 🧩 Marcador de jugador
 const PlayerMarker = ({
   player,
   events,
+  canRate,
+  elapsed,
+  fixtureId
 }: {
-  player: PlayerLineup;
+  player: PlayerLive;
   events?: LiveEvent[];
+  canRate: boolean;
+  elapsed?: number | null;
+  fixtureId: string
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const playerEvents = useMemo(() => {
-    const ev = events?.filter((e) => e.player?.id === player.id) || [];
-    const goals = ev.filter((e) => e.type === "Goal").length;
-    const yellow = ev.some(
-      (e) => e.type === "Card" && e.detail?.includes("Yellow")
+    const goals =
+      events?.filter((e) => e.type === "Goal" && e.player?.id === player.id)
+        .length || 0;
+    const yellow = events?.some(
+      (e) =>
+        e.type === "Card" &&
+        e.player?.id === player.id &&
+        e.detail?.includes("Yellow")
     );
-    const red = ev.some((e) => e.type === "Card" && e.detail?.includes("Red"));
-    const substituted = ev.some((e) => e.type === "Substitution");
-    return { goals, yellow, red, substituted };
-  }, [events]);
+    const red = events?.some(
+      (e) =>
+        e.type === "Card" &&
+        e.player?.id === player.id &&
+        e.detail?.includes("Red")
+    );
+    const entered = events?.some(
+      (e) => e.type === "Substitution" && e.player?.id === player.id
+    );
+    const substituted = events?.some(
+      (e) => e.type === "Substitution" && e.assist?.id === player.id
+    );
+    return { goals, yellow, red, entered, substituted };
+  }, [events, player.id]);
 
-  // const rating = player.rating ?? null;
-  const rating = player.rating ?? 7.8;
+  const rating = player.rating ?? 0;
+  const minutes = calculatePlayedMinutes(player, events ?? [], elapsed);
 
   return (
     <View style={{ alignItems: "center", marginHorizontal: 6 }}>
@@ -247,7 +350,7 @@ const PlayerMarker = ({
             />
           )}
           <PlayerEventIcons {...playerEvents} />
-          {/* ⭐ Calificación mock (por ahora fija) */}
+
           {rating !== null && (
             <View
               style={{
@@ -261,7 +364,7 @@ const PlayerMarker = ({
               }}
             >
               <Text style={{ color: "#fff", fontSize: 10, fontWeight: "600" }}>
-                {rating.toFixed(1)}
+                {rating === 0 ? "-" : rating.toFixed(1)}
               </Text>
             </View>
           )}
@@ -284,7 +387,9 @@ const PlayerMarker = ({
       <PlayerModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        player={player}
+        player={{ ...player, minutes }}
+        canRate={canRate}
+        fixtureId={fixtureId}
       />
     </View>
   );
@@ -294,9 +399,12 @@ const PlayerMarker = ({
 export default function FootballLineupField({
   lineup,
   liveEvents = [],
+  status,
+  fixtureId
 }: Props) {
   const [home, away] = lineup;
   const [selectedTeam, setSelectedTeam] = useState<"home" | "away">("home");
+  const isLive = LIVE_STATUSES.includes(status.short);
 
   const renderTeam = (team: TeamLineup) => {
     const formation = team.team.formation
@@ -337,7 +445,14 @@ export default function FootballLineupField({
           }}
         >
           {group.map((p) => (
-            <PlayerMarker key={p.id} player={p} events={liveEvents} />
+            <PlayerMarker
+              key={p.id}
+              player={p}
+              events={liveEvents}
+              canRate={isLive}
+              elapsed={status.elapsed}
+              fixtureId={fixtureId}
+            />
           ))}
         </View>
       );
@@ -354,7 +469,14 @@ export default function FootballLineupField({
           }}
         >
           {gk.map((p) => (
-            <PlayerMarker key={p.id} player={p} events={liveEvents} />
+            <PlayerMarker
+              key={p.id}
+              player={p}
+              events={liveEvents}
+              canRate={isLive}
+              elapsed={status.elapsed}
+              fixtureId={fixtureId}
+            />
           ))}
         </View>
         {lines}
@@ -524,9 +646,22 @@ export default function FootballLineupField({
           justifyContent: "center",
         }}
       >
-        {currentTeam.substitutes.map((s) => (
-          <PlayerMarker key={s.id} player={s} events={liveEvents} />
-        ))}
+        {currentTeam.substitutes.map((s) => {
+          const hasEntered = liveEvents?.some(
+            (e) => e.type === "Substitution" && e.player?.id === s.id
+          );
+
+          return (
+            <PlayerMarker
+              key={s.id}
+              player={s}
+              events={liveEvents}
+              canRate={isLive && hasEntered}
+              elapsed={status.elapsed}
+              fixtureId={fixtureId}
+            />
+          );
+        })}
       </View>
     </View>
   );

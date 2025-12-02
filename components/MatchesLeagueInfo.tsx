@@ -6,6 +6,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Chip } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import { Fixture, RootStackParamList } from "../types";
+import MatchesLiveLeague from "./MatchesLiveLeague";
 import PastMatchesList from "./PastMatchesList";
 import UpcomingMatchesList from "./UpcomingMatchesList";
 
@@ -16,11 +17,11 @@ type MatchesLeagueInfoProps = {
 const items = [
   { id: "1", name: "Partidos Anteriores" },
   { id: "2", name: "Siguientes Partidos" },
+  { id: "3", name: "En vivo" },
 ];
 
 export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) {
   const { getPreviousAndPostLeagueMatches } = useFetch();
-  const [nextMatch, setNextMatch] = useState<Fixture | null>(null);
   const [previousMatches, setPreviousMatches] = useState<Fixture[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<Fixture[]>([]);
   const [selectedItem, setSelectedItem] = useState(items[0]);
@@ -103,6 +104,12 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
             upcomingMatches={upcomingMatches}
             actionMatch={actionMatch}
           />
+        </View>
+      )}
+
+      {selectedItem.name.toLowerCase() === "en vivo" && (
+        <View style={styles.section}>
+          <MatchesLiveLeague leagueId={leagueId} />
         </View>
       )}
     </ScrollView>

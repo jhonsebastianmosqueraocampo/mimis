@@ -1,13 +1,25 @@
-import { PlayerCareer } from "@/types";
+import { PlayerCareer, RootStackParamList } from "@/types";
+import { useNavigation } from "expo-router";
 import React from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Card, Divider, Paragraph, Title } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 type PlayerCareerProps = {
     player: PlayerCareer
 }
 
 export default function PlayerCareerScreen({ player }: PlayerCareerProps) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
+
+  const handleLeague = (id: string) => {
+    navigation.navigate('tournament', {id})
+  }
+
   return (
     <View style={{ padding: 12 }}>
       <Card style={{ borderRadius: 16, marginBottom: 16 }}>
@@ -34,19 +46,28 @@ export default function PlayerCareerScreen({ player }: PlayerCareerProps) {
           }}
         >
           <Card.Content>
+
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+              onPress={()=>handleLeague(h.league.id.toString())}
+            >
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>{h.league.name}</Text>
+            </TouchableOpacity>
+
             <Text style={{ fontSize: 14, color: "#6c757d", marginBottom: 6 }}>
-              {h.league.name} ({h.league.country}) - {h.league.season}
+              ({h.league.country}) - {h.league.season}
             </Text>
 
-            <View
+            <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+              onPress={()=>handleTeam(h.team.id.toString())}
             >
               <Image
                 source={{ uri: h.team.logo }}
                 style={{ width: 36, height: 36, marginRight: 10 }}
               />
               <Text style={{ fontSize: 16, fontWeight: "600" }}>{h.team.name}</Text>
-            </View>
+            </TouchableOpacity>
 
             <Divider style={{ marginBottom: 10 }} />
 

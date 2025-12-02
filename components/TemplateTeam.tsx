@@ -1,8 +1,10 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { ActivityIndicator, Divider } from "react-native-paper";
-import type { swiperItem, TeamPlayerStatsByLeague } from "../types";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import type { RootStackParamList, swiperItem, TeamPlayerStatsByLeague } from "../types";
 import ScrollSection from "./ScrollSection";
 
 type TemplateTeamProps = {
@@ -58,6 +60,8 @@ export default function TemplateTeam({ teamId }: TemplateTeamProps) {
   const [coach, setCoach] = useState<swiperItem[]>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigation =
+          useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     getSquad();
@@ -94,11 +98,11 @@ export default function TemplateTeam({ teamId }: TemplateTeamProps) {
   };
 
   const actionPlayer = (id: string) => {
-    console.log("Selected player ID:", id);
+    navigation.navigate('player', {id})
   };
 
   const actionCoach = (id: string) => {
-    console.log(id);
+    navigation.navigate('coach', {id})
   };
 
   if (loading) {

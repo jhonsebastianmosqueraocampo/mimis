@@ -6,8 +6,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { Avatar, Card, Divider } from "react-native-paper";
 
@@ -24,7 +23,7 @@ export default function PastMatchesList({
 }: PastMatchesListProps) {
   const [searchText, setSearchText] = useState("");
 
-  // 🧠 Filtrado de partidos (home o away)
+  // 🧠 Filtrado por nombre de equipo
   const filteredMatches = useMemo(() => {
     if (!searchText.trim()) return previousMatches;
     const query = searchText.toLowerCase();
@@ -35,8 +34,19 @@ export default function PastMatchesList({
     );
   }, [previousMatches, searchText]);
 
+  // 🗂️ Agrupar partidos por ronda / jornada
+  const groupedByRound = useMemo(() => {
+    const groups: Record<string, Fixture[]> = {};
+    filteredMatches.forEach((match) => {
+      const round = match.league?.round || "Sin ronda";
+      if (!groups[round]) groups[round] = [];
+      groups[round].push(match);
+    });
+    return Object.entries(groups);
+  }, [filteredMatches]);
+
   return (
-    <TouchableOpacity style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Partidos Anteriores</Text>
 
       {/* 🔍 Buscador */}
@@ -48,68 +58,78 @@ export default function PastMatchesList({
         placeholderTextColor="#888"
       />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={{ gap: 12 }}>
-        {filteredMatches.length === 0 ? (
+      <ScrollView style={styles.scroll} contentContainerStyle={{ gap: 20 }}>
+        {groupedByRound.length === 0 ? (
           <Text style={styles.noResults}>No se encontraron resultados.</Text>
         ) : (
-          filteredMatches.map((match, index) => {
-            const isHome = match.teams.home.id.toString() == teamId;
-            const [teamScore, opponentScore] = isHome
-              ? [match.goals.home, match.goals.away]
-              : [match.goals.away, match.goals.home];
+          groupedByRound.map(([round, matches]) => (
+            <View key={round}>
+              <Text style={styles.roundTitle}>{round}</Text>
 
-            let bgColor = "#f5f5f5";
-            if (teamScore === opponentScore) bgColor = "#f0f0f0";
-            else if (teamScore > opponentScore)
-              bgColor = "rgba(29, 185, 84, 0.15)";
-            else bgColor = "rgba(229, 57, 53, 0.15)";
+              {matches.map((match, index) => {
+                const isHome = match.teams.home.id.toString() == teamId;
+                const [teamScore, opponentScore] = isHome
+                  ? [match.goals.home, match.goals.away]
+                  : [match.goals.away, match.goals.home];
 
-            const result = `${match.goals.home} - ${match.goals.away}`;
-            const matchDate = dayjs(match.date).format("DD MMM YYYY");
+                let bgColor = "#f5f5f5";
+                if (teamScore === opponentScore) bgColor = "#f0f0f0";
+                else if (teamScore > opponentScore)
+                  bgColor = "rgba(29, 185, 84, 0.15)";
+                else bgColor = "rgba(229, 57, 53, 0.15)";
 
-            return (
-              <Card
-                key={index}
-                style={[styles.card, { backgroundColor: bgColor }]}
-                onPress={() => actionMatch(match.fixtureId.toString())}
-              >
-                <View style={styles.headerRow}>
-                  <Text style={styles.date}>{matchDate}</Text>
-                  <Text style={styles.tag}>{match.league.name}</Text>
-                </View>
+                const result = `${match.goals.home} - ${match.goals.away}`;
+                const matchDate = dayjs(match.date).format("DD MMM YYYY");
 
-                <Divider style={styles.divider} />
-                <View style={styles.teamsRow}>
-                  <View style={styles.teamBlock}>
-                    <Avatar.Image
-                      size={40}
-                      source={{ uri: match.teams.home.logo }}
-                      style={{ backgroundColor: "transparent" }}
-                    />
-                    <Text style={styles.teamName}>{match.teams.home.name}</Text>
-                  </View>
+                return (
+                  <Card
+                    key={index}
+                    style={[styles.card, { backgroundColor: bgColor }]}
+                    onPress={() => actionMatch(match.fixtureId.toString())}
+                  >
+                    <View style={styles.headerRow}>
+                      <Text style={styles.date}>{matchDate}</Text>
+                      <Text style={styles.tag}>{match.league.name}</Text>
+                    </View>
 
-                  <Text style={styles.result}>{result}</Text>
+                    <Divider style={styles.divider} />
+                    <View style={styles.teamsRow}>
+                      <View style={styles.teamBlock}>
+                        <Avatar.Image
+                          size={40}
+                          source={{ uri: match.teams.home.logo }}
+                          style={{ backgroundColor: "transparent" }}
+                        />
+                        <Text style={styles.teamName}>
+                          {match.teams.home.name}
+                        </Text>
+                      </View>
 
-                  <View style={styles.teamBlock}>
-                    <Avatar.Image
-                      size={40}
-                      source={{ uri: match.teams.away.logo }}
-                      style={{ backgroundColor: "transparent" }}
-                    />
-                    <Text style={styles.teamName}>{match.teams.away.name}</Text>
-                  </View>
-                </View>
+                      <Text style={styles.result}>{result}</Text>
 
-                <View style={styles.stadiumRow}>
-                  <Text style={styles.stadiumText}>{match.venue.name}</Text>
-                </View>
-              </Card>
-            );
-          })
+                      <View style={styles.teamBlock}>
+                        <Avatar.Image
+                          size={40}
+                          source={{ uri: match.teams.away.logo }}
+                          style={{ backgroundColor: "transparent" }}
+                        />
+                        <Text style={styles.teamName}>
+                          {match.teams.away.name}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.stadiumRow}>
+                      <Text style={styles.stadiumText}>{match.venue.name}</Text>
+                    </View>
+                  </Card>
+                );
+              })}
+            </View>
+          ))
         )}
       </ScrollView>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -120,6 +140,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 12,
     color: "#000",
+  },
+  roundTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#1B5E20",
+    marginBottom: 8,
+    marginLeft: 4,
   },
   searchInput: {
     borderWidth: 1,
@@ -138,7 +165,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   scroll: { paddingRight: 4 },
-  card: { padding: 12, borderRadius: 12 },
+  card: { padding: 12, borderRadius: 12, marginBottom: 10 },
   headerRow: { flexDirection: "row", justifyContent: "space-between" },
   date: { fontWeight: "500" },
   tag: { fontSize: 12, color: "#666" },

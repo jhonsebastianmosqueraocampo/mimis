@@ -1,14 +1,20 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import {
   ActivityIndicator,
   Avatar,
   Card,
   Divider,
-  List
+  List,
 } from "react-native-paper";
-import type { PlayerStats, TeamPlayerStatsByLeague } from "../types";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import type {
+  PlayerStats,
+  RootStackParamList,
+  TeamPlayerStatsByLeague,
+} from "../types";
 import PlayersStatsTable from "./PlayersStatsTable";
 
 type TeamStatsProps = {
@@ -21,6 +27,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
   const [stats, setStats] = useState<TeamPlayerStatsByLeague[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     getPlayersStats();
@@ -120,6 +127,14 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
     );
   }
 
+  const handleLeague = (id: string) => {
+    navigation.navigate('tournament', {id})
+  }
+
+  const handlePlayer = (id: string) => {
+    navigation.navigate('player', {id})
+  }
+
   return (
     <ScrollView>
       {/* Sección de máximos */}
@@ -127,7 +142,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
         <Card.Title title="Máximo Goleador" />
         {topScorers.length > 0 && (
           <Card.Content>
-            <View style={styles.playerRow}>
+            <TouchableOpacity style={styles.playerRow} onPress={()=>handlePlayer(topScorers[0].player.id.toString())}>
               <Avatar.Image
                 size={48}
                 source={{ uri: topScorers[0].player.photo }}
@@ -140,7 +155,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
                   Total Goles: {topScorers[0].statistics[0]?.goals.total}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
             {/* Acordeón con detalle por liga */}
             <List.Accordion
@@ -152,6 +167,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
                 .map((p, idx) => (
                   <List.Item
                     key={idx}
+                    onPress={()=>handleLeague(p.statistics[0]?.league.id.toString() ?? '')}
                     title={p.statistics[0]?.league.name}
                     description={`Goles: ${p.statistics[0]?.goals.total ?? 0}`}
                     left={(props) => (
@@ -172,7 +188,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
         <Card.Title title="Máximo Asistente" />
         {topAssists.length > 0 && (
           <Card.Content>
-            <View style={styles.playerRow}>
+            <TouchableOpacity style={styles.playerRow} onPress={()=>handlePlayer(topAssists[0].player.id.toString())}>
               <Avatar.Image
                 size={48}
                 source={{ uri: topAssists[0].player.photo }}
@@ -183,7 +199,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
                   Asistencias: {topAssists[0].statistics[0]?.goals.assists ?? 0}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </Card.Content>
         )}
       </Card>
@@ -196,12 +212,12 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
             <View key={i} style={styles.playerRow}>
               <Text style={styles.rank}>{i + 1}</Text>
               <Avatar.Image size={40} source={{ uri: p.player.photo }} />
-              <View style={{ marginLeft: 10 }}>
+              <TouchableOpacity style={{ marginLeft: 10 }} onPress={()=>handlePlayer(p.player.id.toString())}>
                 <Text>{p.player.name}</Text>
                 <Text style={{ color: "gray" }}>
                   Goles: {p.statistics[0]?.goals.total}
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
           ))}
         </Card.Content>
@@ -209,8 +225,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
 
       <Divider style={{ marginVertical: 10 }} />
 
-      <PlayersStatsTable stats={stats}/>
-      
+      <PlayersStatsTable stats={stats} />
     </ScrollView>
   );
 }

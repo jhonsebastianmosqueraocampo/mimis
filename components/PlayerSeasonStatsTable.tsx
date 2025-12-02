@@ -1,6 +1,8 @@
-import { PlayerB } from '@/types';
+import { PlayerB, RootStackParamList } from '@/types';
+import { useNavigation } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { NativeStackNavigationProp } from 'react-native-screens/lib/typescript/native-stack/types';
 
 type PlayerStatsProps = {
   player: PlayerB;
@@ -9,6 +11,11 @@ type PlayerStatsProps = {
 export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
   const [selectedLeagueIndex, setSelectedLeagueIndex] = useState(0);
   const selectedStat = player.statistics[selectedLeagueIndex];
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleLeague = (id: string) => {
+    navigation.navigate('tournament', {id})
+  }
 
   return (
     <>
@@ -52,7 +59,7 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
       {/* Estadísticas de la liga seleccionada */}
       <View style={styles.card}>
         {/* Encabezado liga */}
-        <View style={styles.leagueHeader}>
+        <TouchableOpacity style={styles.leagueHeader} onPress={()=>handleLeague(selectedStat.league.id?.toString() ?? '')}>
           {selectedStat.league.logo && (
             <Image source={{ uri: selectedStat.league.logo }} style={styles.leagueLogo} />
           )}
@@ -62,7 +69,7 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
               {selectedStat.league.country} • Temporada {selectedStat.league.season}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Sección Juegos */}
         <Text style={styles.sectionTitle}>Juegos</Text>

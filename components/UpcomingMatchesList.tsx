@@ -7,8 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { Avatar, Card } from "react-native-paper";
 
@@ -38,8 +37,19 @@ export default function UpcomingMatchesList({
     );
   }, [upcomingMatches, searchText]);
 
+  // 🗂️ Agrupar partidos por jornada / ronda
+  const groupedByRound = useMemo(() => {
+    const groups: Record<string, Fixture[]> = {};
+    filteredMatches.forEach((match) => {
+      const round = match.league?.round || "Sin ronda";
+      if (!groups[round]) groups[round] = [];
+      groups[round].push(match);
+    });
+    return Object.entries(groups);
+  }, [filteredMatches]);
+
   return (
-    <TouchableOpacity style={styles.container}>
+    <View style={styles.container}>
       {/* 🔍 Buscador */}
       <TextInput
         placeholder="Buscar por nombre del equipo..."
@@ -49,73 +59,79 @@ export default function UpcomingMatchesList({
         placeholderTextColor="#888"
       />
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={{ gap: 16 }}>
-        {filteredMatches.length === 0 ? (
+      <ScrollView style={styles.scrollArea} contentContainerStyle={{ gap: 20 }}>
+        {groupedByRound.length === 0 ? (
           <Text style={styles.noResults}>No se encontraron resultados.</Text>
         ) : (
-          filteredMatches.map((match, index) => {
-            const isHome = match.teams.home.id.toString() == teamId;
-            const matchDate = dayjs(match.date);
-            const formattedDate = matchDate.format("DD MMM YYYY, HH:mm");
-            const timeUntil = matchDate.fromNow();
+          groupedByRound.map(([round, matches]) => (
+            <View key={round}>
+              <Text style={styles.roundTitle}>{round}</Text>
 
-            const bgColor = "#ffffff";
-            const borderColor = isHome ? "#1DB954" : "#F78E4F"; // Verde si local, naranja si visitante
-            const tagColor = borderColor;
+              {matches.map((match, index) => {
+                const isHome = match.teams.home.id.toString() == teamId;
+                const matchDate = dayjs(match.date);
+                const formattedDate = matchDate.format("DD MMM YYYY, HH:mm");
+                const timeUntil = matchDate.fromNow();
 
-            return (
-              <Card
-                key={index}
-                style={[
-                  styles.card,
-                  { backgroundColor: bgColor, borderLeftColor: borderColor },
-                ]}
-                elevation={2}
-                onPress={() => actionMatch(match.fixtureId.toString())}
-              >
-                <View style={styles.header}>
-                  <Text style={[styles.dateText, { color: borderColor }]}>
-                    {formattedDate}
-                  </Text>
-                  <Text style={[styles.tag, { color: tagColor }]}>
-                    {match.league.name}
-                  </Text>
-                </View>
+                const bgColor = "#ffffff";
+                const borderColor = isHome ? "#1DB954" : "#F78E4F"; // Verde si local, naranja si visitante
+                const tagColor = borderColor;
 
-                <View style={styles.teams}>
-                  <View style={styles.team}>
-                    <Avatar.Image
-                      style={{ backgroundColor: "transparent" }}
-                      size={42}
-                      source={{ uri: match.teams.home.logo }}
-                    />
-                    <Text style={styles.teamName}>
-                      {match.teams.home.name}
-                    </Text>
-                  </View>
+                return (
+                  <Card
+                    key={index}
+                    style={[
+                      styles.card,
+                      { backgroundColor: bgColor, borderLeftColor: borderColor },
+                    ]}
+                    elevation={2}
+                    onPress={() => actionMatch(match.fixtureId.toString())}
+                  >
+                    <View style={styles.header}>
+                      <Text style={[styles.dateText, { color: borderColor }]}>
+                        {formattedDate}
+                      </Text>
+                      <Text style={[styles.tag, { color: tagColor }]}>
+                        {match.league.name}
+                      </Text>
+                    </View>
 
-                  <Text style={[styles.vs, { color: borderColor }]}>VS</Text>
+                    <View style={styles.teams}>
+                      <View style={styles.team}>
+                        <Avatar.Image
+                          style={{ backgroundColor: "transparent" }}
+                          size={42}
+                          source={{ uri: match.teams.home.logo }}
+                        />
+                        <Text style={styles.teamName}>
+                          {match.teams.home.name}
+                        </Text>
+                      </View>
 
-                  <View style={styles.team}>
-                    <Avatar.Image
-                      style={{ backgroundColor: "transparent" }}
-                      size={42}
-                      source={{ uri: match.teams.away.logo }}
-                    />
-                    <Text style={styles.teamName}>
-                      {match.teams.away.name}
-                    </Text>
-                  </View>
-                </View>
+                      <Text style={[styles.vs, { color: borderColor }]}>VS</Text>
 
-                <Text style={styles.stadiumText}>{match.venue.name}</Text>
-                <Text style={styles.timeUntil}>Comienza {timeUntil}</Text>
-              </Card>
-            );
-          })
+                      <View style={styles.team}>
+                        <Avatar.Image
+                          style={{ backgroundColor: "transparent" }}
+                          size={42}
+                          source={{ uri: match.teams.away.logo }}
+                        />
+                        <Text style={styles.teamName}>
+                          {match.teams.away.name}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.stadiumText}>{match.venue.name}</Text>
+                    <Text style={styles.timeUntil}>Comienza {timeUntil}</Text>
+                  </Card>
+                );
+              })}
+            </View>
+          ))
         )}
       </ScrollView>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -123,6 +139,13 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
     paddingHorizontal: 12,
+  },
+  roundTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#1B5E20",
+    marginBottom: 8,
+    marginLeft: 4,
   },
   searchInput: {
     borderWidth: 1,
@@ -139,12 +162,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 12,
     fontStyle: "italic",
-  },
-  title: {
-    fontWeight: "bold",
-    fontSize: 20,
-    marginBottom: 16,
-    color: "#222",
   },
   scrollArea: {
     paddingRight: 4,

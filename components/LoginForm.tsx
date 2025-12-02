@@ -37,6 +37,13 @@ export default function LoginForm() {
       nickName: "",
       email: form.email,
       password: form.password,
+      points: 0,
+      xp: 0,
+      level: "Novato",
+      betsWon: 0,
+      betsLost: 0,
+      redeemed: 0,
+      badges: []
     };
     const result = await login(user);
 

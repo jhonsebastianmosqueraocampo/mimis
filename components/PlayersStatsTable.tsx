@@ -1,14 +1,16 @@
+import { useNavigation } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import {
-    Avatar,
-    Card,
-    DataTable,
-    Modal,
-    Portal,
-    Text,
+  Avatar,
+  Card,
+  DataTable,
+  Modal,
+  Portal,
+  Text,
 } from "react-native-paper";
-import { TeamPlayerStatsByLeague } from "../types";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import { RootStackParamList, TeamPlayerStatsByLeague } from "../types";
 
 type Props = {
   stats: TeamPlayerStatsByLeague[];
@@ -16,6 +18,7 @@ type Props = {
 
 export default function PlayersStatsTable({ stats }: Props) {
   const [selected, setSelected] = useState<any>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // Ligas únicas
   const leagues = stats
@@ -39,6 +42,14 @@ export default function PlayersStatsTable({ stats }: Props) {
 
   const fixedColWidth = 160; // ajustar según estilo
 
+  const handlePlayer = (id: string) => {
+    navigation.navigate('player', {id})
+  }
+
+  const handleLeague = (id: string) => {
+    navigation.navigate('tournament', {id})
+  }
+
   return (
     <View style={styles.container}>
       {/* COLUMNA FIJA JUGADORES */}
@@ -60,7 +71,7 @@ export default function PlayersStatsTable({ stats }: Props) {
           </DataTable.Header>
 
           {players.map((player: any) => (
-            <DataTable.Row key={player.player.id}>
+            <DataTable.Row key={player.player.id} onPress={()=>handlePlayer(player.player.id)}>
               <DataTable.Cell
                 style={[styles.playerCol, { width: fixedColWidth }]}
               >
@@ -87,6 +98,7 @@ export default function PlayersStatsTable({ stats }: Props) {
                 style={styles.leagueGroup}
                 key={idx}
                 numeric={false}
+                onPress={()=>handleLeague(league.id)}
               >
                 <View style={styles.leagueHeader}>
                   <Avatar.Image size={24} source={{ uri: league.logo }} />
@@ -171,7 +183,7 @@ export default function PlayersStatsTable({ stats }: Props) {
           contentContainerStyle={styles.modal}
         >
           {selected && (
-            <Card>
+            <TouchableOpacity onPress={()=>handlePlayer(selected.player.id)}>
               <Card.Title
                 title={`${selected.player.name} - ${selected.league}`}
               />
@@ -194,7 +206,7 @@ export default function PlayersStatsTable({ stats }: Props) {
                 {/* <Text>Pie dominante: {selected.player.foot ?? "-"}</Text> */}
                 {/* <Text>Número camiseta: {selected.stats.games.number ?? "-"}</Text> */}
               </Card.Content>
-            </Card>
+            </TouchableOpacity>
           )}
         </Modal>
       </Portal>

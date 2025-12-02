@@ -10,6 +10,7 @@ import MatchBanner from "./MatchBanner";
 import MatchHistoryPreview from "./MatchHistoryPreview";
 import MatchPredictions from "./MatchPredictions";
 import MatchStatsPreview from "./MatchStatsPreview";
+import PenaltyGameSwipe from "./PenaltyGameSwipe";
 import VerticalScroll from "./VerticalScroll";
 
 const items = [
@@ -19,6 +20,7 @@ const items = [
   { id: "4", name: "Análisis de partidos" },
   { id: "5", name: "Historial de resultados" },
   { id: "6", name: "Alineaciones" },
+  { id: "7", name: "Suma puntos y gana" },
 ];
 
 type MatchPreviewProps = {
@@ -35,6 +37,11 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
   const [showBlock, setShowBlock] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const STATUS = {
+    long: '',
+    short: '',
+    elapsed: null
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -60,12 +67,11 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
     const getPreviewVideo = async () => {
       setLoading(true);
       if (!fixture?.date) return null;
-      const query = `${fixture.teams.home.name} ${fixture.teams.away.name}`;
+      const query = `${fixture.teams.home.name} vs ${fixture.teams.away.name} previa ${new Date().getFullYear()} fútbol`;
       const matchDate = new Date(fixture.date);
       const now = new Date();
       const diffMs = matchDate.getTime() - now.getTime();
       const diffHours = diffMs / (1000 * 60 * 60);
-      console.log(diffHours)
       if (diffHours <= 24) {
         try {
           const { success, videos, message } = await getVideoFromYoutube(query);
@@ -93,7 +99,8 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
     const getPreviewVideoInterviews = async () => {
       setLoading(true);
       if (!fixture?.date) return null;
-      const query = `${fixture.teams.home.name} ${fixture.teams.away.name} rueda de prensa`;
+      const year = new Date().getFullYear();
+      const query = `${fixture.teams.home.name} ${fixture.teams.away.name} entrevista partido declaraciones rueda de prensa ${year} fútbol`;
       const matchDate = new Date(fixture.date);
       const now = new Date();
       const diffMs = matchDate.getTime() - now.getTime();
@@ -268,7 +275,10 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
           <MatchHistoryPreview fixtureId={fixtureId} />
         )}
         {selectedItem.name.toLowerCase() === "alineaciones" && (
-          <FixtureLineups fixtureId={fixtureId} />
+          <FixtureLineups fixtureId={fixtureId} status= {STATUS}/>
+        )}
+        {selectedItem.name.toLowerCase() === "Suma puntos y gana" && (
+          <PenaltyGameSwipe />
         )}
       </View>
     </ScrollView>

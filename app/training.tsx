@@ -65,8 +65,9 @@ export default function Training() {
           setEquipos(teams);
 
           const favVideos: Record<string, Video[]> = {};
+          const year = new Date().getFullYear();
           for (const team of teams) {
-            const query = `${team.title} entrenamiento futbol`;
+            const query = `${team.title} entrenamiento práctica training session preparación ${year} fútbol`;
             const { success, videos } = await getVideoFromYoutube(query);
             favVideos[team.title] = success ? videos.map(mapYoutubeToVideo) : [];
           }

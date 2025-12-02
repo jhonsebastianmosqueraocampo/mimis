@@ -1,3 +1,4 @@
+import { useNavigation } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
@@ -9,7 +10,8 @@ import {
   View,
 } from "react-native";
 import { Button, Divider } from "react-native-paper";
-import type { LeagueTableProps } from "../types";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import type { LeagueTableProps, RootStackParamList, TeamStanding } from "../types";
 
 export default function LeagueTable({
   standings,
@@ -19,9 +21,10 @@ export default function LeagueTable({
   teamId,
 }: LeagueTableProps) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTeamData, setSelectedTeamData] = useState<any>(null);
+  const [selectedTeamData, setSelectedTeamData] = useState<TeamStanding>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const handleTeamClick = (team: any) => {
+  const handleTeamClick = (team: TeamStanding) => {
     const teamIdStr = team.team.id.toString();
     setSelectedTeam((prev) => (prev === teamIdStr ? null : teamIdStr));
     setSelectedTeamData(team);
@@ -46,6 +49,10 @@ export default function LeagueTable({
 
     return `${goalsFor}-${goalsAgainst}`;
   };
+
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
 
   return (
     <>
@@ -153,7 +160,7 @@ export default function LeagueTable({
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             {selectedTeamData && (
-              <>
+              <TouchableOpacity onPress={()=>handleTeam(selectedTeamData.team.id.toString())}>
                 <Text style={styles.modalTitle}>
                   {selectedTeamData.team.name}
                 </Text>
@@ -209,7 +216,7 @@ export default function LeagueTable({
                 >
                   Cerrar
                 </Button>
-              </>
+              </TouchableOpacity>
             )}
           </View>
         </View>

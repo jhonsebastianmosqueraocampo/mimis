@@ -5,11 +5,20 @@ import { ActivityIndicator, Card, Text } from "react-native-paper";
 import FootballLineupField from "./FootballField";
 
 type FixtureLineupsProps = {
-  events?: LiveEvent[]
+  events?: LiveEvent[];
   fixtureId: string;
+  status: {
+    long: string;
+    short: string;
+    elapsed?: number | null;
+  };
 };
 
-export default function FixtureLineups({ fixtureId, events }: FixtureLineupsProps) {
+export default function FixtureLineups({
+  fixtureId,
+  events,
+  status,
+}: FixtureLineupsProps) {
   const { getLineUp } = useFetch();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +67,15 @@ export default function FixtureLineups({ fixtureId, events }: FixtureLineupsProp
               marginVertical: 20,
             }}
           >
-            Alineaciones aún no disponibles
+            Alineaciones no disponibles
           </Text>
         ) : (
-          <FootballLineupField lineup={lineup} liveEvents={events}/>
+          <FootballLineupField
+            fixtureId={fixtureId}
+            lineup={lineup}
+            liveEvents={events}
+            status={status}
+          />
         )}
       </Card.Content>
     </Card>

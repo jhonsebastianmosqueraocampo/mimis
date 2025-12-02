@@ -1,10 +1,16 @@
 import { useFetch } from "@/hooks/FetchContext";
-import { BetInfo, LiveMatch, RootStackParamList, UserBet } from "@/types";
+import { BetInfo, LiveMatch, RootStackParamList, setBet, UserBet } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, TouchableOpacity } from "react-native";
-import { ActivityIndicator, Card, List, Text } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  List,
+  Text,
+} from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
@@ -12,98 +18,143 @@ type liveBetRouteProp = RouteProp<RootStackParamList, "liveBet">;
 
 export default function LiveBetScreen() {
   const route = useRoute<liveBetRouteProp>();
-  const betId = route.params?.id; // 👈 directo del route
+  const betId = route.params?.id as string | undefined;
 
-  const { getBetAndPredictionOddsByBetId, getLiveMatch } = useFetch();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const { getBetAndPredictionOddsByBetId, getLiveMatch, betSetResults } = useFetch();
 
   const [betInfo, setBetInfo] = useState<BetInfo | null>(null);
   const [liveMatch, setLiveMatch] = useState<LiveMatch | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [finished, setFinished] = useState(false);
 
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 1) Carga inicial: obtener la apuesta SOLO UNA VEZ
   useEffect(() => {
-    if (!betId) return;
-
-    const loadData = async () => {
+    let mounted = true;
+    const bootstrap = async () => {
+      if (!betId) return;
       try {
         setLoading(true);
-
         const { success, betInfo } = await getBetAndPredictionOddsByBetId(
           betId
-        );
-        if (success && betInfo) {
-          const { live } = await getLiveMatch(betInfo.bet.fixtureId);
+        ); // ✅ SOLO UNA VEZ
+        if (mounted && success && betInfo) {
           setBetInfo(betInfo);
+          // Cargar live del fixture inicial
+          const { live } = await getLiveMatch(betInfo.bet.fixtureId);
+          if (!mounted) return;
           setLiveMatch(live);
+          if (isFinished(live!)) setFinished(true);
         }
-      } catch (err) {
-        console.error("❌ Error cargando live bet:", err);
+      } catch (e) {
+        console.error("❌ Error inicial:", e);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
+      }
+    };
+    bootstrap();
+
+    return () => {
+      mounted = false;
+    };
+  }, [betId, getBetAndPredictionOddsByBetId, getLiveMatch]);
+
+  // 2) Polling cada 30s: SOLO actualiza el liveMatch
+  useEffect(() => {
+    if (!betInfo?.bet.fixtureId || finished) return;
+
+    const tick = async () => {
+      try {
+        const { live } = await getLiveMatch(betInfo.bet.fixtureId);
+        setLiveMatch(live);
+
+        if (isFinished(live!)) {
+          const results: setBet[] = betInfo.bet.users.map((u) => ({
+            userId: u.userId ?? "",
+            winner: evaluateUserBet(u, live!) === "WIN",
+          }));
+
+          const { success } = await betSetResults(betId!, results);
+
+          if(success){
+            setFinished(true);
+          }
+
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }
+      } catch (e) {
+        console.error("❌ Error en polling live:", e);
       }
     };
 
-    if (betId) {
-      loadData();
-    }
+    tick();
+    pollRef.current = setInterval(tick, 30000);
 
-    let interval: ReturnType<typeof setInterval>;
-
-    interval = setInterval(loadData, 30000);
-
-    return () => clearInterval(interval);
-  }, [betId]);
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [betInfo?.bet.fixtureId, finished, getLiveMatch]);
 
   if (loading || !betInfo || !liveMatch) {
     return <ActivityIndicator style={{ marginTop: 40 }} size="large" />;
   }
 
   const { bet } = betInfo;
-  const fixture = liveMatch; // 👈 usar el fixture en vivo
+  const fixture = liveMatch;
 
-  // Evaluar resultados actuales (tiempo real)
+  // --- Lógica de evaluación ---
   const evaluateUserBet = (
     u: UserBet,
-    fixture: LiveMatch
+    f: LiveMatch
   ): "WIN" | "LOSE" | "PENDING" => {
     switch (u.selection.market) {
       case "RESULT_1X2": {
         const currentResult =
-          fixture.goals.home > fixture.goals.away
+          f.goals.home > f.goals.away
             ? "LOCAL"
-            : fixture.goals.home < fixture.goals.away
+            : f.goals.home < f.goals.away
             ? "AWAY"
             : "DRAW";
-
         return u.selection.pick === currentResult ? "WIN" : "LOSE";
       }
-
       case "EXACT_SCORE": {
-        return u.selection.home === fixture.goals.home &&
-          u.selection.away === fixture.goals.away
+        return u.selection.home === f.goals.home &&
+          u.selection.away === f.goals.away
           ? "WIN"
           : "LOSE";
       }
-
       case "OVER_UNDER": {
-        const totalGoals = fixture.goals.home + fixture.goals.away;
+        const totalGoals = f.goals.home + f.goals.away;
         const condition =
           u.selection.side === "OVER"
             ? totalGoals > u.selection.line
             : totalGoals < u.selection.line;
-
         return condition ? "WIN" : "LOSE";
       }
-
       default:
         return "PENDING";
     }
   };
 
-  const actionMatch = (id: string) => {
-    navigation.navigate("match", { id });
-  };
+  const winners = useMemo(
+    () =>
+      finished
+        ? bet.users.filter((u) => evaluateUserBet(u, fixture) === "WIN")
+        : [],
+    [finished, bet.users, fixture]
+  );
+
+  const actionMatch = (id: string) => navigation.navigate("match", { id });
 
   return (
     <PrivateLayout>
@@ -116,7 +167,7 @@ export default function LiveBetScreen() {
             <Card.Title
               title={`${fixture.teams.home.name} vs ${fixture.teams.away.name}`}
               subtitle={
-                fixture.status.short === "FT"
+                isFinished(fixture)
                   ? "Finalizado"
                   : `Min ${fixture.status.elapsed ?? 0} | ${
                       fixture.status.long
@@ -126,7 +177,7 @@ export default function LiveBetScreen() {
           </TouchableOpacity>
           <Card.Content>
             <Text
-              style={{ fontSize: 20, fontWeight: "bold", textAlign: "center" }}
+              style={{ fontSize: 22, fontWeight: "bold", textAlign: "center" }}
             >
               {fixture.goals.home} - {fixture.goals.away}
             </Text>
@@ -136,45 +187,84 @@ export default function LiveBetScreen() {
           </Card.Content>
         </Card>
 
-        {/* USUARIOS */}
-        <Card>
-          <Card.Title title="Usuarios en la mesa" />
-          <Card.Content>
-            {bet.users.map((u, idx) => {
-              const liveResult = evaluateUserBet(u, fixture);
-              return (
-                <List.Item
-                  key={idx}
-                  title={u.name}
-                  description={`Selección: ${formatSelection(u.selection)}`}
-                  right={() => (
-                    <Text
-                      style={{
-                        color: liveResult === "WIN" ? "green" : "red",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {liveResult === "WIN"
-                        ? `Ganando ${bet.stake} pts`
-                        : "Perdiendo"}
-                    </Text>
-                  )}
-                  left={() => (
-                    <Text style={{ marginRight: 10 }}>
-                      {liveResult === "WIN" ? "🏆" : "❌"}
-                    </Text>
-                  )}
-                />
-              );
-            })}
-          </Card.Content>
-        </Card>
+        {/* EN VIVO o RESUMEN */}
+        {!finished ? (
+          <Card>
+            <Card.Title title="Usuarios en la mesa" />
+            <Card.Content>
+              {bet.users.map((u, idx) => {
+                const status = evaluateUserBet(u, fixture);
+                return (
+                  <List.Item
+                    key={idx}
+                    title={u.name}
+                    description={`Selección: ${formatSelection(u.selection)}`}
+                    right={() => (
+                      <Text
+                        style={{
+                          color: status === "WIN" ? "green" : "red",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {status === "WIN" ? `Ganando` : "Perdiendo"}
+                      </Text>
+                    )}
+                    left={() => (
+                      <Text style={{ marginRight: 10 }}>
+                        {status === "WIN" ? "🏆" : "❌"}
+                      </Text>
+                    )}
+                  />
+                );
+              })}
+            </Card.Content>
+          </Card>
+        ) : (
+          <Card>
+            <Card.Title title="🏁 Resultado final de la apuesta" />
+            <Card.Content>
+              {winners.length > 0 ? (
+                <>
+                  {winners.map((w, i) => (
+                    <List.Item
+                      key={i}
+                      title={w.name}
+                      description={`Ganó ${bet.stake} puntos`}
+                      left={() => <Text style={{ marginRight: 10 }}>🥇</Text>}
+                    />
+                  ))}
+                  <Text style={{ textAlign: "center", marginTop: 8 }}>
+                    ¡Felicidades a los ganadores!
+                  </Text>
+                </>
+              ) : (
+                <Text style={{ textAlign: "center" }}>
+                  Nadie acertó esta vez 😅
+                </Text>
+              )}
+
+              <Button
+                mode="contained"
+                style={{ marginTop: 10 }}
+                onPress={() => actionMatch(String(fixture.fixtureId))}
+              >
+                Ver detalles del partido
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
       </ScrollView>
     </PrivateLayout>
   );
 }
 
-// helper para mostrar selección
+/** Helpers */
+function isFinished(f: LiveMatch) {
+  return (
+    f.status?.short === "FT" || f.status?.long?.toLowerCase().includes("final")
+  );
+}
+
 function formatSelection(sel: any): string {
   if (!sel) return "-";
   if (sel.pick) return sel.pick;

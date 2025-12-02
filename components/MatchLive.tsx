@@ -1,7 +1,8 @@
 import { useFetch } from "@/hooks/FetchContext";
-import { LiveEvent, LiveMatch } from "@/types";
+import { LiveMatch, RootStackParamList } from "@/types";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Dimensions, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 import {
   ActivityIndicator,
   Avatar,
@@ -10,13 +11,10 @@ import {
   Divider,
   Text,
 } from "react-native-paper";
-import Svg, { Circle, Line, Rect } from "react-native-svg";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import DynamicMatchView from "./DynamicMatchView";
 import FixtureLineups from "./FixtureLineups";
 import StarRating from "./StarRating";
-
-const { width } = Dimensions.get("window");
-const FIELD_W = width - 40;
-const FIELD_H = (FIELD_W * 2) / 3;
 
 type MatchLiveProps = { fixtureId: string };
 
@@ -31,7 +29,6 @@ const StatRow = ({
 }) => {
   const total = Math.max(home + away, 1);
   const left = Math.round((home / total) * 100);
-  const right = 100 - left;
   return (
     <View style={{ marginBottom: 10 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -56,134 +53,6 @@ const StatRow = ({
   );
 };
 
-const FootballField = ({ children }: { children?: React.ReactNode }) => (
-  <View style={{ alignItems: "center", marginVertical: 10 }}>
-    <Svg
-      width={FIELD_W}
-      height={FIELD_H}
-      style={{ backgroundColor: "#388e3c", borderRadius: 10 }}
-    >
-      <Rect
-        x="2"
-        y="2"
-        width={FIELD_W - 4}
-        height={FIELD_H - 4}
-        stroke="white"
-        strokeWidth="2"
-        fill="none"
-        rx="10"
-      />
-      <Line
-        x1={FIELD_W / 2}
-        y1={0}
-        x2={FIELD_W / 2}
-        y2={FIELD_H}
-        stroke="white"
-        strokeWidth="2"
-      />
-      <Circle
-        cx={FIELD_W / 2}
-        cy={FIELD_H / 2}
-        r={30}
-        stroke="white"
-        strokeWidth="2"
-        fill="none"
-      />
-      <Circle cx={FIELD_W / 2} cy={FIELD_H / 2} r={3} fill="white" />
-    </Svg>
-    <View style={{ position: "absolute", width: FIELD_W, height: FIELD_H }}>
-      {children}
-    </View>
-  </View>
-);
-
-// Posiciona un punto según tipo de evento y qué equipo lo generó (home/away)
-function eventToGrid(e: LiveEvent, homeId: number) {
-  // Grid 1..6 x 1..6
-  const zones = {
-    goal: { row: 5, col: 5 },
-    shot: { row: 5, col: 4 },
-    attack: { row: 4, col: 4 },
-    foul: { row: 3, col: 3 },
-    card: { row: 3, col: 3 },
-    var: { row: 3, col: 3 },
-    kickoff: { row: 3, col: 3 },
-    default: { row: 3, col: 3 },
-  };
-
-  const t = (e.type || "").toLowerCase();
-  const d = (e.detail || "").toLowerCase();
-
-  let zone = zones.default;
-  if (t === "goal" || d.includes("goal")) zone = zones.goal;
-  else if (d.includes("shot") || d.includes("attempt")) zone = zones.shot;
-  else if (d.includes("dangerous attack") || d.includes("attack"))
-    zone = zones.attack;
-  else if (t === "foul" || d.includes("foul")) zone = zones.foul;
-  else if (t === "card" || d.includes("card")) zone = zones.card;
-  else if (t === "var") zone = zones.var;
-  else if (d.includes("kick-off")) zone = zones.kickoff;
-
-  // Si el evento es del visitante, espejar horizontalmente
-  const isHome = e.team?.id === homeId;
-  const col = isHome ? zone.col : 7 - zone.col;
-  return { row: zone.row, col };
-}
-
-const PlayerDot = ({
-  x,
-  y,
-  label,
-  sub,
-}: {
-  x: number;
-  y: number;
-  label: string;
-  sub?: boolean;
-}) => (
-  <View
-    style={{
-      position: "absolute",
-      left: x - 18,
-      top: y - 18,
-      alignItems: "center",
-    }}
-  >
-    <Avatar.Text
-      size={36}
-      label={label}
-      style={{ backgroundColor: sub ? "#1565c0" : "#1b5e20" }}
-    />
-  </View>
-);
-
-const LineupOnField = ({
-  startXI,
-}: {
-  startXI: { name: string; number: number; grid: string; isSub?: boolean }[];
-}) => {
-  const rows = 6,
-    cols = 6;
-  return (
-    <FootballField>
-      {startXI.map((p, idx) => {
-        const [r, c] = p.grid.split(":").map((n) => parseInt(n, 10));
-        const x = (c / (cols + 1)) * FIELD_W;
-        const y = (r / (rows + 1)) * FIELD_H;
-        return (
-          <PlayerDot
-            key={idx}
-            x={x}
-            y={y}
-            label={String(p.number || "•")}
-            sub={p.isSub}
-          />
-        );
-      })}
-    </FootballField>
-  );
-};
-
 export default function MatchLive({ fixtureId }: MatchLiveProps) {
   const { getLiveMatch } = useFetch();
   const [live, setLive] = useState<LiveMatch>();
@@ -191,6 +60,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
   const [tab, setTab] = useState("timeline");
   const [showAll, setShowAll] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const tabs = [
     { key: "timeline", label: "Minuto a minuto", icon: "timeline" },
@@ -283,6 +153,14 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
     );
   }
 
+  const handleTeam = (id: string) => {
+    navigation.navigate('team', {id})
+  }
+
+  const handlePlayer = (id: string) => {
+    navigation.navigate('player', {id})
+  }
+
   const home = live.teams.home;
   const away = live.teams.away;
 
@@ -297,12 +175,12 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
       }}
     >
       {/* Local */}
-      <View style={{ alignItems: "center", flex: 1 }}>
+      <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(home.id.toString())}>
         <Avatar.Image size={44} source={{ uri: home.logo }} />
         <Text numberOfLines={1} style={{ marginTop: 4, fontWeight: "600" }}>
           {home.name}
         </Text>
-      </View>
+      </TouchableOpacity>
 
       {/* Marcador */}
       <View style={{ alignItems: "center", flex: 1.2 }}>
@@ -322,12 +200,12 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
       </View>
 
       {/* Visitante */}
-      <View style={{ alignItems: "center", flex: 1 }}>
+      <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(away.id.toString())}>
         <Avatar.Image size={44} source={{ uri: away.logo }} />
         <Text numberOfLines={1} style={{ marginTop: 4, fontWeight: "600" }}>
           {away.name}
         </Text>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 
@@ -451,7 +329,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                 backgroundColor: "#0b6623",
               }}
             >
-              {/* aquí iría tu componente FootballField */}
+              <DynamicMatchView fixtureId={fixtureId} live={live} />
             </View>
           </View>
         )}
@@ -513,11 +391,11 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                       }}
                     >
                       ⚽{" "}
-                      <Text style={{ fontWeight: "600" }}>
+                      <Text style={{ fontWeight: "600" }} onPress={()=>handlePlayer(g.player?.id?.toString() ?? '')}>
                         {g.player?.name}
                       </Text>
                       {g.assist?.name ? (
-                        <Text style={{ color: "#555" }}>
+                        <Text style={{ color: "#555" }} onPress={()=>handlePlayer(g.assist?.id?.toString() ?? '')}>
                           {" "}
                           (asist. {g.assist?.name})
                         </Text>
@@ -537,7 +415,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
               Alineaciones
             </Text>
             <Divider style={{ marginVertical: 8 }} />
-            <FixtureLineups fixtureId={fixtureId} events={live.events} />
+            <FixtureLineups fixtureId={fixtureId} events={live.events} status={live.status}/>
           </View>
         )}
 

@@ -50,8 +50,7 @@ export default function JoinBetScreen() {
   const [ouSide, setOuSide] = useState<"OVER" | "UNDER" | null>(null);
   const [ouLine, setOuLine] = useState<number | null>(2.5);
   const [betId, setBetId] = useState(route.params?.id ?? '');
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let isMounted = true;
@@ -311,6 +310,10 @@ export default function JoinBetScreen() {
   const fixture = predictionOdds.fixture;
   const pred = predictionOdds?.predictions?.predictions;
 
+  const handleFixture = (id: string) => {
+    navigation.navigate('match', {id})
+  }
+
   return (
     <PrivateLayout>
       <ScrollView style={{ flex: 1, padding: 16 }}>
@@ -341,7 +344,7 @@ export default function JoinBetScreen() {
         ) : (
           <>
             {/* Fixture */}
-            <Card style={{ marginBottom: 16 }}>
+            <Card style={{ marginBottom: 16 }} onPress={()=>handleFixture(fixture.fixtureId)}>
               <Card.Title
                 title="Partido"
                 subtitle={`${fixture.venue.name}, ${fixture.venue.city}`}

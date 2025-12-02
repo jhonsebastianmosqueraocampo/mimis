@@ -28,8 +28,7 @@ export default function MatchPostBanner({
   tournamentId,
   result,
 }: MatchPostBannerProps) {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const matchDate = dayjs(datetime).format("dddd, D MMM YYYY - HH:mm");
 

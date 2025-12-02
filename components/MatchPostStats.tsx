@@ -9,7 +9,6 @@ type MatchPostStatsProps = {
 
 export default function MatchPostStats({ stats }: MatchPostStatsProps) {
   if (!stats || stats.length < 2) return null;
-  console.log(stats)
 
   const [home, away] = stats;
 

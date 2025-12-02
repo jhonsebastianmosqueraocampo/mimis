@@ -1,21 +1,21 @@
 import { useFetch } from "@/hooks/FetchContext";
-import { LiveMatch } from "@/types";
+import { LiveMatch, RootStackParamList } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ResizeMode, Video } from "expo-av";
+import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
-  Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
-  View,
+  View
 } from "react-native";
 import { ActivityIndicator, Avatar, Chip, Text } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import FixtureLineups from "./FixtureLineups";
 import MatchAnalysisPost from "./MatchAnalysisPost";
 import MatchPostBanner from "./MatchPostBanner";
 import MatchPostStats from "./MatchPostStats";
+import MatchPostVideos from "./MatchPostVideos";
 
 const { height } = Dimensions.get("window");
 
@@ -25,31 +25,6 @@ const items = [
   { id: "3", name: "Análisis del partido" },
   { id: "4", name: "Goles" },
   { id: "5", name: "Resumen jugadas" },
-];
-
-// Mock temporal de ScoreBat (simula backend)
-const mockVideos = [
-  {
-    id: "1",
-    title: "Gol de Vinícius Jr (1-0)",
-    thumbnail: "https://i.ytimg.com/vi/abcd1234/hqdefault.jpg",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    source: "ScoreBat Highlights",
-  },
-  {
-    id: "2",
-    title: "Gol de Lewandowski (1-1)",
-    thumbnail: "https://i.ytimg.com/vi/efgh5678/hqdefault.jpg",
-    videoUrl: "https://www.w3schools.com/html/movie.mp4",
-    source: "ScoreBat Highlights",
-  },
-  {
-    id: "3",
-    title: "Jugadas destacadas del partido",
-    thumbnail: "https://i.ytimg.com/vi/ijkl9012/hqdefault.jpg",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    source: "ScoreBat Highlights",
-  },
 ];
 
 type MatchPostProps = {
@@ -63,19 +38,19 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let mounted = true;
-    console.log(fixtureId)
     const loadFixture = async () => {
       try {
         const { success, live, message } = await getLiveMatch(fixtureId);
-        console.log(live?.statistics)
         if (mounted) {
-          if (success) setMatch(live!);
-          else setError(message!);
+          if (success) {
+            setMatch(live!);
+          } else setError(message!);
         }
-        setLoading(false)
+        setLoading(false);
       } catch {
         setError("Error al cargar el fixture");
       } finally {
@@ -98,12 +73,14 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
     [match]
   );
 
-  if (loading)
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+
+  const handlePlayer = (id: string) => {
+    navigation.navigate("player", { id });
+  };
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-      {/* Banner final del partido */}
       <MatchPostBanner
         homeTeam={{
           id: match?.teams.home.id.toString() ?? "",
@@ -159,10 +136,12 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
 
       {selectedItem.name === "Calificaciones" && (
         <>
-            <Text style={styles.placeholder}>
-            📊 Calificaciones de jugadores
-            </Text>
-            <FixtureLineups fixtureId={fixtureId} events={match?.events} />
+          <Text style={styles.placeholder}>📊 Calificaciones de jugadores</Text>
+          <FixtureLineups
+            fixtureId={fixtureId}
+            events={match?.events}
+            status={match?.status!}
+          />
         </>
       )}
 
@@ -213,11 +192,21 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
                         }
                         style={{ marginRight: 4 }}
                       />
-                      <Text style={styles.playerName}>{g.player?.name}</Text>
+                      <Text
+                        style={styles.playerName}
+                        onPress={() =>
+                          handlePlayer(g.player!.id!.toString() ?? "")
+                        }
+                      >
+                        {g.player?.name}
+                      </Text>
                     </View>
 
                     {g.assist?.name ? (
-                      <Text style={styles.assistText}>
+                      <Text
+                        style={styles.assistText}
+                        onPress={() => handlePlayer(g.assist!.id!.toString())}
+                      >
                         Asistencia: {g.assist.name}
                       </Text>
                     ) : null}
@@ -233,58 +222,9 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
 
       {selectedItem.name === "Resumen jugadas" && (
         <ScrollView style={{ flex: 1 }}>
-          {mockVideos.map((v) => (
-            <Pressable
-              key={v.id}
-              onPress={() => setSelectedVideo(Number(v.id))}
-            >
-              <View style={styles.videoCard}>
-                <Text style={styles.videoTitle}>{v.title}</Text>
-                <Video
-                  source={{ uri: v.videoUrl }}
-                  style={styles.videoThumbnail}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay={false}
-                />
-              </View>
-            </Pressable>
-          ))}
+          <MatchPostVideos teamA={match?.teams.home.name!} teamB={match?.teams.away.name!} query="resume" season={new Date(match?.fixture.date!).getFullYear().toString()} />
         </ScrollView>
       )}
-
-      {/* Modal tipo TikTok / YouTube */}
-      <Modal
-        visible={selectedVideo !== null}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalContainer}>
-          <ScrollView
-            pagingEnabled
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ height: height * mockVideos.length }}
-          >
-            {mockVideos.map((v, index) => (
-              <View key={v.id} style={{ height, justifyContent: "center" }}>
-                <Video
-                  source={{ uri: v.videoUrl }}
-                  style={styles.fullVideo}
-                  useNativeControls
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay={selectedVideo === Number(v.id)}
-                />
-                <Text style={styles.modalTitle}>{v.title}</Text>
-              </View>
-            ))}
-          </ScrollView>
-          <Pressable
-            onPress={() => setSelectedVideo(null)}
-            style={styles.closeButton}
-          >
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>Cerrar</Text>
-          </Pressable>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }

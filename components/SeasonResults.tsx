@@ -138,12 +138,13 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
   };
 
   const getCupStandings = async () => {
-    const { success, hasGroupPhase, groupPhase, knockoutPhase, message } =
+    const { success, hasGroupPhase, groupPhase, knockoutPhase, matches, message } =
       await getStangingsCup(selectedCompetition, selectedSeason.toString());
     if (success) {
       setCupGroupStandings(groupPhase);
       setCupStandings(knockoutPhase);
       setHasGroupPhase(hasGroupPhase);
+      setAllMatches(matches);
     } else {
       setError(message!);
     }
@@ -162,16 +163,21 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
 
   // 🕒 Inicia polling (solo si es LEAGUE)
   const startPolling = useCallback(() => {
-    const compType = selectedComp?.league.leagueType;
+    const league = selectedComp?.league;
+    if (!league) return;
+    const compType = league.leagueType
+    const isFriendlyByName = league.name.toLowerCase().includes("friendlies");
 
-    if (compType !== "League") return; // 🧠 solo si es liga
+    if (isFriendlyByName) return; // 🧠 solo si es liga o copa
     if (intervalRef.current) return; // evitar duplicados
 
     intervalRef.current = setInterval(async () => {
-      await getStandings();
+      if(compType === "League") await getStandings();
+      if(compType === "Cup") await getCupStandings();
+
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }, 60 * 1000); // cada minuto
-  }, [selectedComp, getStandings]);
+  }, [selectedComp, getStandings, getCupStandings]);
 
   // 🕓 Detiene polling
   const stopPolling = useCallback(() => {
@@ -291,14 +297,15 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
                     <GroupPhaseView
                       standings={cupGroupStandings}
                       teamId={teamId}
+                      matches={allMatches}
                     />
                   </View>
                 ) : (
-                  <KnockoutBracket standings={cupStandings} teamId={teamId} />
+                  <KnockoutBracket standings={cupStandings} teamId={teamId} matches={allMatches}/>
                 )}
               </>
             ) : (
-              <KnockoutBracket standings={cupStandings} teamId={teamId} />
+              <KnockoutBracket standings={cupStandings} teamId={teamId} matches={allMatches}/>
             )}
           </View>
         )}

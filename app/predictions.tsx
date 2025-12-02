@@ -13,14 +13,6 @@ import {
 } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
-/** Normaliza la forma de predicciones:
- *  - pred: detalle (winner, percent, goals, under_over, win_or_draw…)
- *  - h2h: array de enfrentamientos
- *  - comparison: objeto con form, att, def, etc.
- *  Soporta:
- *    A) { predictions: { ... }, comparison: {...}, h2h: [...] }
- *    B) { ...camposDePred } (plano)
- */
 function normalizePredictions(raw: any) {
   const base = raw ?? {};
   const hasWrapper =
