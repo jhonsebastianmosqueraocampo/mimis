@@ -1,72 +1,47 @@
+import Loading from "@/components/Loading";
 import ShortModal from "@/components/ShortModal";
+import { useFetch } from "@/hooks/FetchContext";
 import { LoadShortItem, ShortItem } from "@/types";
-import { useState } from "react";
-import {
-    FlatList,
-    Image,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Card, IconButton, Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
-export const SHORTS_MOCK: ShortItem[] = [
-  {
-    id: "1",
-    video: "https://example.com/vid1.mp4",
-    thumbnail: "https://picsum.photos/200/300",
-    fecha: "2025-12-01T10:00:00Z",
-    descripcion: "Golazo desde mitad de cancha",
-    favoritos: 120,
-    comentarios: [
-      {
-        user: {
-          id: "",
-          nickName: "",
-          email: "",
-          points: 0,
-          xp: 0,
-          level: "Novato",
-          betsWon: 0,
-          betsLost: 0,
-          redeemed: 0,
-          badges: [],
-        },
-        comment: "🔥🔥🔥",
-      },
-      {
-        user: {
-          id: "",
-          nickName: "",
-          email: "",
-          points: 0,
-          xp: 0,
-          level: "Novato",
-          betsWon: 0,
-          betsLost: 0,
-          redeemed: 0,
-          badges: [],
-        },
-        comment: "Qué jugada!",
-      },
-    ],
-  },
-  {
-    id: "2",
-    video: "https://example.com/vid2.mp4",
-    thumbnail: "https://picsum.photos/200/301",
-    fecha: "2025-11-29T18:20:00Z",
-    descripcion: "Mejor jugada del partido",
-    favoritos: 34,
-    comentarios: [],
-  },
-];
-
 export default function LoadShorts() {
+  const { getShorts, createShort, updateShort, deleteShort } = useFetch();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<ShortItem | null>(null);
-  const [shorts, setShorts] = useState<ShortItem[]>(SHORTS_MOCK);
+  const [shorts, setShorts] = useState<ShortItem[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const getFavoriteList = async () => {
+      setLoading(true);
+      try {
+        const { success, shorts, message } = await getShorts();
+        if (!isMounted) return;
+
+        if (success) {
+          setShorts(shorts);
+        } else {
+          setError(message!);
+        }
+      } catch (err) {
+        if (isMounted) setError("Error al cargar los equipos favoritos");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    getFavoriteList();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const openNew = () => {
     setEditingItem(null);
@@ -78,31 +53,80 @@ export default function LoadShorts() {
     setModalVisible(true);
   };
 
-  const handleSaveShort = (item: LoadShortItem | ShortItem) => {
-    // SI VIENE CON ID → es edición
-    if ("id" in item) {
-      setShorts((prev) =>
-        prev.map((s) => (s.id === item.id ? (item as ShortItem) : s))
-      );
+  const handleSaveShort = async (item: LoadShortItem | ShortItem) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("descripcion", item.descripcion);
+      formData.append("video", {
+        uri: item.video.uri,
+        name: item.video.name || "video.mp4",
+        type: item.video.mimeType || "video/mp4",
+      } as any);
+      formData.append("thumbnail", {
+        uri: item.thumbnail.uri,
+        name: item.thumbnail.name || "thumb.jpg",
+        type: item.thumbnail.mimeType || "image/jpeg",
+      } as any);
+      // ✅ EDIT
+      if ("id" in item) {
+        const { success, short, message } = await updateShort(
+          item.id,
+          formData,
+        );
+
+        if (!success || !short) {
+          throw new Error(message || "No fue posible editar el short.");
+        }
+
+        // 🔥 Conserva fecha local si el back no la devuelve
+        const merged: ShortItem = {
+          ...short,
+          fecha: item.fecha ?? short.fecha,
+        };
+
+        setShorts((prev) => prev.map((s) => (s.id === item.id ? merged : s)));
+      }
+      // ✅ CREATE
+      else {
+        const resp = await createShort(formData);
+
+        if (!resp.success || !resp.short) {
+          throw new Error(resp.message || "No fue posible crear el short.");
+        }
+
+        // Como el back no recibe fecha, usamos la del modal para UI
+        const created: ShortItem = {
+          ...resp.short,
+          fecha: item.fecha,
+        };
+
+        setShorts((prev) => [created, ...prev]);
+      }
+
+      setModalVisible(false);
+      setEditingItem(null);
+    } catch (e: any) {
+      setError(e?.message || "Error guardando el short.");
+    } finally {
+      setLoading(false);
     }
-
-    // SI NO TIENE ID → es nuevo
-    else {
-      const newShort: ShortItem = {
-        ...item,
-        id: Date.now().toString(),
-        favoritos: 0,
-        comentarios: [],
-      };
-
-      setShorts((prev) => [newShort, ...prev]);
-    }
-
-    setModalVisible(false);
   };
 
-  const handleDeleteShort = (id: string) => {
+  const handleDeleteShort = async (id: string) => {
+    setError(null);
+
+    // optimista (se ve rápido)
+    const snapshot = shorts;
     setShorts((prev) => prev.filter((s) => s.id !== id));
+
+    const { success, message } = await deleteShort(id);
+    if (!success) {
+      setShorts(snapshot); // revertir
+      setError(message || "No fue posible eliminar el short.");
+    }
   };
 
   const dataWithAddButton: ShortItem[] = [
@@ -114,9 +138,20 @@ export default function LoadShorts() {
       descripcion: "",
       comentarios: [],
       favoritos: 0,
+      liked: false,
     },
     ...shorts,
   ];
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
@@ -124,26 +159,26 @@ export default function LoadShorts() {
         Cargar Shorts
       </Text>
 
-      <FlatList
-        data={dataWithAddButton}
-        numColumns={2}
-        keyExtractor={(item) => item.id}
-        columnWrapperStyle={styles.row}
-        renderItem={({ item, index }) =>
+      <View style={styles.grid}>
+        {dataWithAddButton.map((item) =>
           item.id === "add" ? (
-            <TouchableOpacity style={styles.addCard} onPress={openNew}>
+            <TouchableOpacity
+              key="add"
+              style={styles.addCard}
+              onPress={openNew}
+            >
               <Text style={styles.addPlus}>＋</Text>
               <Text style={styles.addText}>Agregar short</Text>
             </TouchableOpacity>
           ) : (
-            <Card style={styles.card}>
+            <Card key={item.id} style={styles.card}>
               <View>
                 <Image
-                  source={{ uri: item.thumbnail }}
+                  source={{
+                    uri: `http://192.168.10.16:3001/api/shorts/image/${item.thumbnail}`,
+                  }}
                   style={styles.thumbnail}
                 />
-
-                {/* Botones flotantes */}
                 <View style={styles.actions}>
                   <IconButton
                     icon="pencil"
@@ -167,14 +202,16 @@ export default function LoadShorts() {
                 </Text>
               </View>
             </Card>
-          )
-        }
-      />
+          ),
+        )}
+      </View>
+
       <ShortModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSave={handleSaveShort}
         editing={editingItem}
+        loading={loading}
       />
     </PrivateLayout>
   );
@@ -191,18 +228,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
   },
-
-  // ADD BUTTON
-  addCard: {
-    width: "48%",
-    height: 180,
-    borderWidth: 2,
-    borderColor: "#bbb",
-    borderStyle: "dashed",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   addPlus: {
     fontSize: 42,
     fontWeight: "300",
@@ -211,13 +236,6 @@ const styles = StyleSheet.create({
   addText: {
     marginTop: 8,
     color: "#777",
-  },
-
-  // SHORT ITEM
-  card: {
-    width: "48%",
-    borderRadius: 12,
-    overflow: "hidden",
   },
 
   thumbnail: {
@@ -249,5 +267,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 3,
     fontWeight: "500",
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+
+  card: {
+    width: "48%",
+    marginBottom: 14,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+
+  addCard: {
+    width: "48%",
+    height: 180,
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: "#bbb",
+    borderStyle: "dashed",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

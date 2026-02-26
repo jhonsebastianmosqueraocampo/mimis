@@ -1,15 +1,19 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { LeagueB, RootStackParamList, Team } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Avatar,
   Button,
   Card,
-  Chip, Menu, Text,
-  TextInput
+  Chip,
+  Menu,
+  Text,
+  TextInput,
 } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
@@ -84,7 +88,8 @@ export default function Stats() {
   const [loading, setLoading] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const seasons = Array.from({ length: 11 }, (_, i) => currentYear - i);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // 1️⃣ Obtener ligas
   useEffect(() => {
@@ -94,7 +99,6 @@ export default function Stats() {
         const { leagues } = await getLeagues();
         setLeagues(leagues);
       } catch (error) {
-        console.error("Error cargando ligas:", error);
       } finally {
         setLoading(false);
       }
@@ -122,7 +126,7 @@ export default function Stats() {
   const handleSelectTeam = async (
     team: Team,
     leagueId: string,
-    season: number
+    season: number,
   ) => {
     setSelectedTeam(team);
     setLoading(true);
@@ -130,7 +134,7 @@ export default function Stats() {
       const { teamSummaty } = await getTeamSummary(
         team.teamId,
         leagueId,
-        season
+        season,
       );
       setSummary(teamSummaty);
     } catch (error) {
@@ -146,12 +150,12 @@ export default function Stats() {
       handleSelectTeam(
         selectedTeam,
         selectedLeague!.league.id.toString(),
-        season
+        season,
       );
   }, [season]);
 
   const filteredLeagues = leagues.filter((l) =>
-    l.league.name.toLowerCase().includes(search.toLowerCase())
+    l.league.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const actionLeague = (id: string) => {
@@ -161,6 +165,15 @@ export default function Stats() {
   const actionTeam = (id: string) => {
     navigation.navigate("team", { id });
   };
+
+  if (loading)
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
 
   return (
     <PrivateLayout>
@@ -190,7 +203,7 @@ export default function Stats() {
                     borderLeftColor: PRIMARY,
                     borderLeftWidth: 4,
                   }}
-                  onPress={()=>actionLeague(l.league.id.toString())}
+                  onPress={() => actionLeague(l.league.id.toString())}
                 >
                   <Card.Title
                     title={l.league.name}
@@ -233,6 +246,32 @@ export default function Stats() {
               Volver a ligas
             </Button>
 
+            <View style={styles.leagueRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.leagueName}>
+                  {selectedLeague.league.name}
+                </Text>
+                <Text style={styles.leagueCountry}>
+                  {selectedLeague.country.name}
+                </Text>
+              </View>
+
+              <Button
+                mode="contained-tonal"
+                icon="arrow-right"
+                onPress={() =>
+                  navigation.navigate("tournament", {
+                    id: selectedLeague.league.id.toString(),
+                  })
+                }
+                style={styles.leagueButton}
+                labelStyle={{ fontWeight: "600" }}
+                compact
+              >
+                Ver detalles
+              </Button>
+            </View>
+
             {loading ? (
               <ActivityIndicator animating color={PRIMARY} />
             ) : (
@@ -244,7 +283,7 @@ export default function Stats() {
                     borderLeftColor: PRIMARY,
                     borderLeftWidth: 4,
                   }}
-                  onPress={()=>actionTeam(t.teamId.toString())}
+                  onPress={() => actionTeam(t.teamId.toString())}
                 >
                   <Card.Title
                     title={t.name}
@@ -260,7 +299,7 @@ export default function Stats() {
                           handleSelectTeam(
                             t,
                             selectedLeague.league.id.toString(),
-                            season
+                            season,
                           )
                         }
                       >
@@ -372,6 +411,22 @@ export default function Stats() {
                       Posición #{summary.position} · {summary.points} pts
                     </Text>
                   </View>
+                  <Button
+                    icon="arrow-right"
+                    mode="outlined"
+                    textColor={PRIMARY}
+                    style={{
+                      borderColor: PRIMARY,
+                      marginBottom: 10,
+                    }}
+                    onPress={() =>
+                      navigation.navigate("team", {
+                        id: summary.teamId.toString(),
+                      })
+                    }
+                  >
+                    Ver detalles
+                  </Button>
                 </View>
 
                 {/* Estadísticas */}
@@ -496,8 +551,8 @@ export default function Stats() {
                                 match.result === "W"
                                   ? "#2ecc71"
                                   : match.result === "D"
-                                  ? "#f39c12"
-                                  : "#e74c3c",
+                                    ? "#f39c12"
+                                    : "#e74c3c",
                             }}
                           >
                             {match.result}
@@ -519,7 +574,36 @@ export default function Stats() {
             </Card>
           </>
         )}
+        <View style={{ marginVertical: 10, alignItems: "center" }}>
+          <AdBanner />
+        </View>
       </ScrollView>
     </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  leagueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    gap: 12,
+  },
+
+  leagueName: {
+    color: PRIMARY,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  leagueCountry: {
+    color: "#666",
+    fontSize: 13,
+  },
+
+  leagueButton: {
+    borderRadius: 20,
+    paddingHorizontal: 12,
+  },
+});

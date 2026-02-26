@@ -1,47 +1,91 @@
-import { Fixture } from "@/types";
+import AdBanner from "@/services/ads/AdBanner";
+import { Fixture, swiperItem } from "@/types";
 import dayjs from "dayjs";
 import React, { useMemo, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
 } from "react-native";
-import { Avatar, Card, Divider } from "react-native-paper";
+import { Avatar, Card, Chip, Divider } from "react-native-paper";
 
 type PastMatchesListProps = {
   previousMatches: Fixture[];
   actionMatch: (id: string) => void;
   teamId?: string;
+  equiposFavoritos?: swiperItem[];
 };
 
 export default function PastMatchesList({
   previousMatches,
   teamId,
   actionMatch,
+  equiposFavoritos,
 }: PastMatchesListProps) {
   const [searchText, setSearchText] = useState("");
 
-  // 🧠 Filtrado por nombre de equipo
-  const filteredMatches = useMemo(() => {
-    if (!searchText.trim()) return previousMatches;
-    const query = searchText.toLowerCase();
-    return previousMatches.filter(
-      (match) =>
-        match.teams.home.name.toLowerCase().includes(query) ||
-        match.teams.away.name.toLowerCase().includes(query)
+  const [selectedFavoriteTeam, setSelectedFavoriteTeam] = useState<
+    string | "ALL"
+  >("ALL");
+
+  const favoriteTeamsInUpcoming = useMemo(() => {
+    if (!equiposFavoritos || !previousMatches) return [];
+
+    // Extraer los nombres de equipos que aparecen en los próximos partidos
+    const teamsInUpcoming = new Set<string>();
+
+    previousMatches.forEach((m) => {
+      teamsInUpcoming.add(m.teams.home.name.toLowerCase());
+      teamsInUpcoming.add(m.teams.away.name.toLowerCase());
+    });
+
+    // Filtrar solo los favoritos que estén en la lista anterior
+    return equiposFavoritos.filter((fav) =>
+      teamsInUpcoming.has(fav.title.toLowerCase()),
     );
-  }, [previousMatches, searchText]);
+  }, [equiposFavoritos, previousMatches]);
+
+  // 🧠 Filtrar partidos por texto y por equipo favorito seleccionado
+  const filteredMatches = useMemo(() => {
+    let results = previousMatches;
+
+    // Filtrar por equipo favorito seleccionado
+    if (selectedFavoriteTeam !== "ALL") {
+      const favLower = selectedFavoriteTeam.toLowerCase();
+
+      results = results.filter(
+        (match) =>
+          match.teams.home.name.toLowerCase() === favLower ||
+          match.teams.away.name.toLowerCase() === favLower,
+      );
+    }
+
+    // Filtro por texto del buscador
+    if (searchText.trim()) {
+      const query = searchText.toLowerCase();
+      results = results.filter(
+        (match) =>
+          match.teams.home.name.toLowerCase().includes(query) ||
+          match.teams.away.name.toLowerCase().includes(query),
+      );
+    }
+
+    return results;
+  }, [previousMatches, searchText, selectedFavoriteTeam]);
 
   // 🗂️ Agrupar partidos por ronda / jornada
   const groupedByRound = useMemo(() => {
     const groups: Record<string, Fixture[]> = {};
+
     filteredMatches.forEach((match) => {
       const round = match.league?.round || "Sin ronda";
       if (!groups[round]) groups[round] = [];
       groups[round].push(match);
     });
+
     return Object.entries(groups);
   }, [filteredMatches]);
 
@@ -58,12 +102,69 @@ export default function PastMatchesList({
         placeholderTextColor="#888"
       />
 
+      {/* Filtro por favoritos */}
+      {favoriteTeamsInUpcoming.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.chipsRowHorizontal, { marginTop: 4 }]}
+        >
+          <Chip
+            selected={selectedFavoriteTeam === "ALL"}
+            onPress={() => setSelectedFavoriteTeam("ALL")}
+            style={[styles.chip, { backgroundColor: "#FFFBEA" }]}
+            avatar={<Text style={{ fontSize: 16 }}>⭐</Text>}
+          >
+            Favoritos
+          </Chip>
+
+          {favoriteTeamsInUpcoming.map((eq) => (
+            <Chip
+              key={eq.id}
+              selected={selectedFavoriteTeam === eq.title}
+              onPress={() =>
+                setSelectedFavoriteTeam((prev) =>
+                  prev === eq.title ? "ALL" : eq.title,
+                )
+              }
+              style={[
+                styles.chip,
+                {
+                  backgroundColor:
+                    selectedFavoriteTeam === eq.title ? "#D6F5D6" : "#F0F0F0",
+                },
+              ]}
+              avatar={
+                <Image
+                  source={{ uri: eq.img }}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: "#fff",
+                  }}
+                />
+              }
+            >
+              {eq.title}
+            </Chip>
+          ))}
+        </ScrollView>
+      )}
+
       <ScrollView style={styles.scroll} contentContainerStyle={{ gap: 20 }}>
         {groupedByRound.length === 0 ? (
           <Text style={styles.noResults}>No se encontraron resultados.</Text>
         ) : (
-          groupedByRound.map(([round, matches]) => (
+          groupedByRound.map(([round, matches], roundIndex) => (
             <View key={round}>
+              {/* Cada 2 rondas insertamos banner */}
+              {roundIndex > 0 && roundIndex % 2 === 0 && (
+                <View style={{ marginVertical: 12 }}>
+                  <AdBanner />
+                </View>
+              )}
+
               <Text style={styles.roundTitle}>{round}</Text>
 
               {matches.map((match, index) => {
@@ -187,4 +288,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stadiumText: { fontSize: 12, color: "#666", marginLeft: 4 },
+  chip: { marginRight: 8, marginBottom: 8 },
+  chipsRowHorizontal: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingRight: 12,
+  },
 });

@@ -1,9 +1,11 @@
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { PlayerCareer } from "@/types";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { ActivityIndicator, Chip } from "react-native-paper";
+import { Chip } from "react-native-paper";
+import Loading from "./Loading";
 import PlayerCareerScreen from "./PlayerCareerScreen";
 
 type PlayerTeamHistoryProps = {
@@ -30,7 +32,7 @@ export default function PlayerTeamHistory({
       try {
         const { success, playerCareer, message } = await getPlayerCareer(
           playerId,
-          selectedItem
+          selectedItem,
         );
 
         if (!isMounted) return;
@@ -57,7 +59,13 @@ export default function PlayerTeamHistory({
   }, [selectedItem, playerId]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   return (
@@ -89,6 +97,10 @@ export default function PlayerTeamHistory({
         </ScrollView>
       </View>
       <PlayerCareerScreen player={playerCareer!} />
+
+      <View style={{ marginVertical: 24, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </>
   );
 }

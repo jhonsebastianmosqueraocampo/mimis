@@ -3,17 +3,11 @@ import { LiveMatch, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TouchableOpacity, View } from "react-native";
-import {
-  ActivityIndicator,
-  Avatar,
-  Card,
-  Chip,
-  Divider,
-  Text,
-} from "react-native-paper";
+import { Avatar, Card, Chip, Divider, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import DynamicMatchView from "./DynamicMatchView";
 import FixtureLineups from "./FixtureLineups";
+import Loading from "./Loading";
 import StarRating from "./StarRating";
 
 type MatchLiveProps = { fixtureId: string };
@@ -60,7 +54,8 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
   const [tab, setTab] = useState("timeline");
   const [showAll, setShowAll] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const tabs = [
     { key: "timeline", label: "Minuto a minuto", icon: "timeline" },
@@ -100,9 +95,9 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
       (live?.events || []).filter(
         (e) =>
           (e.type || "").toLowerCase() === "goal" ||
-          (e.detail || "").toLowerCase().includes("goal")
+          (e.detail || "").toLowerCase().includes("goal"),
       ),
-    [live]
+    [live],
   );
 
   const lastEvent = useMemo(() => (live?.events || []).slice(-1)[0], [live]);
@@ -139,7 +134,13 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
   }
 
   if (loading) {
-    return <ActivityIndicator animating style={{ marginTop: 20 }} />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   if (!live) {
@@ -154,12 +155,12 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
   }
 
   const handleTeam = (id: string) => {
-    navigation.navigate('team', {id})
-  }
+    navigation.navigate("team", { id });
+  };
 
   const handlePlayer = (id: string) => {
-    navigation.navigate('player', {id})
-  }
+    navigation.navigate("player", { id });
+  };
 
   const home = live.teams.home;
   const away = live.teams.away;
@@ -175,7 +176,10 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
       }}
     >
       {/* Local */}
-      <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(home.id.toString())}>
+      <TouchableOpacity
+        style={{ alignItems: "center", flex: 1 }}
+        onPress={() => handleTeam(home.id.toString())}
+      >
         <Avatar.Image size={44} source={{ uri: home.logo }} />
         <Text numberOfLines={1} style={{ marginTop: 4, fontWeight: "600" }}>
           {home.name}
@@ -200,7 +204,10 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
       </View>
 
       {/* Visitante */}
-      <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(away.id.toString())}>
+      <TouchableOpacity
+        style={{ alignItems: "center", flex: 1 }}
+        onPress={() => handleTeam(away.id.toString())}
+      >
         <Avatar.Image size={44} source={{ uri: away.logo }} />
         <Text numberOfLines={1} style={{ marginTop: 4, fontWeight: "600" }}>
           {away.name}
@@ -324,8 +331,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                 borderWidth: 1,
                 borderColor: "#ccc",
                 borderRadius: 12,
-                overflow: "hidden",
-                height: 260,
+                minHeight: 260,
                 backgroundColor: "#0b6623",
               }}
             >
@@ -391,11 +397,21 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                       }}
                     >
                       ⚽{" "}
-                      <Text style={{ fontWeight: "600" }} onPress={()=>handlePlayer(g.player?.id?.toString() ?? '')}>
+                      <Text
+                        style={{ fontWeight: "600" }}
+                        onPress={() =>
+                          handlePlayer(g.player?.id?.toString() ?? "")
+                        }
+                      >
                         {g.player?.name}
                       </Text>
                       {g.assist?.name ? (
-                        <Text style={{ color: "#555" }} onPress={()=>handlePlayer(g.assist?.id?.toString() ?? '')}>
+                        <Text
+                          style={{ color: "#555" }}
+                          onPress={() =>
+                            handlePlayer(g.assist?.id?.toString() ?? "")
+                          }
+                        >
                           {" "}
                           (asist. {g.assist?.name})
                         </Text>
@@ -415,7 +431,11 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
               Alineaciones
             </Text>
             <Divider style={{ marginVertical: 8 }} />
-            <FixtureLineups fixtureId={fixtureId} events={live.events} status={live.status}/>
+            <FixtureLineups
+              fixtureId={fixtureId}
+              events={live.events}
+              status={live.status}
+            />
           </View>
         )}
 
@@ -456,7 +476,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                       "Red Cards",
                       "Offsides",
                       "Passes Accurate",
-                    ].includes(s.label)
+                    ].includes(s.label),
                   )
                   .map((s, i) => (
                     <StatRow
@@ -481,7 +501,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                         "Red Cards",
                         "Offsides",
                         "Passes Accurate",
-                      ].includes(s.label)
+                      ].includes(s.label),
                   )
                   .slice(0, 6)
                   .map((s, i) => (

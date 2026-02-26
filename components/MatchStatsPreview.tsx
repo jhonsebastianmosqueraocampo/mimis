@@ -1,12 +1,10 @@
-import { useFetch } from "@/hooks/FetchContext";
 import { PreMatchStats, RootStackParamList } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import {
-  ActivityIndicator,
   Avatar,
   Card,
   DataTable,
@@ -15,53 +13,13 @@ import {
 } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
-type MatchStatsPreviewProps = { fixtureId: string };
+type MatchStatsPreviewProps = { stats: PreMatchStats };
 
-export default function MatchStatsPreview({
-  fixtureId,
-}: MatchStatsPreviewProps) {
-  const { getPreMatchStats } = useFetch();
-  const [stats, setStats] = useState<PreMatchStats>();
+export default function MatchStatsPreview({ stats }: MatchStatsPreviewProps) {
   const [section, setSection] = useState("h2h");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchStats = async () => {
-      setLoading(true);
-      try {
-        const { success, stats, message } = await getPreMatchStats(fixtureId);
-
-        if (!isMounted) return;
-
-        if (success) {
-          setStats(stats!);
-        } else {
-          setError(message!);
-        }
-      } catch (err) {
-        if (isMounted) setError("Error al cargar el fixture");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    if (fixtureId) {
-      fetchStats();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [fixtureId]);
-
-  if (loading) {
-    return <ActivityIndicator animating={true} style={{ marginTop: 20 }} />;
-  }
 
   const ResultRow = ({
     match,
@@ -72,9 +30,6 @@ export default function MatchStatsPreview({
   }) => {
     // ¿el equipo analizado fue local o visitante en este partido?
     const isTeamHome = match.teams.home.id === teamId;
-
-    const team = isTeamHome ? match.teams.home : match.teams.away;
-    const opp = isTeamHome ? match.teams.away : match.teams.home;
 
     const teamGoals = isTeamHome ? match.goals.home : match.goals.away;
     const oppGoals = isTeamHome ? match.goals.away : match.goals.home;
@@ -89,8 +44,8 @@ export default function MatchStatsPreview({
     const icon = isWin
       ? "check-circle"
       : isLose
-      ? "close-circle"
-      : "minus-circle";
+        ? "close-circle"
+        : "minus-circle";
     const iconColor = isWin ? "#2e7d32" : isLose ? "#c62828" : "#616161";
 
     return (

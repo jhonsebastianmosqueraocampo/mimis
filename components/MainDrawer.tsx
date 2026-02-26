@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/AuthContext";
 import { theme } from "@/theme";
 import { RootStackParamList } from "@/types";
 import { useNavigation } from "@react-navigation/native";
@@ -6,9 +7,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
 import { Divider, Drawer, IconButton, List } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
@@ -19,62 +19,112 @@ type MainDrawerProps = {
   setOpenMainDrawer: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
+type Role = "user" | "administrador";
+type Level = "novato" | "intermedio" | "aficionado" | "leyenda";
+
 type MenuItem = {
   label: string;
   icon: string;
   to: keyof RootStackParamList;
+  roles?: Role[];
+  levels?: Level[];
 };
 
 const menuItems: MenuItem[] = [
-  // INICIO
-  { label: "Inicio", icon: "home", to: "index" },
-
-  // VIDEOS / HIGHLIGHTS
-  { label: "Subir Shorts", icon: "video-upload", to: "loadShorts" },
-  { label: "Shorts", icon: "video", to: "shorts" },
-  { label: "Subir Top 10 Ligas", icon: "upload", to: "loadWorldResumeVideos" },
-  { label: "Subir Top 10 Sintético", icon: "upload", to: "loadSyntheticResumeVideos" },
-  { label: "Top 10 Ligas", icon: "trophy-outline", to: "worldResumeVideos" },
-  { label: "Top 10 Sintético", icon: "fire", to: "weekResumeVideos" },
-
-  // BÚSQUEDA / NOTICIAS
-  { label: "Buscar", icon: "magnify", to: "search" },
-  { label: "Agregar Manual (1x1)", icon: "playlist-plus", to: "loadOneByOne" },
-  { label: "Lista Manual", icon: "playlist-check", to: "oneByOne" },
-  { label: "Agregar Noticia", icon: "newspaper-plus", to: "addNews" },
-  { label: "Noticias", icon: "newspaper-variant-multiple-outline", to: "news" },
-  { label: "Fichajes y Rumores", icon: "swap-horizontal-bold", to: "transferNews" },
-  { label: "Resúmenes y Goles", icon: "soccer", to: "resumeAndGoals" },
+  // =========================
+  // PRINCIPAL
+  // =========================
+  { label: "Inicio", icon: "home-outline", to: "index" },
+  { label: "Shorts", icon: "play-circle-outline", to: "shorts" },
+  { label: "Top 10 Ligas", icon: "trophy-outline", to: "worldTop10Screen" },
+  {
+    label: "Top 10 Sintético",
+    icon: "lightning-bolt-outline",
+    to: "WeekSyntheticResumeVideos",
+  },
+  { label: "Noticias", icon: "newspaper-variant-outline", to: "news" },
+  {
+    label: "Fichajes y Rumores",
+    icon: "newspaper-variant-outline",
+    to: "transferNews",
+  },
+  { label: "Resúmenes y Goles", icon: "soccer-field", to: "resumeAndGoals" },
   { label: "Entrevistas", icon: "microphone-outline", to: "interviews" },
+  { label: "Buscar", icon: "magnify", to: "search" },
 
-  // FAVORITOS
+  // =========================
+  // INTERACCIÓN
+  // =========================
   { label: "Favoritos", icon: "heart-outline", to: "favorites" },
-  { label: "Equipos Seguidos", icon: "shield-star-outline", to: "favoriteTeams" },
-  { label: "Jugadores Seguidos", icon: "account-star-outline", to: "favoritePlayers" },
-
-  // APUESTAS / PUNTOS / PREDICCIONES
-  { label: "Ganar Puntos", icon: "coin", to: "earnPoints" },
-  { label: "Crear Apuesta", icon: "dice-multiple", to: "createBet" },
-  { label: "Mis Apuestas", icon: "ticket-confirmation-outline", to: "bets" },
-  { label: "Predicciones", icon: "lightbulb-on-outline", to: "predictions" },
-
-  // ESTADÍSTICAS / SELECCIONES
+  { label: "Equipos Seguidos", icon: "shield-outline", to: "favoriteTeams" },
+  {
+    label: "Jugadores Seguidos",
+    icon: "account-star-outline",
+    to: "favoritePlayers",
+  },
+  { label: "Predicciones", icon: "chart-bell-curve", to: "predictions" },
   { label: "Estadísticas", icon: "chart-line", to: "stats" },
   { label: "Selecciones y Torneos", icon: "earth", to: "countries" },
 
+  // =========================
+  // ECONOMÍA
+  // =========================
+  { label: "Crear Apuesta", icon: "dice-multiple-outline", to: "createBet" },
+  { label: "Mis Apuestas", icon: "ticket-outline", to: "bets" },
+
+  // =========================
+  // ENTRENAMIENTO
+  // =========================
+  { label: "Entrenamiento", icon: "dumbbell", to: "training" },
+
+  // =========================
   // PERFIL
+  // =========================
   { label: "Mi Perfil", icon: "account-circle-outline", to: "profile" },
 
-  // ENTRENAMIENTO
-  { label: "Entrenamiento", icon: "dumbbell", to: "training" },
-];
+  // =========================
+  // ADMIN / PERMISOS ESPECIALES
+  // =========================
 
+  {
+    label: "Subir Shorts",
+    icon: "video-plus-outline",
+    to: "loadShorts",
+    roles: ["administrador"],
+  },
+  {
+    label: "Subir Top 10 Ligas",
+    icon: "upload-outline",
+    to: "loadWorldResumeVideos",
+    roles: ["administrador"],
+  },
+  {
+    label: "Subir Top 10 Sintético",
+    icon: "upload-outline",
+    to: "loadSyntheticResumeVideos",
+    roles: ["administrador"],
+  },
+  {
+    label: "Agregar (1x1)",
+    icon: "playlist-plus",
+    to: "loadOneByOne",
+    roles: ["administrador"],
+  },
+  {
+    label: "Agregar Noticia",
+    icon: "newspaper-plus",
+    to: "addNews",
+    roles: ["administrador", "user"],
+    levels: ["intermedio", "aficionado", "leyenda"],
+  },
+];
 
 export default function MainDrawer({
   active,
   setActive,
   setOpenMainDrawer,
 }: MainDrawerProps) {
+  const { user } = useAuth();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -82,6 +132,21 @@ export default function MainDrawer({
     setActive(to);
     navigation.navigate(to);
   };
+
+  const filteredMenu = menuItems.filter((item) => {
+    // Si no tiene restricción, mostrar
+    if (!item.roles && !item.levels) return true;
+
+    // Validar role
+    const roleAllowed =
+      !item.roles || item.roles.includes((user?.role ?? "user") as Role);
+
+    // Validar level
+    const levelAllowed =
+      !item.levels || item.levels.includes((user?.level ?? "novato") as Level);
+
+    return roleAllowed && levelAllowed;
+  });
 
   return (
     <View style={styles.overlay}>
@@ -102,16 +167,16 @@ export default function MainDrawer({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <TextInput
+          {/* <TextInput
             placeholder="Buscar..."
             placeholderTextColor="#aaa"
             style={[styles.input, { borderColor: theme.colors.outline }]}
-          />
+          /> */}
 
           <Divider style={{ marginVertical: 12 }} />
 
           <Drawer.Section>
-            {menuItems.map((item, index) => {
+            {filteredMenu.map((item, index) => {
               const isActive = active === item.to;
               return (
                 <List.Item

@@ -2,15 +2,16 @@ import { useFetch } from "@/hooks/FetchContext";
 import { VideoYoutube } from "@/types";
 import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    Image,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
+import Loading from "./Loading";
 
 const { width } = Dimensions.get("window");
 
@@ -50,7 +51,11 @@ export default function MatchPostVideos({teamA, teamB, query, season}: MatchPost
         };
       }, []);
 
-      if (loading) return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+      if (loading) return <Loading
+                visible={loading}
+                title="Cargando"
+                subtitle="Pronto tendrás la información"
+              />;
 
       const openVideo = (id: string) => {
           Linking.openURL(`https://www.youtube.com/watch?v=${id}`);

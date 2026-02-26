@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Linking, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Button, Chip, Text } from "react-native-paper";
+import { Button, Chip, Text } from "react-native-paper";
 
 import { useFetch } from "@/hooks/FetchContext";
-import { Fixture, swiperItem, VideoYoutube } from "@/types";
+import { Fixture, PreMatchStats, swiperItem, VideoYoutube } from "@/types";
 import FixtureLineups from "./FixtureLineups";
+import Loading from "./Loading";
 import MatchAnalysisPreview from "./MatchAnalysisPreview";
 import MatchBanner from "./MatchBanner";
 import MatchHistoryPreview from "./MatchHistoryPreview";
@@ -25,49 +26,37 @@ const items = [
 
 type MatchPreviewProps = {
   fixtureId: string;
+  fixture: Fixture | null;
 };
 
-export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
-  const { getFixture, getVideoFromYoutube } = useFetch();
+export default function MatchPreview({
+  fixtureId,
+  fixture,
+}: MatchPreviewProps) {
+  const { getVideoFromYoutube, getPreMatchStats } = useFetch();
   const [selectedItem, setSelectedItem] = useState(items[0]);
-  const [fixture, setFixture] = useState<Fixture>();
   const [videoPreview, setVideoPreview] = useState<VideoYoutube>();
   const [videoPreviewInterviews, setVideoPreviewInterviews] =
     useState<swiperItem[]>();
+  const [stats, setStats] = useState<PreMatchStats>();
   const [showBlock, setShowBlock] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const STATUS = {
-    long: '',
-    short: '',
-    elapsed: null
-  }
+    long: "",
+    short: "",
+    elapsed: null,
+  };
 
   useEffect(() => {
     let isMounted = true;
-    const getFixtureMatch = async () => {
-      setLoading(true);
-      try {
-        const { success, fixture, message } = await getFixture(fixtureId);
-
-        if (!isMounted) return;
-
-        if (success) {
-          setFixture(fixture!);
-        } else {
-          setError(message!);
-        }
-      } catch (err) {
-        if (isMounted) setError("Error al cargar el fixture");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
     const getPreviewVideo = async () => {
       setLoading(true);
       if (!fixture?.date) return null;
-      const query = `${fixture.teams.home.name} vs ${fixture.teams.away.name} previa ${new Date().getFullYear()} fútbol`;
+      const query = `${fixture.teams.home.name} vs ${
+        fixture.teams.away.name
+      } previa ${new Date().getFullYear()} fútbol`;
       const matchDate = new Date(fixture.date);
       const now = new Date();
       const diffMs = matchDate.getTime() - now.getTime();
@@ -100,7 +89,7 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
       setLoading(true);
       if (!fixture?.date) return null;
       const year = new Date().getFullYear();
-      const query = `${fixture.teams.home.name} ${fixture.teams.away.name} entrevista partido declaraciones rueda de prensa ${year} fútbol`;
+      const query = `${fixture.teams.home.name} ${fixture.teams.away.name} ${year} fútbol`;
       const matchDate = new Date(fixture.date);
       const now = new Date();
       const diffMs = matchDate.getTime() - now.getTime();
@@ -121,7 +110,7 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
                 description: video.description,
                 date: new Date().toISOString(),
                 source: video.channelTitle,
-              })
+              }),
             );
             setVideoPreviewInterviews(interviews!);
           } else {
@@ -140,10 +129,29 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
       setLoading(false);
     };
 
+    const fetchStats = async () => {
+      setStatsLoading(true);
+      try {
+        const { success, stats, message } = await getPreMatchStats(fixtureId);
+
+        if (!isMounted) return;
+
+        if (success) {
+          setStats(stats!);
+        } else {
+          setError(message!);
+        }
+      } catch (err) {
+        if (isMounted) setError("Error al cargar el fixture");
+      } finally {
+        if (isMounted) setStatsLoading(false);
+      }
+    };
+
     if (fixtureId && selectedItem) {
-      getFixtureMatch();
       getPreviewVideo();
       getPreviewVideoInterviews();
+      fetchStats();
     }
 
     return () => {
@@ -152,7 +160,13 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
   }, [fixtureId]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const actionInterviews = (id: string) => {
@@ -206,7 +220,7 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
             style={{ marginTop: 8 }}
             onPress={() =>
               Linking.openURL(
-                `https://www.youtube.com/watch?v=${videoPreview?.videoId}`
+                `https://www.youtube.com/watch?v=${videoPreview?.videoId}`,
               )
             }
           >
@@ -251,7 +265,7 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
         {selectedItem.name.toLowerCase() === "entrevistas" &&
           (showBlock ? (
             <VerticalScroll
-              listItems={videoPreviewInterviews!}
+              listItems={videoPreviewInterviews ?? []}
               actionGeneralList={actionInterviews}
             />
           ) : (
@@ -265,17 +279,27 @@ export default function MatchPreview({ fixtureId }: MatchPreviewProps) {
         {selectedItem.name.toLowerCase() === "predicciones" && (
           <MatchPredictions fixtureId={fixtureId} />
         )}
-        {selectedItem.name.toLowerCase() === "estadísticas" && (
-          <MatchStatsPreview fixtureId={fixtureId} />
+        {selectedItem.name.toLowerCase() === "estadísticas" && stats && (
+          <MatchStatsPreview stats={stats} />
         )}
-        {selectedItem.name.toLowerCase() === "análisis de partidos" && (
-          <MatchAnalysisPreview />
-        )}
-        {selectedItem.name.toLowerCase() === "historial de resultados" && (
-          <MatchHistoryPreview fixtureId={fixtureId} />
-        )}
+        {selectedItem.name.toLowerCase() === "análisis de partidos" &&
+          stats && <MatchAnalysisPreview stats={stats} fixtureId={fixtureId} />}
+        {selectedItem.name.toLowerCase() === "historial de resultados" &&
+          (statsLoading ? (
+            <Loading
+              visible
+              title="Cargando historial"
+              subtitle="Consultando enfrentamientos previos"
+            />
+          ) : stats ? (
+            <MatchHistoryPreview stats={stats} />
+          ) : (
+            <Text style={{ textAlign: "center", marginTop: 20, color: "gray" }}>
+              No hay historial disponible
+            </Text>
+          ))}
         {selectedItem.name.toLowerCase() === "alineaciones" && (
-          <FixtureLineups fixtureId={fixtureId} status= {STATUS}/>
+          <FixtureLineups fixtureId={fixtureId} status={STATUS} />
         )}
         {selectedItem.name.toLowerCase() === "Suma puntos y gana" && (
           <PenaltyGameSwipe />

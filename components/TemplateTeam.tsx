@@ -1,10 +1,16 @@
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
-import { ActivityIndicator, Divider } from "react-native-paper";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { Divider } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
-import type { RootStackParamList, swiperItem, TeamPlayerStatsByLeague } from "../types";
+import type {
+  RootStackParamList,
+  swiperItem,
+  TeamPlayerStatsByLeague,
+} from "../types";
+import Loading from "./Loading";
 import ScrollSection from "./ScrollSection";
 
 type TemplateTeamProps = {
@@ -61,7 +67,7 @@ export default function TemplateTeam({ teamId }: TemplateTeamProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigation =
-          useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     getSquad();
@@ -84,12 +90,14 @@ export default function TemplateTeam({ teamId }: TemplateTeamProps) {
     setLoading(true);
     const { success, coach, message } = await getCoachByTeam(teamId);
     if (success) {
-      const coachItem: swiperItem[] = [{
-        id: coach!.coachId.toString(),
-        title: coach!.name,
-        img: coach!.photo!,
-        pathTo: "",
-      }];
+      const coachItem: swiperItem[] = [
+        {
+          id: coach!.coachId.toString(),
+          title: coach!.name,
+          img: coach!.photo!,
+          pathTo: "",
+        },
+      ];
       setCoach(coachItem);
     } else {
       setError(message!);
@@ -98,54 +106,67 @@ export default function TemplateTeam({ teamId }: TemplateTeamProps) {
   };
 
   const actionPlayer = (id: string) => {
-    navigation.navigate('player', {id})
+    navigation.navigate("player", { id });
   };
 
   const actionCoach = (id: string) => {
-    navigation.navigate('coach', {id})
+    navigation.navigate("coach", { id });
   };
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Divider />
-      <ScrollSection
-        title="Arqueros"
-        list={teamSquad?.goalKeeper!}
-        shape="circle"
-        action={actionPlayer}
-      />
-      <Divider />
-      <ScrollSection
-        title="Defensas"
-        list={teamSquad?.defender!}
-        shape="circle"
-        action={actionPlayer}
-      />
-      <Divider />
-      <ScrollSection
-        title="Centrocampistas"
-        list={teamSquad?.midfielder!}
-        shape="circle"
-        action={actionPlayer}
-      />
-      <Divider />
-      <ScrollSection
-        title="Delanteros"
-        list={teamSquad?.attacker!}
-        shape="circle"
-        action={actionPlayer}
-      />
-      <Divider />
-      <ScrollSection
-        title="Técnico"
-        list={coach!}
-        shape="square"
-        action={actionCoach}
-      />
+      {teamSquad && (
+        <View>
+          <ScrollSection
+            title="Arqueros"
+            list={teamSquad?.goalKeeper!}
+            shape="circle"
+            action={actionPlayer}
+          />
+          <Divider />
+          <ScrollSection
+            title="Defensas"
+            list={teamSquad?.defender!}
+            shape="circle"
+            action={actionPlayer}
+          />
+          <Divider />
+          <ScrollSection
+            title="Centrocampistas"
+            list={teamSquad?.midfielder!}
+            shape="circle"
+            action={actionPlayer}
+          />
+          <Divider />
+          <ScrollSection
+            title="Delanteros"
+            list={teamSquad?.attacker!}
+            shape="circle"
+            action={actionPlayer}
+          />
+          <Divider />
+          <ScrollSection
+            title="Técnico"
+            list={coach!}
+            shape="square"
+            action={actionCoach}
+          />
+        </View>
+      )}
+      <View style={{ marginVertical: 24, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </ScrollView>
   );
 }

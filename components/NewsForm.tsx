@@ -1,5 +1,6 @@
+import { useAuth } from "@/hooks/AuthContext";
 import { useFetch } from "@/hooks/FetchContext";
-import { NewsItem, NewsPayload } from "@/types";
+import { CarruselFoto, NewsItem } from "@/types";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
@@ -10,51 +11,75 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Button, Chip, Divider, Text, TextInput } from "react-native-paper";
+import {
+  Button,
+  Chip,
+  Divider,
+  Portal,
+  Text,
+  TextInput,
+} from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import Loading from "./Loading";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   existingNews?: NewsItem | null;
+  setNews: React.Dispatch<React.SetStateAction<NewsItem[]>>;
 };
 
 const GREEN = "#2ecc71";
 const ENTIDADES = ["Jugador", "Equipo", "Entrenador"];
 
-export default function NewsForm({ visible, onClose, existingNews }: Props) {
+const getImageUri = (foto: string | ImagePicker.ImagePickerAsset): string => {
+  // Imagen recién seleccionada (local)
+  if (typeof foto !== "string") {
+    return foto.uri;
+  }
+
+  // Imagen del backend (solo filename)
+  return `http://192.168.10.16:3001/api/userNews/image/${foto}`;
+};
+
+export default function NewsForm({
+  visible,
+  onClose,
+  existingNews,
+  setNews,
+}: Props) {
   const { createUserNew, editUserNew } = useFetch();
+  const { user } = useAuth();
 
   const isEdit = !!existingNews;
 
   const [titulo, setTitulo] = useState("");
   const [entidad, setEntidad] = useState("");
-  const [fotoPrincipal, setFotoPrincipal] = useState("");
+  const [fotoPrincipal, setFotoPrincipal] = useState<any>(null);
   const [urlFotoPrincipal, setUrlFotoPrincipal] = useState("");
   const [desarrolloInicialNoticia, setDesarrolloInicialNoticia] = useState("");
-  const [carruselFotos, setCarruselFotos] = useState<
-    { foto: string; url: string }[]
-  >([]);
+  const [carruselFotos, setCarruselFotos] = useState<CarruselFoto[]>([]);
   const [desarrolloFinalNoticia, setDesarrolloFinalNoticia] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  // Cargar datos si viene noticia existente (editar)
+  // ==========================
+  // CARGA EN EDICIÓN
+  // ==========================
   useEffect(() => {
     if (existingNews) {
       setTitulo(existingNews.titulo);
       setEntidad(existingNews.entidad);
-      setFotoPrincipal(existingNews.fotoPrincipal);
+      setFotoPrincipal(
+        `http://192.168.10.16:3001/api/userNews/image/${existingNews.fotoPrincipal}`,
+      );
       setUrlFotoPrincipal(existingNews.urlFotoPrincipal);
       setDesarrolloInicialNoticia(existingNews.desarrolloInicialNoticia);
       setCarruselFotos(existingNews.carruselFotos);
       setDesarrolloFinalNoticia(existingNews.desarrolloFinalNoticia);
     } else {
-      // si es crear, limpiar
       setTitulo("");
       setEntidad("");
-      setFotoPrincipal("");
+      setFotoPrincipal(null);
       setUrlFotoPrincipal("");
       setDesarrolloInicialNoticia("");
       setCarruselFotos([]);
@@ -63,275 +88,279 @@ export default function NewsForm({ visible, onClose, existingNews }: Props) {
   }, [existingNews]);
 
   // ==========================
-  //  Selector de imagen (galería)
+  // IMAGE PICKER
   // ==========================
-  const pickImage = async (onSelect: (uri: string) => void) => {
+  const pickImage = async (
+    onSave: (asset: ImagePicker.ImagePickerAsset) => void,
+  ) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.9,
     });
 
     if (!result.canceled) {
-      onSelect(result.assets[0].uri);
+      onSave(result.assets[0]);
     }
   };
 
+  // ==========================
+  // CARRUSEL HELPERS
+  // ==========================
   const addCarruselFoto = () => {
-    setCarruselFotos([...carruselFotos, { foto: "", url: "" }]);
+    setCarruselFotos((prev) => [...prev, { foto: "", url: "" }]);
   };
 
   const updateCarruselFoto = (
     index: number,
     key: "foto" | "url",
-    value: string
+    value: ImagePicker.ImagePickerAsset | string,
   ) => {
-    const updated = [...carruselFotos];
-    updated[index][key] = value;
-    setCarruselFotos(updated);
+    setCarruselFotos((prev) => {
+      const copy = [...prev];
+      copy[index][key] = value as any;
+      return copy;
+    });
   };
 
   const removeCarruselFoto = (index: number) => {
-    setCarruselFotos(carruselFotos.filter((_, i) => i !== index));
+    setCarruselFotos((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // ==========================
+  // GUARDAR
+  // ==========================
   const handleSave = async () => {
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     try {
-      const newNew: NewsPayload = {
-        titulo,
-        entidad,
-        fotoPrincipal,
-        urlFotoPrincipal,
-        desarrolloInicialNoticia,
-        carruselFotos,
-        desarrolloFinalNoticia
-      };
+      const formData = new FormData();
 
-      const {success, message} = isEdit
-        ? await editUserNew(existingNews!.id, newNew)
-        : await createUserNew(newNew);
+      formData.append("titulo", titulo);
+      formData.append("entidad", entidad);
+      formData.append("urlFotoPrincipal", urlFotoPrincipal);
+      formData.append("desarrolloInicialNoticia", desarrolloInicialNoticia);
+      formData.append("desarrolloFinalNoticia", desarrolloFinalNoticia);
 
-      if (!success) {
-        setError(message || "No se pudo guardar la noticia.");
+      // FOTO PRINCIPAL (ya estaba bien)
+      if (fotoPrincipal?.uri) {
+        formData.append("fotoPrincipal", {
+          uri: fotoPrincipal.uri,
+          name: fotoPrincipal.fileName || "principal.jpg",
+          type: fotoPrincipal.mimeType || "image/jpeg",
+        } as any);
+      }
+
+      // ===== CARRUSEL =====
+      const carruselMeta: { foto: string; url: string }[] = [];
+
+      carruselFotos.forEach((item, index) => {
+        if (typeof item.foto === "string") {
+          // Imagen existente
+          carruselMeta.push({
+            foto: item.foto,
+            url: item.url,
+          });
+        } else {
+          // Imagen nueva
+          const field = `carrusel_${index}`;
+
+          carruselMeta.push({
+            foto: field,
+            url: item.url,
+          });
+
+          formData.append(field, {
+            uri: item.foto.uri,
+            name: item.foto.fileName || `${field}.jpg`,
+            type: item.foto.mimeType || "image/jpeg",
+          } as any);
+        }
+      });
+
+      formData.append("carruselFotos", JSON.stringify(carruselMeta));
+
+      const result = isEdit
+        ? await editUserNew(existingNews!.id!, formData)
+        : await createUserNew(formData);
+
+      if (!result?.success) {
         setLoading(false);
         return;
       }
 
-      setSuccess("Noticia guardada exitosamente 🎉");
-
-      setTimeout(() => {
-        setLoading(false);
-        onClose();
-      }, 1200);
-    } catch (err) {
-      setError("Ocurrió un error inesperado. Inténtalo de nuevo.");
+      setLoading(false);
+      onClose();
+    } catch (e) {
       setLoading(false);
     }
   };
 
+  if (loading) {
+    return <Loading visible title="Cargando" subtitle="Guardando noticia…" />;
+  }
+
+  // ==========================
+  // RENDER
+  // ==========================
   return (
-    <Modal visible={visible} animationType="slide">
-      {/* HEADER VERDE */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {isEdit ? "Editar noticia" : "Crear noticia"}
-        </Text>
-
-        <TouchableOpacity onPress={onClose}>
-          <Icon name="close" size={26} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* PREVIEW FOTO PRINCIPAL */}
-        {fotoPrincipal ? (
-          <Image
-            source={{ uri: fotoPrincipal }}
-            style={styles.mainImage}
-            resizeMode="cover"
-          />
-        ) : null}
-
-        {/* TÍTULO */}
-        <TextInput
-          label="Título"
-          value={titulo}
-          onChangeText={setTitulo}
-          mode="outlined"
-          style={styles.input}
-          outlineColor={GREEN}
-        />
-
-        {/* FOTO PRINCIPAL (URL + GALERÍA) */}
-        <Text style={styles.label}>Foto principal</Text>
-
-        <Button
-          mode="outlined"
-          icon="image"
-          onPress={() => pickImage(setFotoPrincipal)}
-          style={styles.outlinedButton}
-          textColor={GREEN}
-        >
-          Seleccionar desde galería
-        </Button>
-
-        <TextInput
-          label="Foto principal (URL)"
-          value={fotoPrincipal}
-          onChangeText={setFotoPrincipal}
-          mode="outlined"
-          style={styles.input}
-          outlineColor={GREEN}
-        />
-
-        <TextInput
-          label="URL origen de la foto"
-          value={urlFotoPrincipal}
-          onChangeText={setUrlFotoPrincipal}
-          mode="outlined"
-          style={styles.input}
-          outlineColor={GREEN}
-        />
-
-        {/* ENTIDAD - SELECT CON CHIPS */}
-        <Text style={styles.label}>Entidad relacionada</Text>
-        <View style={styles.entityContainer}>
-          {ENTIDADES.map((opt) => (
-            <Chip
-              key={opt}
-              selected={entidad === opt}
-              onPress={() => setEntidad(opt)}
-              style={[
-                styles.chip,
-                entidad === opt && { backgroundColor: GREEN },
-              ]}
-              textStyle={{
-                color: entidad === opt ? "white" : "black",
-                fontWeight: "bold",
-              }}
-            >
-              {opt}
-            </Chip>
-          ))}
+    <Portal>
+      <Modal visible={visible} animationType="slide">
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>
+            {isEdit ? "Editar noticia" : "Crear noticia"}
+          </Text>
+          <TouchableOpacity onPress={onClose}>
+            <Icon name="close" size={26} color="#fff" />
+          </TouchableOpacity>
         </View>
 
-        <Divider style={{ marginVertical: 15 }} />
-
-        {/* DESARROLLO INICIAL */}
-        <TextInput
-          label="Desarrollo inicial de la noticia"
-          value={desarrolloInicialNoticia}
-          onChangeText={setDesarrolloInicialNoticia}
-          multiline
-          mode="outlined"
-          style={styles.input}
-          outlineColor={GREEN}
-        />
-
-        {/* CARRUSEL DE FOTOS */}
-        <Text style={styles.sectionTitle}>🖼 Carrusel de fotos</Text>
-
-        {carruselFotos.map((item, i) => (
-          <View key={i} style={styles.carruselItem}>
-            {/* PREVIEW CARRUSEL */}
-            {item.foto ? (
-              <Image
-                source={{ uri: item.foto }}
-                style={styles.carruselImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.emptyImage}>
-                <Icon name="image-off" size={40} color="#777" />
-              </View>
-            )}
-
-            {/* BOTÓN GALERÍA */}
-            <Button
-              mode="outlined"
-              icon="image"
-              onPress={() =>
-                pickImage((uri) => updateCarruselFoto(i, "foto", uri))
-              }
-              style={styles.carruselButton}
-              textColor={GREEN}
-            >
-              Seleccionar foto desde galería
-            </Button>
-
-            {/* URL FOTO */}
-            <TextInput
-              label="Foto URL (opcional)"
-              value={item.foto}
-              onChangeText={(t) => updateCarruselFoto(i, "foto", t)}
-              mode="outlined"
-              style={styles.input}
-              outlineColor={GREEN}
-            />
-
-            {/* URL ORIGEN */}
-            <TextInput
-              label="URL origen"
-              value={item.url}
-              onChangeText={(t) => updateCarruselFoto(i, "url", t)}
-              mode="outlined"
-              style={styles.input}
-              outlineColor={GREEN}
-            />
-
-            {/* ELIMINAR ITEM */}
-            <TouchableOpacity
-              onPress={() => removeCarruselFoto(i)}
-              style={styles.deleteCarruselBtn}
-            >
-              <Icon name="trash-can" size={22} color="#ff4444" />
-            </TouchableOpacity>
+        <ScrollView style={styles.container}>
+          <Text style={styles.label}>Entidad relacionada</Text>
+          <View style={styles.entityContainer}>
+            {ENTIDADES.map((opt) => (
+              <Chip
+                key={opt}
+                selected={entidad === opt}
+                onPress={() => setEntidad(opt)}
+                style={[
+                  styles.chip,
+                  entidad === opt && { backgroundColor: GREEN },
+                ]}
+                textStyle={{
+                  color: entidad === opt ? "white" : "black",
+                  fontWeight: "bold",
+                }}
+              >
+                {opt}
+              </Chip>
+            ))}
           </View>
-        ))}
 
-        <Button
-          mode="outlined"
-          icon="plus"
-          onPress={addCarruselFoto}
-          style={styles.outlinedButton}
-          textColor={GREEN}
-        >
-          Agregar foto al carrusel
-        </Button>
+          {fotoPrincipal && (
+            <Image
+              source={{
+                uri:
+                  typeof fotoPrincipal === "string"
+                    ? fotoPrincipal
+                    : fotoPrincipal.uri,
+              }}
+              style={styles.mainImage}
+            />
+          )}
 
-        <Divider style={{ marginVertical: 15 }} />
+          <TextInput
+            label="Título"
+            value={titulo}
+            onChangeText={setTitulo}
+            mode="outlined"
+            style={styles.input}
+          />
 
-        {/* DESARROLLO FINAL */}
-        <TextInput
-          label="Desarrollo final de la noticia"
-          value={desarrolloFinalNoticia}
-          onChangeText={setDesarrolloFinalNoticia}
-          multiline
-          mode="outlined"
-          style={styles.input}
-          outlineColor={GREEN}
-        />
+          <Button
+            mode="outlined"
+            icon="image"
+            onPress={() => pickImage(setFotoPrincipal)}
+            style={styles.outlinedButton}
+          >
+            Seleccionar foto principal
+          </Button>
 
-        {/* BOTONES */}
-        <Button
-          mode="contained"
-          onPress={handleSave}
-          style={[styles.saveButton, { backgroundColor: GREEN }]}
-        >
-          Guardar noticia
-        </Button>
+          <TextInput
+            label="URL origen de la foto"
+            value={urlFotoPrincipal}
+            onChangeText={setUrlFotoPrincipal}
+            mode="outlined"
+            style={styles.input}
+          />
 
-        <Button onPress={onClose} style={{ marginTop: 10 }}>
-          Cancelar
-        </Button>
-      </ScrollView>
-    </Modal>
+          <TextInput
+            label="Desarrollo inicial"
+            value={desarrolloInicialNoticia}
+            onChangeText={setDesarrolloInicialNoticia}
+            multiline
+            mode="outlined"
+            style={styles.input}
+          />
+
+          <Text style={styles.sectionTitle}>🖼 Carrusel de fotos</Text>
+
+          {carruselFotos.map((item, i) => {
+            const uri = item.foto ? getImageUri(item.foto) : null;
+
+            return (
+              <View key={i} style={styles.carruselItem}>
+                {uri ? (
+                  <Image
+                    source={{ uri }}
+                    style={styles.carruselImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.emptyImage}>
+                    <Icon name="image-off" size={40} color="#777" />
+                  </View>
+                )}
+
+                <Button
+                  mode="outlined"
+                  icon="image"
+                  onPress={() =>
+                    pickImage((asset) => updateCarruselFoto(i, "foto", asset))
+                  }
+                  style={styles.carruselButton}
+                >
+                  Seleccionar foto
+                </Button>
+
+                <TextInput
+                  label="URL origen"
+                  value={item.url}
+                  onChangeText={(t) => updateCarruselFoto(i, "url", t)}
+                  mode="outlined"
+                  style={styles.input}
+                />
+              </View>
+            );
+          })}
+
+          <Button
+            mode="outlined"
+            icon="plus"
+            onPress={addCarruselFoto}
+            style={styles.outlinedButton}
+          >
+            Agregar foto al carrusel
+          </Button>
+
+          <Divider style={{ marginVertical: 15 }} />
+
+          <TextInput
+            label="Desarrollo final"
+            value={desarrolloFinalNoticia}
+            onChangeText={setDesarrolloFinalNoticia}
+            multiline
+            mode="outlined"
+            style={styles.input}
+          />
+
+          <Button
+            mode="contained"
+            onPress={handleSave}
+            style={styles.saveButton}
+          >
+            Guardar noticia
+          </Button>
+
+          <Button onPress={onClose} style={{ marginBottom: 40 }}>
+            Cancelar
+          </Button>
+        </ScrollView>
+      </Modal>
+    </Portal>
   );
 }
 
+// estilos: los tuyos, sin cambios
 const styles = StyleSheet.create({
   header: {
     backgroundColor: GREEN,
@@ -340,27 +369,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    elevation: 4,
   },
-  headerTitle: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  container: {
-    padding: 20,
-    backgroundColor: "#f7f7f7",
-  },
-  mainImage: {
-    width: "100%",
-    height: 200,
+  headerTitle: { color: "white", fontSize: 20, fontWeight: "bold" },
+  container: { padding: 20, backgroundColor: "#f7f7f7" },
+  mainImage: { width: "100%", height: 200, borderRadius: 12, marginBottom: 16 },
+  input: { marginBottom: 15, backgroundColor: "white" },
+  sectionTitle: { fontWeight: "bold", marginBottom: 10 },
+  carruselItem: {
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    padding: 12,
     borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: "#fff",
   },
-  input: {
-    marginBottom: 15,
-    backgroundColor: "white",
+  carruselImage: { width: "100%", height: 150, borderRadius: 10 },
+  emptyImage: {
+    height: 150,
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
   },
+  outlinedButton: { marginBottom: 15 },
+  carruselButton: { marginBottom: 10 },
+  deleteCarruselBtn: { position: "absolute", top: 10, right: 10 },
+  saveButton: { marginTop: 10 },
   label: {
     marginBottom: 6,
     fontWeight: "600",
@@ -375,54 +408,5 @@ const styles = StyleSheet.create({
   chip: {
     borderWidth: 1,
     borderColor: GREEN,
-  },
-  sectionTitle: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 10,
-    color: "#333",
-  },
-  carruselItem: {
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    position: "relative",
-  },
-  carruselImage: {
-    width: "100%",
-    height: 150,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  emptyImage: {
-    width: "100%",
-    height: 150,
-    borderRadius: 10,
-    marginBottom: 10,
-    backgroundColor: "#eee",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  deleteCarruselBtn: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-  },
-  outlinedButton: {
-    borderColor: GREEN,
-    marginBottom: 15,
-    borderRadius: 10,
-  },
-  carruselButton: {
-    borderColor: GREEN,
-    marginBottom: 10,
-    borderRadius: 10,
-  },
-  saveButton: {
-    marginTop: 10,
-    borderRadius: 10,
   },
 });

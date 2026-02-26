@@ -1,23 +1,16 @@
-import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { LiveMatch, RootStackParamList } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  View
-} from "react-native";
-import { ActivityIndicator, Avatar, Chip, Text } from "react-native-paper";
+import React, { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { Avatar, Chip, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import FixtureAnalysis from "./FixtureAnalysis";
 import FixtureLineups from "./FixtureLineups";
-import MatchAnalysisPost from "./MatchAnalysisPost";
 import MatchPostBanner from "./MatchPostBanner";
 import MatchPostStats from "./MatchPostStats";
 import MatchPostVideos from "./MatchPostVideos";
-
-const { height } = Dimensions.get("window");
 
 const items = [
   { id: "1", name: "Estadísticas" },
@@ -29,77 +22,52 @@ const items = [
 
 type MatchPostProps = {
   fixtureId: string;
+  liveMatchFixture: LiveMatch;
 };
 
-export default function MatchPost({ fixtureId }: MatchPostProps) {
-  const { getLiveMatch } = useFetch();
+export default function MatchPost({
+  fixtureId,
+  liveMatchFixture,
+}: MatchPostProps) {
   const [selectedItem, setSelectedItem] = useState(items[0]);
-  const [match, setMatch] = useState<LiveMatch>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  useEffect(() => {
-    let mounted = true;
-    const loadFixture = async () => {
-      try {
-        const { success, live, message } = await getLiveMatch(fixtureId);
-        if (mounted) {
-          if (success) {
-            setMatch(live!);
-          } else setError(message!);
-        }
-        setLoading(false);
-      } catch {
-        setError("Error al cargar el fixture");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadFixture();
-    return () => {
-      mounted = false;
-    };
-  }, [fixtureId]);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const goals = useMemo(
     () =>
-      (match?.events || []).filter(
+      (liveMatchFixture?.events || []).filter(
         (e) =>
           (e.type || "").toLowerCase() === "goal" ||
-          (e.detail || "").toLowerCase().includes("goal")
+          (e.detail || "").toLowerCase().includes("goal"),
       ),
-    [match]
+    [liveMatchFixture],
   );
-
-  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
 
   const handlePlayer = (id: string) => {
     navigation.navigate("player", { id });
   };
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 2 }}>
       <MatchPostBanner
         homeTeam={{
-          id: match?.teams.home.id.toString() ?? "",
-          title: match?.teams.home.name ?? "",
-          img: match?.teams.home.logo ?? "",
+          id: liveMatchFixture?.teams.home.id.toString() ?? "",
+          title: liveMatchFixture?.teams.home.name ?? "",
+          img: liveMatchFixture?.teams.home.logo ?? "",
           pathTo: "",
         }}
         awayTeam={{
-          id: match?.teams.away.id.toString() ?? "",
-          title: match?.teams.away.name ?? "",
-          img: match?.teams.away.logo ?? "",
+          id: liveMatchFixture?.teams.away.id.toString() ?? "",
+          title: liveMatchFixture?.teams.away.name ?? "",
+          img: liveMatchFixture?.teams.away.logo ?? "",
           pathTo: "",
         }}
-        datetime={match?.fixture.date.toString() ?? ""}
-        stadium={match?.fixture.venue.name ?? ""}
-        referee={match?.fixture.referee ?? ""}
-        tournament={match?.league.name ?? ""}
-        tournamentId={match?.league.id.toString() ?? ""}
-        result={`${match?.goals.home ?? 0} - ${match?.goals.away ?? 0}`}
+        datetime={liveMatchFixture?.fixture.date.toString() ?? ""}
+        stadium={liveMatchFixture?.fixture.venue.name ?? ""}
+        referee={liveMatchFixture?.fixture.referee ?? ""}
+        tournament={liveMatchFixture?.league.name ?? ""}
+        tournamentId={liveMatchFixture?.league.id.toString() ?? ""}
+        result={`${liveMatchFixture?.goals.home ?? 0} - ${liveMatchFixture?.goals.away ?? 0}`}
       />
 
       {/* Chips */}
@@ -131,21 +99,26 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
 
       {/* Contenido dinámico */}
       {selectedItem.name === "Estadísticas" && (
-        <MatchPostStats stats={match?.statistics!} />
+        <MatchPostStats stats={liveMatchFixture?.statistics!} />
       )}
 
       {selectedItem.name === "Calificaciones" && (
         <>
           <Text style={styles.placeholder}>📊 Calificaciones de jugadores</Text>
           <FixtureLineups
+            events={liveMatchFixture?.events}
+            status={liveMatchFixture?.status!}
             fixtureId={fixtureId}
-            events={match?.events}
-            status={match?.status!}
           />
         </>
       )}
 
-      {selectedItem.name === "Análisis del partido" && <MatchAnalysisPost />}
+      {selectedItem.name === "Análisis del partido" && (
+        <FixtureAnalysis
+          fixtureId={fixtureId}
+          stats={liveMatchFixture?.statistics}
+        />
+      )}
 
       {selectedItem.name === "Goles" && (
         <View style={styles.container}>
@@ -179,16 +152,16 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
                           g.detail?.includes("Own")
                             ? "soccer"
                             : g.detail?.includes("Penalty")
-                            ? "soccer"
-                            : "soccer"
+                              ? "soccer"
+                              : "soccer"
                         }
                         size={16}
                         color={
                           g.detail?.includes("Own")
                             ? "#e53935"
                             : g.detail?.includes("Penalty")
-                            ? "#1976D2"
-                            : "#1B5E20"
+                              ? "#1976D2"
+                              : "#1B5E20"
                         }
                         style={{ marginRight: 4 }}
                       />
@@ -217,12 +190,22 @@ export default function MatchPost({ fixtureId }: MatchPostProps) {
               </View>
             </View>
           ))}
+          <View style={{ marginVertical: 24, alignItems: "center" }}>
+            <AdBanner />
+          </View>
         </View>
       )}
 
       {selectedItem.name === "Resumen jugadas" && (
         <ScrollView style={{ flex: 1 }}>
-          <MatchPostVideos teamA={match?.teams.home.name!} teamB={match?.teams.away.name!} query="resume" season={new Date(match?.fixture.date!).getFullYear().toString()} />
+          <MatchPostVideos
+            teamA={liveMatchFixture?.teams.home.name!}
+            teamB={liveMatchFixture?.teams.away.name!}
+            query="resume"
+            season={new Date(liveMatchFixture?.fixture.date!)
+              .getFullYear()
+              .toString()}
+          />
         </ScrollView>
       )}
     </ScrollView>

@@ -1,101 +1,216 @@
-import { Product, RootStackParamList } from "@/types";
-import { useNavigation } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import ProductCard from "@/components/ProductCard";
+import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
+import { loadInterstitial } from "@/services/ads/interstitial";
+import { showRewardedAd } from "@/services/ads/rewarded";
+import { Product } from "@/types";
+import * as Location from "expo-location";
+import React, { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
+  ActivityIndicator,
   Appbar,
   Button,
   Card,
   Chip,
   Divider,
   Text,
-  useTheme,
 } from "react-native-paper";
-import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
-
-const PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: "Auriculares Bluetooth",
-    image: "https://falabella.scene7.com/is/image/FalabellaCO/12345678",
-    category: "Tecnología",
-    points: 2500,
-    description: "Auriculares inalámbricos con cancelación de ruido.",
-  },
-  {
-    id: 2,
-    name: "Cafetera Espresso",
-    image: "https://falabella.scene7.com/is/image/FalabellaCO/87654321",
-    category: "Hogar",
-    points: 4000,
-    description: "Cafetera automática con espumador de leche.",
-  },
-  {
-    id: 3,
-    name: "Bono de Compras $100.000",
-    image: "https://falabella.scene7.com/is/image/FalabellaCO/11223344",
-    category: "Bonos",
-    points: 10000,
-    description: "Canjea este bono y úsalo en tiendas físicas y online.",
-  },
-];
+import PrivateLayout from "./privateLayout";
 
 export default function StoreScreen() {
-  const theme = useTheme();
+  const { productsList, descountLimitAdsPerDayAndAddPoint, getLimitAdsPerDay } =
+    useFetch();
   const [category, setCategory] = useState<string>("Todos");
-  const [pointsBalance, setPointsBalance] = useState<number>(12500);
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const categories = ["Todos", "Tecnología", "Hogar", "Bonos"];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(true);
 
-  const filtered =
-    category === "Todos"
-      ? PRODUCTS
-      : PRODUCTS.filter((p) => p.category === category);
+  const [loadingFirst, setLoadingFirst] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [limitAdsPerDay, setLimitAdsPerDay] = useState(20);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadInterstitial();
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAdsLimitPerDay = async () => {
+      setLoading(true);
+      try {
+        const { success, limit, message } = await getLimitAdsPerDay();
+        if (!isMounted) return;
+
+        if (success) {
+          setLimitAdsPerDay(limit);
+        } else {
+          setError(message!);
+        }
+      } catch (err) {
+        if (isMounted) setError("Error al cargar los equipos favoritos");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadAdsLimitPerDay();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // ✅ categorías sacadas de products (backend)
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      const c = (p.category || "").trim();
+      if (c) set.add(c);
+    }
+    return ["Todos", ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+  }, [products]);
+
+  // ✅ si el usuario tenía una categoría que ya no existe, vuelve a "Todos"
+  useEffect(() => {
+    if (category === "Todos") return;
+    if (!categories.includes(category)) setCategory("Todos");
+  }, [categories]);
+
+  const filtered = useMemo(() => {
+    return category === "Todos"
+      ? products
+      : products.filter((p) => p.category === category);
+  }, [category, products]);
+
+  useEffect(() => {
+    loadPage(1, true);
+  }, []);
+
+  const getCurrentPosition = async () => {
+    // pedir permisos
+    const { status } = await Location.requestForegroundPermissionsAsync();
+
+    if (status !== "granted") {
+      throw new Error("Permiso de ubicación denegado");
+    }
+
+    // obtener ubicación
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+    });
+
+    return {
+      lat: location.coords.latitude,
+      lng: location.coords.longitude,
+    };
+  };
+
+  const loadPage = async (nextPage: number, reset = false) => {
+    try {
+      if (reset) setLoadingFirst(true);
+      else setLoadingMore(true);
+
+      const { lat, lng } = await getCurrentPosition();
+
+      const { success, products, hasNext, page, message } = await productsList(
+        nextPage,
+        lat,
+        lng,
+      );
+
+      if (!success) {
+        throw new Error(message || "No fue posible crear la orden.");
+      }
+
+      const incoming = (products || []) as Product[];
+
+      setHasNext(Boolean(hasNext));
+      setPage(Number(page) || nextPage);
+
+      setProducts((prev) => {
+        if (reset) return incoming;
+
+        // evitar duplicados por id
+        const map = new Map(prev.map((p) => [p.id, p]));
+        for (const p of incoming) map.set(p.id, p);
+        return Array.from(map.values());
+      });
+    } catch (e) {
+      console.log("❌ loadPage error:", e);
+    } finally {
+      setLoadingFirst(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const refresh = () => {
+    setHasNext(true);
+    setPage(1);
+    loadPage(1, true);
+  };
+
+  const loadMore = () => {
+    if (!hasNext) return;
+    if (loadingFirst || loadingMore) return;
+    loadPage(page + 1, false);
+  };
+
+  const handleReward = () => {
+    showRewardedAd(async () => {
+      try {
+        const { success, limit, message } =
+          await descountLimitAdsPerDayAndAddPoint();
+        if (success) {
+          setLimitAdsPerDay(limit);
+        }
+        console.log("Usuario ganó puntos 🎉");
+      } catch (error) {
+        console.log("Error aplicando recompensa", error);
+      }
+    });
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f9f9f9" }}>
-      {/* Header con puntos */}
-      <Appbar.Header style={{ backgroundColor: theme.colors.primary }}>
+    <PrivateLayout>
+      {/* Header */}
+      <Appbar.Header>
         <Appbar.Content
           title="Tienda de Puntos"
           subtitle="Canjea tus productos favoritos"
           titleStyle={{ color: "white" }}
           subtitleStyle={{ color: "white" }}
         />
-        <Chip style={{ backgroundColor: "white", marginRight: 10 }}>
-          <Text style={{ color: theme.colors.primary }}>
-            ⭐ {pointsBalance.toLocaleString()} pts
-          </Text>
-        </Chip>
+        <Appbar.Action icon="refresh" onPress={refresh} />
       </Appbar.Header>
 
-      {/* CTA para obtener más puntos */}
-      <Card
-        style={{
-          margin: 10,
-          borderRadius: 12,
-          backgroundColor: theme.colors.secondaryContainer,
-        }}
-      >
-        <Card.Content>
-          <Text variant="titleMedium" style={{ marginBottom: 6 }}>
-            ¿Quieres más puntos?
-          </Text>
-          <Text variant="bodySmall" style={{ marginBottom: 10 }}>
-            Mira videos publicitarios y gana puntos adicionales.
-          </Text>
-          <Button
-            mode="contained-tonal"
-            onPress={() => alert("Abrir módulo de videos publicitarios")}
-          >
-            🎥 Presiona aquí para obtener más puntos
-          </Button>
-        </Card.Content>
-      </Card>
+      {/* CTA */}
+      {limitAdsPerDay > 0 && (
+        <Card style={{ margin: 10, borderRadius: 12 }}>
+          <Card.Content>
+            <Text variant="titleMedium" style={{ marginBottom: 6 }}>
+              ¿Quieres más puntos?
+            </Text>
+            <Text variant="bodySmall" style={{ marginBottom: 10 }}>
+              Mira videos publicitarios y gana puntos adicionales.
+            </Text>
+            <Button mode="contained-tonal" onPress={handleReward}>
+              🎥 Presiona aquí para obtener más puntos
+            </Button>
+          </Card.Content>
+        </Card>
+      )}
 
-      {/* Categorías */}
+      {/*Banner tienda */}
+      <View style={{ marginVertical: 6 }}>
+        <AdBanner />
+      </View>
+
+      {/* Categorías (dinámicas) */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -115,48 +230,67 @@ export default function StoreScreen() {
 
       <Divider />
 
-      {/* Lista de productos */}
-      <ScrollView style={{ padding: 10 }}>
-        {filtered.map((product) => (
-          <Card
-            key={product.id}
-            style={{ marginBottom: 16 }}
-            onPress={() =>
-              navigation.navigate("productDetail", {
-                product,
-                pointsBalance,
-                setPointsBalance,
-              })
-            }
-          >
-            <Card.Cover source={{ uri: product.image }} />
-            <Card.Content style={{ marginTop: 10 }}>
-              <Text variant="titleMedium">{product.name}</Text>
-              <Text variant="bodySmall" style={{ marginBottom: 6 }}>
-                {product.description}
-              </Text>
-              <Text variant="bodyMedium" style={{ fontWeight: "bold" }}>
-                ⭐ {product.points.toLocaleString()} pts
-              </Text>
-            </Card.Content>
-            <Card.Actions>
-              <Button
-                mode="contained"
-                onPress={() => {
-                  if (pointsBalance >= product.points) {
-                    setPointsBalance(pointsBalance - product.points);
-                    alert(`¡Redimiste ${product.name}!`);
-                  } else {
-                    alert("No tienes puntos suficientes.");
-                  }
-                }}
-              >
-                Redimir
-              </Button>
-            </Card.Actions>
-          </Card>
-        ))}
+      {/* Lista */}
+      <ScrollView
+        style={{ padding: 10 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        {loadingFirst ? (
+          <View style={{ paddingVertical: 20, alignItems: "center" }}>
+            <ActivityIndicator />
+            <Text style={{ marginTop: 8, opacity: 0.7 }}>
+              Cargando productos…
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.grid}>
+              {filtered.map((product) => (
+                <View key={product.id} style={styles.gridItem}>
+                  <ProductCard product={product} />
+                </View>
+              ))}
+            </View>
+
+            {!filtered.length && (
+              <View style={{ paddingVertical: 24, alignItems: "center" }}>
+                <Text style={{ opacity: 0.7 }}>
+                  No hay productos en esta categoría.
+                </Text>
+              </View>
+            )}
+
+            <View style={{ paddingTop: 10 }}>
+              {hasNext ? (
+                <Button
+                  mode="contained"
+                  onPress={loadMore}
+                  loading={loadingMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? "Cargando…" : "Cargar más"}
+                </Button>
+              ) : (
+                <Text style={{ textAlign: "center", opacity: 0.6 }}>
+                  Ya viste todos los productos.
+                </Text>
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
-    </View>
+    </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%",
+    marginBottom: 14,
+  },
+});

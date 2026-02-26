@@ -1,21 +1,10 @@
-import { OneByOne } from "@/types";
+import { OneByOneType, PlayerOneByOne } from "@/types";
 import React, { useMemo } from "react";
-import {
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    View,
-} from "react-native";
-import {
-    Card,
-    Divider,
-    IconButton,
-    Text
-} from "react-native-paper";
+import { Image, Modal, ScrollView, StyleSheet, View } from "react-native";
+import { Card, Divider, IconButton, Text } from "react-native-paper";
 
 type Props = {
-  oneByOne: OneByOne;     // ← AHORA RECIBE EL OBJETO COMPLETO
+  oneByOne: OneByOneType;
   onClose: () => void;
 };
 
@@ -34,6 +23,25 @@ export default function OneByOneDetail({ oneByOne, onClose }: Props) {
     return [...playerRatings].sort((a, b) => b.rating - a.rating)[0];
   }, [playerRatings]);
 
+  const playersMap = useMemo(() => {
+    const map = new Map<number, PlayerOneByOne>();
+
+    const allPlayers = [
+      ...teams.home.players.titulares,
+      ...teams.home.players.suplentes,
+      ...teams.away.players.titulares,
+      ...teams.away.players.suplentes,
+    ];
+
+    allPlayers.forEach((player) => {
+      map.set(player.playerId, player);
+    });
+
+    return map;
+  }, [teams]);
+
+  const mvpPlayer = mvp ? playersMap.get(mvp.playerId) : null;
+
   return (
     <Modal animationType="slide" visible transparent>
       <View style={styles.backdrop}>
@@ -46,7 +54,10 @@ export default function OneByOneDetail({ oneByOne, onClose }: Props) {
           <ScrollView contentContainerStyle={styles.container}>
             {/* HERO */}
             <View style={styles.hero}>
-              <Image source={{ uri: teams.home.logo }} style={styles.teamLogo} />
+              <Image
+                source={{ uri: teams.home.logo }}
+                style={styles.teamLogo}
+              />
 
               <View style={styles.heroCenter}>
                 <Text variant="headlineSmall" style={styles.heroTitle}>
@@ -58,7 +69,10 @@ export default function OneByOneDetail({ oneByOne, onClose }: Props) {
                 </Text>
               </View>
 
-              <Image source={{ uri: teams.away.logo }} style={styles.teamLogo} />
+              <Image
+                source={{ uri: teams.away.logo }}
+                style={styles.teamLogo}
+              />
             </View>
 
             {/* RESULTADO */}
@@ -80,7 +94,9 @@ export default function OneByOneDetail({ oneByOne, onClose }: Props) {
                 <Card style={styles.mvpCard}>
                   <Card.Content style={styles.mvpRow}>
                     <View style={styles.mvpInfo}>
-                      <Text style={styles.mvpName}>{mvp.title}</Text>
+                      <Text style={styles.mvpName}>
+                        {mvpPlayer?.name ?? "Jugador desconocido"}
+                      </Text>
                       <Text style={styles.mvpRating}>
                         {mvp.rating} ⭐ — {mvp.description}
                       </Text>
@@ -97,22 +113,37 @@ export default function OneByOneDetail({ oneByOne, onClose }: Props) {
               Análisis jugador por jugador
             </Text>
 
-            {playerRatings.map((p) => (
-              <Card key={p.playerId} style={styles.card}>
-                <Card.Content>
-                  <View style={styles.playerRow}>
+            {playerRatings.map((p) => {
+              const player = playersMap.get(p.playerId);
 
-                    <View style={styles.playerInfo}>
-                      <Text style={styles.playerName}>{p.title}</Text>
-                      <Text style={styles.playerRating}>{p.rating} ⭐</Text>
+              return (
+                <Card key={p.playerId} style={styles.card}>
+                  <Card.Content>
+                    <View style={styles.playerRow}>
+                      <Image
+                        source={{ uri: player?.photo || undefined }}
+                        style={styles.playerPhoto}
+                      />
+
+                      <View style={styles.playerInfo}>
+                        <Text style={styles.playerName}>
+                          {player?.name ?? "Jugador desconocido"}
+                        </Text>
+
+                        <Text style={styles.playerMeta}>
+                          #{player?.number} • {player?.pos}
+                        </Text>
+
+                        <Text style={styles.playerRating}>{p.rating} ⭐</Text>
+                      </View>
                     </View>
-                  </View>
 
-                  <Text style={styles.playerTitle}>“{p.title}”</Text>
-                  <Text style={styles.playerDesc}>{p.description}</Text>
-                </Card.Content>
-              </Card>
-            ))}
+                    <Text style={styles.playerTitle}>{p.title}</Text>
+                    <Text style={styles.playerDesc}>{p.description}</Text>
+                  </Card.Content>
+                </Card>
+              );
+            })}
           </ScrollView>
         </View>
       </View>
@@ -169,4 +200,17 @@ const styles = StyleSheet.create({
   playerRating: { opacity: 0.8 },
   playerTitle: { marginTop: 8, fontWeight: "700", fontStyle: "italic" },
   playerDesc: { marginTop: 6, opacity: 0.9 },
+  playerPhoto: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+    backgroundColor: "#eee",
+  },
+
+  playerMeta: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 2,
+  },
 });

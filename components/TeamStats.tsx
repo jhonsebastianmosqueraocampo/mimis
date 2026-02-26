@@ -1,21 +1,24 @@
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import {
-  ActivityIndicator,
-  Avatar,
-  Card,
-  Divider,
-  List,
-} from "react-native-paper";
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Avatar, Card, Divider, List } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import type {
   PlayerStats,
   RootStackParamList,
   TeamPlayerStatsByLeague,
 } from "../types";
+import Loading from "./Loading";
 import PlayersStatsTable from "./PlayersStatsTable";
+import TeamSeasonAnalysis from "./TeamSeasonAnalysis";
 
 type TeamStatsProps = {
   teamId: string;
@@ -27,7 +30,8 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
   const [stats, setStats] = useState<TeamPlayerStatsByLeague[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     getPlayersStats();
@@ -44,8 +48,8 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
             p.statistics.some(
               (st) =>
                 st.league.id === league.leagueId &&
-                (st.games.appearences ?? 0) > 0
-            )
+                (st.games.appearences ?? 0) > 0,
+            ),
           ),
         }))
         .filter((league) => league.players.length > 0);
@@ -84,7 +88,7 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
       .sort(
         (a, b) =>
           (b.statistics[0]?.goals.total || 0) -
-          (a.statistics[0]?.goals.total || 0)
+          (a.statistics[0]?.goals.total || 0),
       )
       .slice(0, 5);
   }, [allPlayers]);
@@ -110,13 +114,19 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
       .sort(
         (a, b) =>
           (b.statistics[0]?.goals.assists || 0) -
-          (a.statistics[0]?.goals.assists || 0)
+          (a.statistics[0]?.goals.assists || 0),
       )
       .slice(0, 5);
   }, [allPlayers]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   if (error) {
@@ -128,21 +138,33 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
   }
 
   const handleLeague = (id: string) => {
-    navigation.navigate('tournament', {id})
-  }
+    navigation.navigate("tournament", { id });
+  };
 
   const handlePlayer = (id: string) => {
-    navigation.navigate('player', {id})
-  }
+    navigation.navigate("player", { id });
+  };
+
+  const year = new Date().getFullYear();
 
   return (
     <ScrollView>
+      {/* Sección analisis de temporada */}
+      <TeamSeasonAnalysis
+        teamId={teamId}
+        stats={stats}
+        season={year.toString()}
+      />
+
       {/* Sección de máximos */}
       <Card style={styles.card}>
         <Card.Title title="Máximo Goleador" />
         {topScorers.length > 0 && (
           <Card.Content>
-            <TouchableOpacity style={styles.playerRow} onPress={()=>handlePlayer(topScorers[0].player.id.toString())}>
+            <TouchableOpacity
+              style={styles.playerRow}
+              onPress={() => handlePlayer(topScorers[0].player.id.toString())}
+            >
               <Avatar.Image
                 size={48}
                 source={{ uri: topScorers[0].player.photo }}
@@ -167,7 +189,9 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
                 .map((p, idx) => (
                   <List.Item
                     key={idx}
-                    onPress={()=>handleLeague(p.statistics[0]?.league.id.toString() ?? '')}
+                    onPress={() =>
+                      handleLeague(p.statistics[0]?.league.id.toString() ?? "")
+                    }
                     title={p.statistics[0]?.league.name}
                     description={`Goles: ${p.statistics[0]?.goals.total ?? 0}`}
                     left={(props) => (
@@ -188,7 +212,10 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
         <Card.Title title="Máximo Asistente" />
         {topAssists.length > 0 && (
           <Card.Content>
-            <TouchableOpacity style={styles.playerRow} onPress={()=>handlePlayer(topAssists[0].player.id.toString())}>
+            <TouchableOpacity
+              style={styles.playerRow}
+              onPress={() => handlePlayer(topAssists[0].player.id.toString())}
+            >
               <Avatar.Image
                 size={48}
                 source={{ uri: topAssists[0].player.photo }}
@@ -212,7 +239,10 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
             <View key={i} style={styles.playerRow}>
               <Text style={styles.rank}>{i + 1}</Text>
               <Avatar.Image size={40} source={{ uri: p.player.photo }} />
-              <TouchableOpacity style={{ marginLeft: 10 }} onPress={()=>handlePlayer(p.player.id.toString())}>
+              <TouchableOpacity
+                style={{ marginLeft: 10 }}
+                onPress={() => handlePlayer(p.player.id.toString())}
+              >
                 <Text>{p.player.name}</Text>
                 <Text style={{ color: "gray" }}>
                   Goles: {p.statistics[0]?.goals.total}
@@ -222,6 +252,10 @@ export default function TeamStats({ teamId }: TeamStatsProps) {
           ))}
         </Card.Content>
       </Card>
+
+      <View style={{ marginVertical: 20, alignItems: "center" }}>
+        <AdBanner />
+      </View>
 
       <Divider style={{ marginVertical: 10 }} />
 

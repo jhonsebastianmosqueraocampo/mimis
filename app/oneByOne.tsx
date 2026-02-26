@@ -1,20 +1,17 @@
+import Loading from "@/components/Loading";
 import OneByOneDetail from "@/components/OneByOneDetail";
 import { useFetch } from "@/hooks/FetchContext";
-import { OneByOne } from "@/types";
+import AdBanner from "@/services/ads/AdBanner";
+import { OneByOneType } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
+import { Image, StyleSheet, View } from "react-native";
 import {
-    Image,
-    SectionList,
-    StyleSheet,
-    View,
-} from "react-native";
-import {
-    ActivityIndicator,
-    Button,
-    Card,
-    Chip,
-    Text,
-    TextInput,
+  ActivityIndicator,
+  Button,
+  Card,
+  Chip,
+  Text,
+  TextInput,
 } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
@@ -34,12 +31,12 @@ const formatDateLabel = (iso: string) => {
 export default function OneByOne() {
   const { getOneByOne } = useFetch();
 
-  const [list, setList] = useState<OneByOne[]>([]);
+  const [list, setList] = useState<OneByOneType[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<"recent" | "old">("recent");
-  const [selected, setSelected] = useState<OneByOne | null>(null);
+  const [selected, setSelected] = useState<OneByOneType | null>(null);
 
   // Cargar del backend
   useEffect(() => {
@@ -58,16 +55,23 @@ export default function OneByOne() {
 
     if (search.trim()) {
       const s = search.toLowerCase();
-      arr = arr.filter((o) =>
-        o.teams.home.name.toLowerCase().includes(s) ||
-        o.teams.away.name.toLowerCase().includes(s)
+      arr = arr.filter(
+        (o) =>
+          o.teams.home.name.toLowerCase().includes(s) ||
+          o.teams.away.name.toLowerCase().includes(s),
       );
     }
 
     if (order === "recent") {
-      arr.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      arr.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     } else {
-      arr.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      arr.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
     }
 
     return arr;
@@ -75,7 +79,7 @@ export default function OneByOne() {
 
   // Agrupación por fecha (section list)
   const sections = useMemo(() => {
-    const map = new Map<string, OneByOne[]>();
+    const map = new Map<string, OneByOneType[]>();
 
     processed.forEach((o) => {
       const key = formatDateLabel(o.createdAt);
@@ -86,7 +90,7 @@ export default function OneByOne() {
     return [...map.entries()].map(([title, data]) => ({ title, data }));
   }, [processed]);
 
-  const renderItem = ({ item }: { item: OneByOne }) => {
+  const renderItem = ({ item }: { item: OneByOneType }) => {
     const avg =
       item.playerRatings && item.playerRatings.length
         ? item.playerRatings.reduce((a, b) => a + b.rating, 0) /
@@ -98,21 +102,28 @@ export default function OneByOne() {
         <Card.Content>
           <View style={styles.matchRow}>
             <View style={styles.teamCol}>
-              <Image source={{ uri: item.teams.home.logo }} style={styles.logo} />
+              <Image
+                source={{ uri: item.teams.home.logo }}
+                style={styles.logo}
+              />
               <Text numberOfLines={1} style={styles.teamText}>
                 {item.teams.home.name}
               </Text>
-            </View>
-
-            <View style={styles.centerCol}>
-              <Text style={styles.avg}>{avg.toFixed(1)}</Text>
-              <Text style={styles.vs}>Prom. general</Text>
+              <Text numberOfLines={1} style={styles.teamText}>
+                {item.result.home}
+              </Text>
             </View>
 
             <View style={styles.teamCol}>
-              <Image source={{ uri: item.teams.away.logo }} style={styles.logo} />
+              <Image
+                source={{ uri: item.teams.away.logo }}
+                style={styles.logo}
+              />
               <Text numberOfLines={1} style={styles.teamText}>
                 {item.teams.away.name}
+              </Text>
+              <Text numberOfLines={1} style={styles.teamText}>
+                {item.result.away}
               </Text>
             </View>
           </View>
@@ -128,6 +139,16 @@ export default function OneByOne() {
       </Card>
     );
   };
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
@@ -146,10 +167,18 @@ export default function OneByOne() {
         />
 
         <View style={styles.row}>
-          <Chip selected={order === "recent"} onPress={() => setOrder("recent")} style={styles.chip}>
+          <Chip
+            selected={order === "recent"}
+            onPress={() => setOrder("recent")}
+            style={styles.chip}
+          >
             Recientes
           </Chip>
-          <Chip selected={order === "old"} onPress={() => setOrder("old")} style={styles.chip}>
+          <Chip
+            selected={order === "old"}
+            onPress={() => setOrder("old")}
+            style={styles.chip}
+          >
             Antiguos
           </Chip>
         </View>
@@ -157,18 +186,24 @@ export default function OneByOne() {
         {loading ? (
           <ActivityIndicator style={{ marginTop: 40 }} size="large" />
         ) : (
-          <SectionList
-            sections={sections}
-            keyExtractor={(i) => i.id}
-            renderItem={renderItem}
-            renderSectionHeader={({ section }) => (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
+          <View style={styles.listContainer}>
+            {sections.map((section) => (
+              <View key={section.title} style={styles.sectionWrapper}>
+                {/* Header */}
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>{section.title}</Text>
+                </View>
+
+                {/* Items */}
+                {section.data.map((item) => renderItem({ item }))}
               </View>
-            )}
-            contentContainerStyle={{ paddingBottom: 80 }}
-          />
+            ))}
+          </View>
         )}
+
+        <View style={{ marginVertical: 20 }}>
+          <AdBanner />
+        </View>
 
         {selected && (
           <OneByOneDetail
@@ -188,7 +223,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", marginBottom: 10 },
   chip: { marginRight: 8 },
   card: { marginBottom: 12 },
-  matchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  matchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   teamCol: { flex: 1, alignItems: "center" },
   centerCol: { width: 90, alignItems: "center" },
   avg: { fontWeight: "bold", fontSize: 18 },
@@ -198,4 +237,12 @@ const styles = StyleSheet.create({
   btn: { marginTop: 10 },
   sectionHeader: { paddingVertical: 6, alignItems: "center" },
   sectionTitle: { opacity: 0.7, fontWeight: "700" },
+  listContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+
+  sectionWrapper: {
+    marginBottom: 24,
+  },
 });

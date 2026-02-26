@@ -1,10 +1,10 @@
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { PlayerStat, StatsByCategory } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import {
-  ActivityIndicator,
   Appbar,
   Card,
   Chip,
@@ -12,6 +12,7 @@ import {
   Divider,
   Text,
 } from "react-native-paper";
+import Loading from "./Loading";
 
 type Props = {
   leagueId: string;
@@ -22,9 +23,9 @@ const items = [
   { id: "topAssists", name: "Asistentes", valueKey: "assists" },
   { id: "topYellowCards", name: "Amarillas", valueKey: "yellow" },
   { id: "topRedCards", name: "Rojas", valueKey: "red" },
-  { id: "topRating", name: "Rating", valueKey: "rating" },
-  { id: "topDribblesSuccess", name: "Dribbles", valueKey: "dribblesSuccess" },
-  { id: "topKeyPasses", name: "Pases clave", valueKey: "keyPasses" },
+  // { id: "topRating", name: "Rating", valueKey: "rating" },
+  // { id: "topDribblesSuccess", name: "Dribbles", valueKey: "dribblesSuccess" },
+  // { id: "topKeyPasses", name: "Pases clave", valueKey: "keyPasses" },
 ];
 
 export default function LeagueStatsScreen({ leagueId }: Props) {
@@ -52,7 +53,7 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
         const season = 0;
         const { success, stats, message } = await getLeagueStats(
           leagueId,
-          season
+          season,
         );
 
         if (!isMounted) return;
@@ -90,10 +91,11 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 12 }}>Cargando estadísticas…</Text>
-      </View>
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
     );
   }
 
@@ -190,7 +192,7 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
                 page={page}
                 numberOfPages={Math.max(
                   1,
-                  Math.ceil(dataForSelected.length / itemsPerPage)
+                  Math.ceil(dataForSelected.length / itemsPerPage),
                 )}
                 onPageChange={setPage}
                 label={
@@ -207,6 +209,9 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
             </DataTable>
           </Card.Content>
         </Card>
+      </View>
+      <View style={{ marginVertical: 10, alignItems: "center" }}>
+        <AdBanner />
       </View>
     </View>
   );

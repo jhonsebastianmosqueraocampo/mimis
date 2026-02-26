@@ -31,17 +31,14 @@ export default function PlayerProfileCard({
   dominantFoot,
   marketValue,
 }: PlayerProfileProps) {
-  const renderChip = (
-    label: string,
-    key?: string | number
-  ): ReactNode => (
+  const renderChip = (key?: string | number): ReactNode => (
     <Chip
-      key={key || label}
+      key={key}
       style={styles.chip}
       textStyle={{ color: "#1DB954" }}
       mode="outlined"
     >
-      {label}
+      {key}
     </Chip>
   );
 
@@ -54,23 +51,22 @@ export default function PlayerProfileCard({
               {name}
             </Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              #${jerseyNumber ?? "-"}`
-                : `#${jerseyNumber ?? "-"}`
+              {jerseyNumber && dominantFoot
+                ? ` | ${jerseyNumber} - ${dominantFoot}`
+                : ""}
             </Text>
           </View>
         </View>
 
         <View style={styles.chipContainer}>
-          {renderChip("tag", `Edad: ${age} años`)}
-          {renderChip("calendar-today", `Nacimiento: ${birthday}`)}
-          {renderChip("flag", `País: ${country}`)}
-          {renderChip("sports-soccer", `Posición: ${position}`)}
-          {renderChip("height", `Altura: ${height}`)}
-          {renderChip("fitness-center", `Peso: ${weight}`)}
-          {dominantFoot &&
-            renderChip("directions-run", `Pierna: ${dominantFoot}`)}
-          {marketValue &&
-            renderChip("monetization-on", `Valor mercado: ${marketValue}`)}
+          {renderChip(`Edad: ${age} años`)}
+          {renderChip(`Nacimiento: ${birthday}`)}
+          {renderChip(`País: ${country}`)}
+          {renderChip(`Posición: ${position}`)}
+          {renderChip(`Altura: ${height}`)}
+          {renderChip(`Peso: ${weight}`)}
+          {dominantFoot && renderChip(`Pierna: ${dominantFoot}`)}
+          {marketValue && renderChip(`Valor mercado: ${marketValue}`)}
         </View>
       </Card.Content>
     </Card>

@@ -1,3 +1,4 @@
+import AdBanner from "@/services/ads/AdBanner";
 import { TeamStatistics } from "@/types";
 import React from "react";
 import { Animated, ScrollView, StyleSheet, View } from "react-native";
@@ -88,6 +89,9 @@ export default function MatchPostStats({ stats }: MatchPostStatsProps) {
             </View>
           );
         })}
+      </View>
+      <View style={{ marginVertical: 24, alignItems: "center" }}>
+        <AdBanner />
       </View>
     </ScrollView>
   );

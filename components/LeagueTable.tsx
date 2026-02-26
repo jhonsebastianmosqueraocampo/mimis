@@ -1,5 +1,5 @@
 import { useNavigation } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Image,
   Modal,
@@ -11,7 +11,11 @@ import {
 } from "react-native";
 import { Button, Divider } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
-import type { LeagueTableProps, RootStackParamList, TeamStanding } from "../types";
+import type {
+  LeagueTableProps,
+  RootStackParamList,
+  TeamStanding,
+} from "../types";
 
 export default function LeagueTable({
   standings,
@@ -19,10 +23,17 @@ export default function LeagueTable({
   selectedTeam,
   setSelectedTeam,
   teamId,
+  equiposFavoritos,
 }: LeagueTableProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTeamData, setSelectedTeamData] = useState<TeamStanding>();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const favoriteSet = useMemo(() => {
+    if (!equiposFavoritos) return new Set();
+    return new Set(equiposFavoritos.map((f) => f.title.toLowerCase()));
+  }, [equiposFavoritos]);
 
   const handleTeamClick = (team: TeamStanding) => {
     const teamIdStr = team.team.id.toString();
@@ -51,8 +62,8 @@ export default function LeagueTable({
   };
 
   const handleTeam = (id: string) => {
-    navigation.navigate('team', {id})
-  }
+    navigation.navigate("team", { id });
+  };
 
   return (
     <>
@@ -70,6 +81,9 @@ export default function LeagueTable({
             const isSelected = selectedTeam === team.team.id.toString();
 
             const liveScore = getLiveScore(team.team.id);
+            const isFavoriteTeam = favoriteSet.has(
+              team.team.name.toLowerCase()
+            );
 
             return (
               <TouchableOpacity
@@ -81,6 +95,7 @@ export default function LeagueTable({
                     styles.fixedRow,
                     isUserTeam && styles.userRow,
                     isSelected && styles.selectedRow,
+                    isFavoriteTeam && styles.favoriteRow,
                     { borderLeftColor: color },
                     styles.hasDescription,
                   ]}
@@ -125,6 +140,9 @@ export default function LeagueTable({
             {standings?.map((team) => {
               const isUserTeam = team.team.id.toString() === teamId;
               const isSelected = selectedTeam === team.team.id.toString();
+              const isFavoriteTeam = favoriteSet.has(
+                team.team.name.toLowerCase()
+              );
               return (
                 <TouchableOpacity
                   key={`scroll-${team.team.id}`}
@@ -135,6 +153,7 @@ export default function LeagueTable({
                       styles.scrollRow,
                       isUserTeam && styles.userRow,
                       isSelected && styles.selectedRow,
+                      isFavoriteTeam && styles.favoriteRow,
                     ]}
                   >
                     <Text style={styles.cell}>{team.points}</Text>
@@ -160,7 +179,9 @@ export default function LeagueTable({
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             {selectedTeamData && (
-              <TouchableOpacity onPress={()=>handleTeam(selectedTeamData.team.id.toString())}>
+              <TouchableOpacity
+                onPress={() => handleTeam(selectedTeamData.team.id.toString())}
+              >
                 <Text style={styles.modalTitle}>
                   {selectedTeamData.team.name}
                 </Text>
@@ -357,5 +378,15 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
+  },
+  favoriteRow: {
+    backgroundColor: "#FFF7E0",
+    borderLeftWidth: 6,
+    borderLeftColor: "#FFC107",
+    shadowColor: "#FFC107",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
   },
 });

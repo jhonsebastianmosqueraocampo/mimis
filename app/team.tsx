@@ -2,18 +2,15 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Chip, Text } from "react-native-paper";
 
+import FavoriteBadge from "@/components/FavoriteBadge";
+import Loading from "@/components/Loading";
 import MatchesTeamInfo from "@/components/MatchesTeamInfo";
 import SigningsAndRumors from "@/components/SigningsAndRumors";
 import TemplateTeam from "@/components/TemplateTeam";
 import { useFetch } from "@/hooks/FetchContext";
-import {
-  RootStackParamList,
-  swiperItem,
-  Team
-} from "@/types";
+import { RootStackParamList, swiperItem, Team } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import AvatarCard from "../components/AvatarCard";
-import SeasonAnalysis from "../components/SeasonAnalysis";
 import SeasonResults from "../components/SeasonResults";
 import TeamStats from "../components/TeamStats";
 import VerticalScroll from "../components/VerticalScroll";
@@ -26,7 +23,6 @@ const items = [
   { id: "4", name: "Estadísticas" },
   { id: "5", name: "Plantilla" },
   { id: "6", name: "Fichajes y Rumores" },
-  { id: "7", name: "Análisis de temporada" },
   // { id: "8", name: "Crear Jugadores" },
 ];
 
@@ -36,9 +32,11 @@ export default function TeamScreen() {
   const { getTeam, getNewsTeam } = useFetch();
   const [selectedItem, setSelectedItem] = useState(items[0]);
   const [team, setTeam] = useState<Team>();
+  const [isFavorite, setIsFavorite] = useState(false);
   const [news, setNews] = useState<swiperItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   const route = useRoute<TeamScreenRouteProp>();
   const { id } = route.params;
 
@@ -58,8 +56,13 @@ export default function TeamScreen() {
   };
 
   const getInfoTeam = async () => {
-    const { success, team, message } = await getTeam(id);
-    success ? setTeam(team) : setError(message!);
+    const { success, team, isFavorite, message } = await getTeam(id);
+    if (success) {
+      setTeam(team);
+      setIsFavorite(isFavorite ?? false);
+    } else {
+      setError(message!);
+    }
   };
 
   const manageInfo = () => {
@@ -74,13 +77,30 @@ export default function TeamScreen() {
   };
 
   const getNews = async () => {
-    if (team) {
+    if (!team) return;
+
+    setLoading(true);
+    setNews([]);
+
+    try {
       const response = await getNewsTeam(team.name);
       if (response.success) {
         setNews(response.news);
       }
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
@@ -90,6 +110,14 @@ export default function TeamScreen() {
         typographyProps={{
           variant: "titleLarge",
           style: { textAlign: "center", fontWeight: "bold", color: "#333" },
+        }}
+      />
+
+      <FavoriteBadge
+        isFavorite={isFavorite}
+        onToggle={() => {
+          // si quieres luego llamar al endpoint toggleFavorites aquí (backend)
+          setIsFavorite((prev) => !prev);
         }}
       />
 
@@ -109,6 +137,7 @@ export default function TeamScreen() {
             ]}
             textStyle={{
               color: selectedItem.id === item.id ? "#fff" : "#000",
+              lineHeight: 20,
             }}
           >
             {item.name.toUpperCase()}
@@ -133,18 +162,17 @@ export default function TeamScreen() {
         )}
 
         {selectedItem.name.toLowerCase() === "temporada" && (
-          <SeasonResults
-            teamId={team?.teamId!}
-          />
+          <SeasonResults teamId={team?.teamId!} />
         )}
 
-        {selectedItem.name.toLowerCase() === "estadísticas" && <TeamStats teamId={team?.teamId!}/>}
-        {selectedItem.name.toLowerCase() === "plantilla" && <TemplateTeam teamId={team?.teamId!}/>}
+        {selectedItem.name.toLowerCase() === "estadísticas" && (
+          <TeamStats teamId={team?.teamId!} />
+        )}
+        {selectedItem.name.toLowerCase() === "plantilla" && (
+          <TemplateTeam teamId={team?.teamId!} />
+        )}
         {selectedItem.name.toLowerCase() === "fichajes y rumores" && (
           <SigningsAndRumors teamId={team?.teamId!} />
-        )}
-        {selectedItem.name.toLowerCase() === "análisis de temporada" && (
-          <SeasonAnalysis />
         )}
         {/* {selectedItem.name.toLowerCase() === "crear jugadores" && (
           <VerticalScroll
@@ -167,6 +195,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderColor: "#1DB954",
     backgroundColor: "transparent",
+    height: 36,
+    justifyContent: "center",
   },
   chipSelected: {
     backgroundColor: "#1DB954",
@@ -174,7 +204,6 @@ const styles = StyleSheet.create({
   sectionContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    maxHeight: 500,
   },
   sectionTitle: {
     fontWeight: "bold",

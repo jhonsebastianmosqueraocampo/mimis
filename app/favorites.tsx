@@ -4,32 +4,25 @@ import * as Notifications from "expo-notifications";
 import { useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import {
-    ActivityIndicator,
-    Button,
-    Card,
-    Divider,
-    Modal,
-    Portal,
-    Text,
-} from "react-native-paper";
+import { Button, Card, Divider, Modal, Portal, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { v4 as uuidv4 } from "uuid";
 import type {
-    Favorites,
-    NotificationItem,
-    RootStackParamList,
-    swiperItem,
+  Favorites,
+  NotificationItem,
+  RootStackParamList,
+  swiperItem,
 } from "../types";
 import PrivateLayout from "./privateLayout";
 
+import Loading from "@/components/Loading";
 import { useInside } from "@/hooks/InsideContext";
 import registerPushToken from "@/utils/registerPushToken";
 import {
-    Notification,
-    NotificationResponse,
-    Subscription,
+  Notification,
+  NotificationResponse,
+  Subscription,
 } from "expo-notifications";
 
 Notifications.setNotificationHandler({
@@ -64,7 +57,7 @@ export default function favorites() {
           };
 
           addNotification(newNotif);
-        }
+        },
       );
 
     // Listener cuando usuario toca la notificación
@@ -72,13 +65,13 @@ export default function favorites() {
       Notifications.addNotificationResponseReceivedListener(
         (response: NotificationResponse) => {
           console.log("👉 Notificación tocada:", response);
-        }
+        },
       );
 
     return () => {
       if (notificationListener.current)
         Notifications.removeNotificationSubscription(
-          notificationListener.current
+          notificationListener.current,
         );
       if (responseListener.current)
         Notifications.removeNotificationSubscription(responseListener.current);
@@ -116,7 +109,8 @@ export default function favorites() {
     const getFavoriteList = async () => {
       setLoading(true);
       try {
-        const { success, teams, players, coaches, leagues, message } = await getFavorites();
+        const { success, teams, players, coaches, leagues, message } =
+          await getFavorites();
         if (!isMounted) return;
 
         if (success) {
@@ -142,7 +136,13 @@ export default function favorites() {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando favoritos"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const getFavoriteList = async () => {
@@ -194,7 +194,7 @@ export default function favorites() {
 
   const removeItem = (
     key: keyof typeof favoritosEditados,
-    id: swiperItem["id"]
+    id: swiperItem["id"],
   ) => {
     setFavoritosEditados((prev) => ({
       ...prev,
@@ -215,7 +215,7 @@ export default function favorites() {
   };
 
   const getFavoritosFromEditados = (
-    editados: typeof favoritosEditados
+    editados: typeof favoritosEditados,
   ): Favorites => ({
     equipos: editados.equipos.map((e) => e.title),
     entrenadores: editados.entrenadores.map((e) => e.title),
@@ -252,7 +252,7 @@ export default function favorites() {
         <ScrollSection
           title="Mis Equipos seguidos"
           list={equipos}
-          shape="square"
+          shape="circle"
           action={actionTeams}
         />
       )}
@@ -288,7 +288,7 @@ export default function favorites() {
         <ScrollSection
           title="Equipos más buscados"
           list={equipos}
-          shape="square"
+          shape="circle"
           action={actionTeams}
         />
       )}

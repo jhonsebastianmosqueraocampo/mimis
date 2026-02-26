@@ -5,7 +5,8 @@ import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Chip } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
-import { Fixture, RootStackParamList } from "../types";
+import { Fixture, RootStackParamList, swiperItem } from "../types";
+import Loading from "./Loading";
 import MatchesLiveLeague from "./MatchesLiveLeague";
 import PastMatchesList from "./PastMatchesList";
 import UpcomingMatchesList from "./UpcomingMatchesList";
@@ -20,14 +21,18 @@ const items = [
   { id: "3", name: "En vivo" },
 ];
 
-export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) {
+export default function MatchesLeagueInfo({
+  leagueId,
+}: MatchesLeagueInfoProps) {
   const { getPreviousAndPostLeagueMatches } = useFetch();
   const [previousMatches, setPreviousMatches] = useState<Fixture[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<Fixture[]>([]);
   const [selectedItem, setSelectedItem] = useState(items[0]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [equiposFavoritos, setEquiposFavoritos] = useState<swiperItem[]>([]);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let isMounted = true;
@@ -63,8 +68,18 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
     };
   }, [leagueId]);
 
-  const actionMatch = (id:string) => {
+  const actionMatch = (id: string) => {
     navigation.navigate("match", { id });
+  };
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   return (
@@ -94,7 +109,11 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
 
       {selectedItem.name.toLowerCase() === "partidos anteriores" && (
         <View style={styles.section}>
-          <PastMatchesList actionMatch={actionMatch} previousMatches={previousMatches} />
+          <PastMatchesList
+            actionMatch={actionMatch}
+            previousMatches={previousMatches}
+            equiposFavoritos={equiposFavoritos}
+          />
         </View>
       )}
 
@@ -103,13 +122,17 @@ export default function MatchesLeagueInfo({ leagueId }: MatchesLeagueInfoProps) 
           <UpcomingMatchesList
             upcomingMatches={upcomingMatches}
             actionMatch={actionMatch}
+            equiposFavoritos={equiposFavoritos}
           />
         </View>
       )}
 
       {selectedItem.name.toLowerCase() === "en vivo" && (
         <View style={styles.section}>
-          <MatchesLiveLeague leagueId={leagueId} />
+          <MatchesLiveLeague
+            leagueId={leagueId}
+            equiposFavoritos={equiposFavoritos}
+          />
         </View>
       )}
     </ScrollView>

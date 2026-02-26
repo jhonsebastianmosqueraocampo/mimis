@@ -14,7 +14,7 @@ export default function ScrollSection({
     <>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-        {list.length > 5 && (
+        {list && list.length > 5 && (
           <TouchableOpacity activeOpacity={0.7}>
             <Text style={styles.seeAll}>Ver todo</Text>
           </TouchableOpacity>

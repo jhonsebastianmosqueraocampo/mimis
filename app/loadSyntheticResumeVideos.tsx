@@ -1,14 +1,10 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import { User, WeeklyGoalVideo } from "@/types";
+import { ResizeMode, Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useEffect, useState } from "react";
-import {
-  Image,
-  Modal,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, Modal, ScrollView, TouchableOpacity, View } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import {
   ActivityIndicator,
@@ -45,8 +41,8 @@ export default function LoadSyntheticVideos() {
   const [fixtureB, setFixtureB] = useState("");
 
   // 🔥 LISTA REAL DE USUARIOS
-  const [usersList, setUsersList] = useState<{ id: string; name: string }[]>([]);
-  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  const [usersList, setUsersList] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User>();
 
   const [userMenuVisible, setUserMenuVisible] = useState(false);
 
@@ -62,7 +58,7 @@ export default function LoadSyntheticVideos() {
   const [editFixtureA, setEditFixtureA] = useState("");
   const [editFixtureB, setEditFixtureB] = useState("");
 
-  const [editUser, setEditUser] = useState<{ id: string; name: string } | null>(null);
+  const [editUser, setEditUser] = useState<User>();
   const [editUserMenuVisible, setEditUserMenuVisible] = useState(false);
 
   // 📌 FORMATO YYYY/MM/DD
@@ -104,12 +100,8 @@ export default function LoadSyntheticVideos() {
       try {
         const { users, success } = await getUsers();
         if (success && users) {
-          const mapped = users.map((u: User) => ({
-            id: u.id,
-            name: u.nickName,
-          }));
-          setUsersList(mapped);
-          setSelectedUser(mapped[0]); // por defecto
+          setUsersList(users);
+          setSelectedUser(users[0]);
         }
       } catch {
         console.log("Error cargando usuarios");
@@ -134,11 +126,13 @@ export default function LoadSyntheticVideos() {
     setMessage("");
     try {
       const { videos, success, message } = await getSyntheticVideo(week);
+      console.log(video);
       if (success) {
         setVideosFromApi(videos || []);
-      } else setMessage(message || "No se pudieron obtener los videos");
+      } else {
+      }
     } catch {
-      setMessage("❌ Error al conectar");
+      setMessage(message || "❌ Error al conectar");
     } finally {
       setLoading(false);
     }
@@ -182,7 +176,7 @@ export default function LoadSyntheticVideos() {
       formData.append("fixtureA", fixtureA);
       formData.append("fixtureB", fixtureB);
       formData.append("userId", selectedUser!.id);
-      formData.append("userName", selectedUser!.name);
+      formData.append("userName", selectedUser!.nickName);
 
       formData.append("video", {
         uri: video.uri,
@@ -240,7 +234,7 @@ export default function LoadSyntheticVideos() {
       formData.append("fixtureA", editFixtureA);
       formData.append("fixtureB", editFixtureB);
       formData.append("userId", editUser!.id);
-      formData.append("userName", editUser!.name);
+      formData.append("userName", editUser!.nickName);
 
       if (editVideo)
         formData.append("video", {
@@ -258,7 +252,7 @@ export default function LoadSyntheticVideos() {
 
       const { success, message } = await editSyntheticVideo(
         videoToEdit.id,
-        formData
+        formData,
       );
 
       setMessage(success ? "✅ Actualizado" : message || "❌ Error");
@@ -272,6 +266,16 @@ export default function LoadSyntheticVideos() {
 
   // ▶️ LISTA FINAL
   const filteredVideos = videosFromApi;
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
@@ -328,14 +332,14 @@ export default function LoadSyntheticVideos() {
                   onPress={() => setUserMenuVisible(true)}
                   style={{ marginBottom: 15 }}
                 >
-                  👤 {selectedUser?.name ?? "Seleccionar usuario"}
+                  👤 {selectedUser?.nickName ?? "Seleccionar usuario"}
                 </Button>
               }
             >
-              {usersList.map((u) => (
+              {usersList.map((u, index) => (
                 <Menu.Item
-                  key={u.id}
-                  title={u.name}
+                  key={index}
+                  title={u.nickName}
                   onPress={() => {
                     setSelectedUser(u);
                     setUserMenuVisible(false);
@@ -360,6 +364,19 @@ export default function LoadSyntheticVideos() {
             <Button icon="video" mode="outlined" onPress={pickVideo}>
               {video ? "Cambiar video" : "Seleccionar video"}
             </Button>
+            {video && (
+              <View
+                style={{ marginTop: 10, borderRadius: 10, overflow: "hidden" }}
+              >
+                <Video
+                  source={{ uri: video.uri }}
+                  style={{ width: "100%", height: 220 }}
+                  useNativeControls
+                  resizeMode={ResizeMode.CONTAIN}
+                  shouldPlay={false}
+                />
+              </View>
+            )}
             <Button
               icon="image"
               mode="outlined"
@@ -405,7 +422,11 @@ export default function LoadSyntheticVideos() {
               {filteredVideos.map((item) => (
                 <View key={item.id} style={{ width: "48%", marginBottom: 10 }}>
                   <Card>
-                    <Card.Cover source={{ uri: item.thumbail }} />
+                    <Card.Cover
+                      source={{
+                        uri: `http://192.168.10.16:3001/api/weeklySyntheticTop/image/${item.thumbail}`,
+                      }}
+                    />
                     <View
                       style={{
                         position: "absolute",
@@ -471,14 +492,14 @@ export default function LoadSyntheticVideos() {
                   onPress={() => setEditUserMenuVisible(true)}
                   style={{ marginBottom: 15 }}
                 >
-                  👤 {editUser?.name ?? "Seleccionar usuario"}
+                  👤 {editUser?.nickName ?? "Seleccionar usuario"}
                 </Button>
               }
             >
-              {usersList.map((u) => (
+              {usersList.map((u, index) => (
                 <Menu.Item
-                  key={u.id}
-                  title={u.name}
+                  key={index}
+                  title={u.nickName}
                   onPress={() => {
                     setEditUser(u);
                     setEditUserMenuVisible(false);
@@ -540,8 +561,8 @@ export default function LoadSyntheticVideos() {
               color: message.startsWith("✅")
                 ? "green"
                 : message.startsWith("❌")
-                ? "red"
-                : "orange",
+                  ? "red"
+                  : "orange",
             }}
           >
             {message}

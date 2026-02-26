@@ -47,7 +47,7 @@ export default function AuthLayout({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.innerContainer}>
-            <Logo />
+            <Logo size="sm" />
 
             <View style={{ marginTop: 24 }}>{form}</View>
 
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     padding: 16,
     justifyContent: "center",
-    minHeight: 100
+    minHeight: 100,
   },
   innerContainer: {
     width: "100%",

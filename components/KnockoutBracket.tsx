@@ -1,4 +1,9 @@
-import { CupStanding, LiveMatch, RootStackParamList } from "@/types";
+import {
+  CupStanding,
+  LiveMatch,
+  RootStackParamList,
+  swiperItem,
+} from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -15,6 +20,7 @@ type KnockoutBracketProps = {
   standings: CupStanding[];
   matches?: LiveMatch[];
   teamId?: string;
+  equiposFavoritos?: swiperItem[];
 };
 
 function groupMatchesByKey(matches: CupStanding[]) {
@@ -52,17 +58,33 @@ function MatchDateStatus(date: string) {
   return `${formattedDate} - ${status}`;
 }
 
-export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBracketProps) {
+export function KnockoutBracket({
+  standings,
+  teamId,
+  matches = [],
+  equiposFavoritos,
+}: KnockoutBracketProps) {
   const grouped = groupMatchesByKey(standings);
   const rounds = Array.from(new Set(standings.map((m) => m.round)));
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const favoriteSet = useMemo(() => {
+    if (!equiposFavoritos) return new Set();
+    return new Set(equiposFavoritos.map((f) => f.title.toLowerCase()));
+  }, [equiposFavoritos]);
 
   // 🧠 Crear mapa rápido de partidos en vivo por IDs de equipos
   const liveMap = useMemo(() => {
     const map: Record<
       number,
-      { goals: { home: number; away: number }; isHome: boolean; elapsed?: number; fixtureId: number }
+      {
+        goals: { home: number; away: number };
+        isHome: boolean;
+        elapsed?: number;
+        fixtureId: number;
+      }
     > = {};
 
     for (const match of matches) {
@@ -92,8 +114,8 @@ export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBra
   };
 
   const handleTeam = (id: string) => {
-    navigation.navigate('team', {id})
-  }
+    navigation.navigate("team", { id });
+  };
 
   return (
     <ScrollView
@@ -149,6 +171,9 @@ export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBra
                   onPress={() => toggleExpand(key)}
                 >
                   {[homeTeam, awayTeam].map((team) => {
+                    const isFavoriteTeam = favoriteSet.has(
+                      team.name.toLowerCase()
+                    );
                     const isHighlighted = team.id.toString() === teamId;
                     const score = goalsByTeamId[team.id] ?? "-";
 
@@ -167,16 +192,21 @@ export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBra
                         style={[
                           styles.teamRow,
                           isHighlighted && styles.highlighted,
+                          isFavoriteTeam && styles.favoriteTeamRow
                         ]}
-                        onPress={()=>handleTeam(team.id.toString())}
+                        onPress={() => handleTeam(team.id.toString())}
                       >
-                        <Image source={{ uri: team.logo }} style={styles.avatar} />
+                        <Image
+                          source={{ uri: team.logo }}
+                          style={styles.avatar}
+                        />
                         <Text
                           numberOfLines={1}
                           style={[
                             styles.teamName,
                             isHighlighted && styles.textWhite,
                             isLive && styles.liveText,
+                            isFavoriteTeam && styles.favoriteTeamText
                           ]}
                         >
                           {team.name}
@@ -186,6 +216,7 @@ export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBra
                             styles.teamScore,
                             isHighlighted && styles.textWhite,
                             isLive && styles.liveText,
+                            isFavoriteTeam && styles.favoriteTeamText
                           ]}
                         >
                           {showScore}
@@ -200,8 +231,8 @@ export function KnockoutBracket({ standings, teamId, matches = [] }: KnockoutBra
                       {matches.map((m, i) => (
                         <View key={i} style={styles.detailRow}>
                           <Text style={styles.detailText}>
-                            {m.homeTeam.name} {m.goals.home ?? "-"} - {m.goals.away ?? "-"}{" "}
-                            {m.awayTeam.name}
+                            {m.homeTeam.name} {m.goals.home ?? "-"} -{" "}
+                            {m.goals.away ?? "-"} {m.awayTeam.name}
                           </Text>
                           <Text style={styles.detailSub}>
                             {MatchDateStatus(m.date.toString())}
@@ -316,6 +347,17 @@ const styles = StyleSheet.create({
   },
   liveText: {
     color: "#d32f2f",
+    fontWeight: "700",
+  },
+  favoriteTeamRow: {
+    backgroundColor: "#FFF4C2",
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
+  },
+
+  favoriteTeamText: {
+    color: "#B98000",
     fontWeight: "700",
   },
 });

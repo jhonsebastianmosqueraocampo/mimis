@@ -1,16 +1,18 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
-import { PredictionOddsItem } from "@/types";
+import AdBanner from "@/services/ads/AdBanner";
+import { PredictionOddsItem, RootStackParamList } from "@/types";
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
-import { Image, RefreshControl, ScrollView, View } from "react-native";
 import {
-  ActivityIndicator,
-  Button,
-  Card,
-  Chip,
-  Divider,
-  List,
-  Text,
-} from "react-native-paper";
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { Button, Card, Chip, Divider, List, Text } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
 function normalizePredictions(raw: any) {
@@ -19,17 +21,11 @@ function normalizePredictions(raw: any) {
     typeof base === "object" &&
     (base.predictions || base.comparison || base.h2h);
 
-  const pred =
-    (hasWrapper ? base.predictions : base) ||
-    null; // detalle (winner, goals, under_over, percent…)
+  const pred = (hasWrapper ? base.predictions : base) || null; // detalle (winner, goals, under_over, percent…)
 
-  const h2h =
-    (hasWrapper ? base.h2h : base.h2h) ||
-    []; // siempre array
+  const h2h = (hasWrapper ? base.h2h : base.h2h) || []; // siempre array
 
-  const comparison =
-    (hasWrapper ? base.comparison : base.comparison) ||
-    null;
+  const comparison = (hasWrapper ? base.comparison : base.comparison) || null;
 
   return { pred, h2h, comparison };
 }
@@ -38,9 +34,14 @@ export default function PredictionsFull() {
   const { getPredictionOdds } = useFetch();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [predictionOdds, setPredictionOdds] = useState<PredictionOddsItem[]>([]);
+  const [predictionOdds, setPredictionOdds] = useState<PredictionOddsItem[]>(
+    [],
+  );
   const [error, setError] = useState("");
   const [selectedHouse, setSelectedHouse] = useState<string | null>(null);
+
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const loadPredictionOdds = async () => {
     try {
@@ -74,33 +75,67 @@ export default function PredictionsFull() {
 
   if (loading && !refreshing) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator animating size="large" />
-      </View>
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
     );
   }
 
   if (error || predictionOdds.length === 0) {
     return (
       <PrivateLayout>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 20,
-          }}
-        >
-          <Text
-            variant="bodyLarge"
-            style={{ textAlign: "center", opacity: 0.8, marginBottom: 10 }}
-          >
-            {error ||
-              "No se ha cargado la información. Intenta nuevamente más tarde."}
+        <View style={styles.emptyContainer}>
+          {/* Icono principal */}
+          <Text style={styles.emptyIcon}>⚽⏳</Text>
+
+          {/* Título */}
+          <Text style={styles.emptyTitle}>
+            No hay partidos para predecir ahora
           </Text>
-          <Button mode="contained" onPress={loadPredictionOdds}>
-            Reintentar
-          </Button>
+
+          {/* Mensaje principal */}
+          <Text style={styles.emptyDescription}>
+            En los próximos 30 minutos no hay encuentros disponibles para
+            predicción. Pero aún puedes seguir ganando puntos y estar al día.
+          </Text>
+
+          {/* Acciones principales */}
+          <View style={styles.actionsGroup}>
+            <Button
+              mode="contained"
+              icon="soccer"
+              style={styles.primaryButton}
+              onPress={() => navigation.navigate("index")}
+            >
+              Ver partidos en vivo
+            </Button>
+
+            <Button
+              mode="outlined"
+              icon="dice-multiple"
+              style={styles.secondaryButton}
+              onPress={() => navigation.navigate("bets")}
+            >
+              Revisar apuestas
+            </Button>
+
+            <Button
+              mode="outlined"
+              icon="play-circle"
+              style={styles.secondaryButton}
+              onPress={() => console.log("Ganar puntos viendo videos")}
+            >
+              Ganar puntos viendo videos
+            </Button>
+          </View>
+
+          {/* Mensaje de cierre / refuerzo */}
+          <Text style={styles.emptyHint}>
+            Tip: revisa antes de que inicie un partido y accede a mejores
+            predicciones 🔮
+          </Text>
         </View>
       </PrivateLayout>
     );
@@ -122,7 +157,7 @@ export default function PredictionsFull() {
 
           const matchDate = new Date(fixture?.date || "");
           const isLive = ["1H", "2H", "HT", "ET"].includes(
-            fixture?.status?.short || ""
+            fixture?.status?.short || "",
           );
           const elapsed = fixture?.status?.elapsed;
 
@@ -214,7 +249,7 @@ export default function PredictionsFull() {
                                 name.includes("over/under") || // total goles
                                 name.includes("correct score") // marcador exacto
                               );
-                            }
+                            },
                           );
 
                           return (
@@ -254,14 +289,14 @@ export default function PredictionsFull() {
                                               selectedHouse ===
                                                 `${bm.name}-${bet.name}-${v.value}`
                                                 ? null
-                                                : `${bm.name}-${bet.name}-${v.value}`
+                                                : `${bm.name}-${bet.name}-${v.value}`,
                                             )
                                           }
                                           style={{ margin: 4 }}
                                         >
                                           {v.value}: {v.odd}
                                         </Chip>
-                                      )
+                                      ),
                                     )}
                                   </View>
                                 </View>
@@ -296,8 +331,9 @@ export default function PredictionsFull() {
                         )}
                         {pred.percent && (
                           <Text>
-                            Probabilidades → Local: {pred.percent.home} | Empate:{" "}
-                            {pred.percent.draw} | Visitante: {pred.percent.away}
+                            Probabilidades → Local: {pred.percent.home} |
+                            Empate: {pred.percent.draw} | Visitante:{" "}
+                            {pred.percent.away}
                           </Text>
                         )}
                       </>
@@ -328,7 +364,7 @@ export default function PredictionsFull() {
                           <Text style={{ color: "gray" }}>
                             {match?.fixture?.date
                               ? new Date(
-                                  match.fixture.date
+                                  match.fixture.date,
                                 ).toLocaleDateString()
                               : ""}
                           </Text>
@@ -367,13 +403,17 @@ export default function PredictionsFull() {
                               {val?.away}
                             </Text>
                           </View>
-                        )
+                        ),
                       )
                     ) : (
                       <Text>No hay datos de comparación</Text>
                     )}
                   </Card.Content>
                 </Card>
+
+                <View style={{ marginVertical: 10, alignItems: "center" }}>
+                  <AdBanner />
+                </View>
               </Card.Content>
             </Card>
           );
@@ -382,3 +422,58 @@ export default function PredictionsFull() {
     </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+
+  emptyButton: {
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  emptyIcon: {
+    fontSize: 56,
+    marginBottom: 16,
+  },
+
+  emptyDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+
+  actionsGroup: {
+    width: "100%",
+    gap: 12,
+    marginBottom: 20,
+  },
+
+  primaryButton: {
+    borderRadius: 24,
+  },
+
+  secondaryButton: {
+    borderRadius: 24,
+  },
+
+  emptyHint: {
+    fontSize: 12,
+    color: "#999",
+    textAlign: "center",
+  },
+});

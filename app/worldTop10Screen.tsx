@@ -1,20 +1,29 @@
+import Loading from "@/components/Loading";
 import WorldVideoFeed from "@/components/worldVideoFeed";
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
+import { loadInterstitial } from "@/services/ads/interstitial";
 import { WeeklyWorldTopVideo } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator, Button, Menu, Text } from "react-native-paper";
+import { Button, Menu, Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
 export default function WorldTop10Screen() {
-  const { getVideosWorldTop10 } = useFetch();
+  const { getVideosWorldTop10, getLimitAdsPerDay } = useFetch();
   const [videos, setVideos] = useState<WeeklyWorldTopVideo[]>([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
   const [openFeed, setOpenFeed] = useState(false);
   const [initialVideo, setInitialVideo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [limitAdsPerDay, setLimitAdsPerDay] = useState(20);
+
+  useEffect(() => {
+    loadInterstitial();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,29 +45,54 @@ export default function WorldTop10Screen() {
       }
     };
 
+    const loadAdsLimitPerDay = async () => {
+      setLoading(true);
+      try {
+        const { success, limit, message } = await getLimitAdsPerDay();
+        if (!isMounted) return;
+
+        if (success) {
+          setLimitAdsPerDay(limit);
+        } else {
+          setError(message!);
+        }
+      } catch (err) {
+        if (isMounted) setError("Error al cargar los equipos favoritos");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     getVideos();
+    loadAdsLimitPerDay();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
-  }
-
   const allWeeks = useMemo(
     () =>
       Array.from(new Set(videos.map((v) => v.week))).sort((a, b) =>
-        b.localeCompare(a)
+        b.localeCompare(a),
       ),
-    []
+    [],
   );
 
   const filtered =
     selectedWeek === null
       ? videos
       : videos.filter((v) => v.week === selectedWeek);
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
@@ -121,7 +155,9 @@ export default function WorldTop10Screen() {
               }}
             >
               <Image
-                source={{ uri: item.thumbail }}
+                source={{
+                  uri: `http://192.168.10.16:3001/api/weeklyWorldTop/image/${item.thumbail}`,
+                }}
                 style={{ width: "100%", height: 180 }}
               />
               <View
@@ -140,11 +176,17 @@ export default function WorldTop10Screen() {
           ))}
         </ScrollView>
 
+        <View style={{ marginVertical: 20, alignItems: "center" }}>
+          <AdBanner />
+        </View>
+
         {openFeed && initialVideo && (
           <WorldVideoFeed
             videos={filtered}
-            initialVideoId={initialVideo}
+            item={filtered.find((v) => v.id === initialVideo)!}
             onClose={() => setOpenFeed(false)}
+            limitAdsPerDay={limitAdsPerDay}
+            setLimitAdsPerDay={setLimitAdsPerDay}
           />
         )}
       </View>

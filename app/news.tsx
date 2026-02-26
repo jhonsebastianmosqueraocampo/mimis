@@ -1,17 +1,18 @@
+import Loading from "@/components/Loading";
 import NewsDetail from "@/components/NewsDetail";
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { NewsItem } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { ActivityIndicator } from "react-native-paper";
+import { TextInput } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import PrivateLayout from "./privateLayout";
 
@@ -64,13 +65,15 @@ export default function News() {
 
       return matchText && matchDate;
     });
-  }, [search, dateFilter]);
+  }, [news, search, dateFilter]);
 
   if (loading) {
     return (
-      <PrivateLayout>
-        <ActivityIndicator animating size="large" style={{ marginTop: 40 }} />
-      </PrivateLayout>
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
     );
   }
 
@@ -95,48 +98,72 @@ export default function News() {
 
         {/* 🔍 BUSCADOR */}
         <View style={styles.searchBox}>
-          <Icon name="magnify" size={22} color="#777" />
+          <Icon name="magnify" size={22} color="#555" />
+
           <TextInput
+            mode="flat"
             placeholder="Buscar por entidad, jugador o usuario..."
-            style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
+            style={styles.searchInput}
+            textColor="#000"
+            placeholderTextColor="#777"
+            underlineColor="transparent"
+            activeUnderlineColor="transparent"
           />
         </View>
 
         {/* 📅 FILTRO POR FECHA */}
         <TextInput
-          style={styles.dateInput}
+          mode="outlined"
           placeholder="Filtrar por fecha (YYYY-MM-DD)"
           value={dateFilter}
           onChangeText={setDateFilter}
+          style={styles.dateInput}
+          textColor="#000"
+          placeholderTextColor="#777"
+          outlineColor="#ccc"
+          activeOutlineColor="#2ecc71"
         />
+
+        <View style={{ marginVertical: 12 }}>
+          <AdBanner />
+        </View>
 
         {/* 📰 GRID DE NOTICIAS */}
         <ScrollView contentContainerStyle={styles.grid}>
-          {filteredNews.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.card}
-              onPress={() => setSelectedNews(item)}
-            >
-              <Image
-                source={{ uri: item.fotoPrincipal }}
-                style={styles.cardImage}
-              />
+          {filteredNews.map((item, index) => (
+            <React.Fragment key={item.id}>
+              {index > 0 && index % 6 === 0 && (
+                <View style={{ marginVertical: 12 }}>
+                  <AdBanner />
+                </View>
+              )}
+              <TouchableOpacity
+                key={item.id}
+                style={styles.card}
+                onPress={() => setSelectedNews(item)}
+              >
+                <Image
+                  source={{
+                    uri: `http://192.168.10.16:3001/api/userNews/image/${item.fotoPrincipal}`,
+                  }}
+                  style={styles.cardImage}
+                />
 
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle} numberOfLines={2}>
-                  {item.titulo}
-                </Text>
+                <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle} numberOfLines={2}>
+                    {item.titulo}
+                  </Text>
 
-                <Text style={styles.cardMeta}>
-                  {item.entidad} • {item.user.name}
-                </Text>
+                  <Text style={styles.cardMeta}>
+                    {item.entidad} • {item.user.name}
+                  </Text>
 
-                <Text style={styles.cardDate}>{item.fecha}</Text>
-              </View>
-            </TouchableOpacity>
+                  <Text style={styles.cardDate}>{item.fecha}</Text>
+                </View>
+              </TouchableOpacity>
+            </React.Fragment>
           ))}
         </ScrollView>
 
@@ -172,23 +199,22 @@ const styles = StyleSheet.create({
 
   searchBox: {
     flexDirection: "row",
-    backgroundColor: "#f0f0f0",
     alignItems: "center",
-    paddingHorizontal: 12,
+    backgroundColor: "#fff",
     borderRadius: 10,
+    paddingHorizontal: 10,
     marginBottom: 12,
   },
+
   searchInput: {
     flex: 1,
-    paddingVertical: 8,
-    marginLeft: 8,
+    backgroundColor: "transparent",
+    fontSize: 14,
   },
 
   dateInput: {
-    backgroundColor: "#f0f0f0",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 16,
+    backgroundColor: "#fff",
+    marginBottom: 15,
   },
 
   grid: {

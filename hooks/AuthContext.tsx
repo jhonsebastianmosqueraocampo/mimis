@@ -9,7 +9,7 @@ import React, {
 } from "react";
 
 // const apiUrl = Constants.expoConfig?.extra?.API_URL;
-const apiUrl = "http://192.168.20.17:3001/api";
+const apiUrl = "http://192.168.10.18:3001/api";
 
 type GoogleUser = {
   id: string;
@@ -24,7 +24,7 @@ type AuthContextType = {
   login: (userData: User) => Promise<{ success: boolean; message?: string }>;
   register: (userData: User) => Promise<{ success: boolean; message?: string }>;
   registerWithGoogle: (
-    googleUser: GoogleUser
+    googleUser: GoogleUser,
   ) => Promise<{ success: boolean; isNewUser: boolean; message?: string }>;
   logout: () => void;
   isLoggedIn: boolean;
@@ -53,11 +53,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!access_token) return;
 
     await AsyncStorage.setItem("accessToken", access_token);
-    setUser(user)
+    setUser(user);
   };
 
   const login = async (
-    userData: User
+    userData: User,
   ): Promise<{ success: boolean; message?: string }> => {
     try {
       const response = await fetch(`${apiUrl}/user/login`, {
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (
-    userData: User
+    userData: User,
   ): Promise<{ success: boolean; message?: string }> => {
     try {
       const response = await fetch(`${apiUrl}/user/register`, {
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const registerWithGoogle = async (
-    googleUser: GoogleUser
+    googleUser: GoogleUser,
   ): Promise<{
     success: boolean;
     isNewUser: boolean;

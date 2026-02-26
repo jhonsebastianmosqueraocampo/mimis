@@ -1,4 +1,5 @@
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { Picker } from "@react-native-picker/picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -30,7 +31,33 @@ const itemsTournament = [
   { id: 2, item: "Fase eliminatoria" },
 ];
 
-export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
+function normalizePhasesFromRaw(raw: any) {
+  if (!raw?.standings) return [];
+
+  return raw.standings.map((block: any[], index: number) => {
+    const sample = block[0];
+
+    const isGroup =
+      sample?.group &&
+      typeof sample.group === "string" &&
+      sample.group.length > 0;
+
+    const isLeague = !isGroup && block.length > 10; // heurística razonable
+
+    return {
+      id: index,
+      name: sample?.group ?? (isLeague ? "Fase Liga" : `Fase ${index + 1}`),
+      type: isGroup ? "group" : "league",
+      standings: block,
+    };
+  });
+}
+
+export default function SeasonResults({
+  teamId,
+  league,
+  equiposFavoritos,
+}: SeasonResultsProps) {
   const {
     getLeaguesByTeam,
     getStangingsLeague,
@@ -39,22 +66,24 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
   } = useFetch();
   const [competitions, setCompetitions] = useState<Competitions[]>([]);
   const [standings, setStandings] = useState<TeamStanding[]>([]);
+  const [phases, setPhases] = useState<any[]>([]);
+  const [selectedPhase, setSelectedPhase] = useState<number>(0);
   const [cupGroupStandings, setCupGroupStandings] = useState<GroupStanding[]>(
-    []
+    [],
   );
   const [hasGroupPhase, setHasGroupPhase] = useState(false);
   const [cupStandings, setCupStandings] = useState<CupStanding[]>([]);
   const [friendlyStandings, setFriendlyStandings] = useState<Fixture[]>([]);
   const [error, setError] = useState("");
   const [selectedItemTournament, setSelectedItemTournament] = useState(
-    itemsTournament[0].id
+    itemsTournament[0].id,
   );
   const [selectedCompetition, setSelectedCompetition] = useState(
-    competitions[0]?.league.id || ""
+    competitions[0]?.league.id || "",
   );
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [allMatches, setAllMatches] = useState<LiveMatch[]>([]);
-  const [selectedSeason, setSelectedSeason] = useState(0); // 0 = temporada actual
+  const [selectedSeason, setSelectedSeason] = useState(0);
   const currentYear = new Date().getFullYear();
   const seasons = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
@@ -94,7 +123,7 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
       default:
         break;
     }
-  }, [selectedCompetition]);
+  }, [selectedCompetition, selectedSeason]);
 
   useEffect(() => {
     if (league) {
@@ -114,32 +143,44 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
   }, [league]);
 
   const selectedComp = competitions.find(
-    (c) => c.league.id === selectedCompetition
+    (c) => c.league.id === selectedCompetition,
   );
 
   const getLeagues = async () => {
     if (teamId) {
-      const { success, competitions, message } = await getLeaguesByTeam(teamId, selectedSeason.toString());
+      const { success, competitions, message } = await getLeaguesByTeam(
+        teamId,
+        selectedSeason.toString(),
+      );
       success ? setCompetitions(competitions) : setError(message!);
     }
   };
 
   const getStandings = async () => {
-    const { success, standings, matches, message } = await getStangingsLeague(
+    const { success, standings, raw, matches } = await getStangingsLeague(
       selectedCompetition,
-      selectedSeason.toString()
+      selectedSeason.toString(),
     );
-    if (success) {
-      setStandings(standings);
+
+    if (success && raw) {
+      const parsedPhases = normalizePhasesFromRaw(raw);
+
+      setPhases(parsedPhases);
+      setSelectedPhase(0);
+      setStandings(parsedPhases[0]?.standings ?? []);
       setAllMatches(matches);
-    } else {
-      setError(message!);
     }
   };
 
   const getCupStandings = async () => {
-    const { success, hasGroupPhase, groupPhase, knockoutPhase, matches, message } =
-      await getStangingsCup(selectedCompetition, selectedSeason.toString());
+    const {
+      success,
+      hasGroupPhase,
+      groupPhase,
+      knockoutPhase,
+      matches,
+      message,
+    } = await getStangingsCup(selectedCompetition, selectedSeason.toString());
     if (success) {
       setCupGroupStandings(groupPhase);
       setCupStandings(knockoutPhase);
@@ -152,7 +193,10 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
 
   const getFriendlies = async () => {
     if (teamId) {
-      const { success, fixtures, message } = await getFriendlyMatches(teamId, selectedSeason.toString());
+      const { success, fixtures, message } = await getFriendlyMatches(
+        teamId,
+        selectedSeason.toString(),
+      );
       if (success) {
         setFriendlyStandings(fixtures);
       } else {
@@ -165,15 +209,15 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
   const startPolling = useCallback(() => {
     const league = selectedComp?.league;
     if (!league) return;
-    const compType = league.leagueType
+    const compType = league.leagueType;
     const isFriendlyByName = league.name.toLowerCase().includes("friendlies");
 
     if (isFriendlyByName) return; // 🧠 solo si es liga o copa
     if (intervalRef.current) return; // evitar duplicados
 
     intervalRef.current = setInterval(async () => {
-      if(compType === "League") await getStandings();
-      if(compType === "Cup") await getCupStandings();
+      if (compType === "League") await getStandings();
+      if (compType === "Cup") await getCupStandings();
 
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     }, 60 * 1000); // cada minuto
@@ -255,13 +299,38 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
           <FriendlyMatches standings={friendlyStandings} teamId={teamId} />
         )}
 
-      {selectedComp?.league.leagueType.toLowerCase() === "league" && (
+      {phases.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {phases.map((phase, idx) => (
+            <Chip
+              key={idx}
+              mode={selectedPhase === idx ? "flat" : "outlined"}
+              style={[
+                styles.chip,
+                selectedPhase === idx && styles.chipSelected,
+              ]}
+              textStyle={{
+                color: selectedPhase === idx ? "#fff" : "#000",
+              }}
+              onPress={() => {
+                setSelectedPhase(idx);
+                setStandings(phase.standings);
+              }}
+            >
+              {phase.name.toUpperCase()}
+            </Chip>
+          ))}
+        </ScrollView>
+      )}
+
+      {phases.length > 0 && (
         <LeagueTable
           standings={standings}
           matches={allMatches}
           selectedTeam={selectedTeam ?? ""}
           setSelectedTeam={setSelectedTeam}
           teamId={teamId}
+          equiposFavoritos={equiposFavoritos}
         />
       )}
 
@@ -301,14 +370,26 @@ export default function SeasonResults({ teamId, league }: SeasonResultsProps) {
                     />
                   </View>
                 ) : (
-                  <KnockoutBracket standings={cupStandings} teamId={teamId} matches={allMatches}/>
+                  <KnockoutBracket
+                    standings={cupStandings}
+                    teamId={teamId}
+                    matches={allMatches}
+                  />
                 )}
               </>
             ) : (
-              <KnockoutBracket standings={cupStandings} teamId={teamId} matches={allMatches}/>
+              <KnockoutBracket
+                standings={cupStandings}
+                teamId={teamId}
+                matches={allMatches}
+              />
             )}
           </View>
         )}
+
+      <View style={{ marginVertical: 20, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </ScrollView>
   );
 }

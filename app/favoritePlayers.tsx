@@ -1,9 +1,10 @@
+import Loading from "@/components/Loading";
 import ScrollSection from "@/components/ScrollSection";
 import { useFetch } from "@/hooks/FetchContext";
 import { RootStackParamList, swiperItem } from "@/types";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Divider } from "react-native-paper";
+import { Divider } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
@@ -20,8 +21,7 @@ export default function FavoritePlayers() {
     const getFavoriteList = async () => {
       setLoading(true);
       try {
-        const { success, players, message } =
-          await getFavorites();
+        const { success, players, message } = await getFavorites();
         if (!isMounted) return;
 
         if (success) {
@@ -44,7 +44,13 @@ export default function FavoritePlayers() {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando jugadores favoritos"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const actionPlayer = (id: string) => {

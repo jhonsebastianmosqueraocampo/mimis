@@ -1,5 +1,11 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
-import { Country, LiveMatch, NationalLeague, RootStackParamList } from "@/types";
+import {
+  Country,
+  LiveMatch,
+  NationalLeague,
+  RootStackParamList,
+} from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ActivityIndicator, Card, Chip, Divider } from "react-native-paper";
+import { Card, Chip, Divider } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
@@ -23,15 +29,16 @@ export default function Countries() {
     getNationalMatchesToday,
   } = useFetch();
   const [activeTab, setActiveTab] = useState<"paises" | "torneos" | "vivo">(
-    "paises"
+    "paises",
   );
   const [search, setSearch] = useState<string>("");
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [tournaments, setTournaments] = useState<NationalLeague[]>([]);
   const [allMatches, setAllMatches] = useState<LiveMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [loading, setLoading] = useState(false);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let mounted = true;
@@ -54,7 +61,7 @@ export default function Countries() {
       setLoading(true);
       try {
         const { success, leaguesCountry, message } = await getLeaguesCountry(
-          selectedCountry!
+          selectedCountry!,
         );
         if (!mounted) return;
         if (success) {
@@ -116,33 +123,48 @@ export default function Countries() {
   }, [activeTab, selectedCountry]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando paises"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
-  const filteredCountries = countries.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
-  const filteredTournaments = tournaments.filter((t) =>
-    t.name.toLowerCase().includes(search.toLowerCase())
-  );
-  const filteredLive = allMatches.filter((m) =>
-    `${m.teams.home.name} ${m.teams.away.name}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filteredCountries =
+    countries.length > 0
+      ? countries.filter((c) =>
+          (c?.name ?? "").toLowerCase().includes(search.toLowerCase()),
+        )
+      : [];
+  const filteredTournaments =
+    tournaments.length > 0
+      ? tournaments.filter((t) =>
+          (t?.name ?? "").toLowerCase().includes(search.toLowerCase()),
+        )
+      : [];
+  const filteredLive =
+    allMatches?.filter((m) =>
+      `${m?.teams?.home?.name ?? ""} ${m?.teams?.away?.name ?? ""}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    ) ?? [];
 
   const handleTournament = (id: string) => {
-    navigation.navigate('tournament', {id})
-  }
+    navigation.navigate("tournament", { id });
+  };
 
   const handleMatch = (id: string) => {
-    navigation.navigate('match', {id})
-  }
+    navigation.navigate("match", { id });
+  };
 
   /** 🌍 Países + torneos del país */
   const renderCountries = () => {
-    const firstRow = filteredCountries.filter((_, i) => i % 2 === 0);
-    const secondRow = filteredCountries.filter((_, i) => i % 2 !== 0);
+    const firstRow =
+      filteredCountries && filteredCountries.filter((_, i) => i % 2 === 0);
+    const secondRow =
+      filteredCountries && filteredCountries.filter((_, i) => i % 2 !== 0);
 
     // Generador de grid 2 columnas
     const renderTournamentGrid = (tournaments: NationalLeague[]) => {
@@ -156,9 +178,9 @@ export default function Countries() {
             <View key={index} style={styles.tournamentRow}>
               {row.map((item, index) => (
                 <Card
-                  key={item.leagueId}
+                  key={index}
                   style={styles.tournamentGridCard}
-                  onPress={() => console.log("Ir a torneo:", item.name)}
+                  onPress={() => handleTournament(item.leagueId.toString())}
                 >
                   <Image
                     source={{ uri: item.logo }}
@@ -195,30 +217,31 @@ export default function Countries() {
           <View style={styles.countryRows}>
             {[firstRow, secondRow].map((row, i) => (
               <View key={i} style={styles.countryRow}>
-                {row.map((country) => {
-                  const isSelected = selectedCountry === country.name;
-                  return (
-                    <TouchableOpacity
-                      key={country.name}
-                      style={[
-                        styles.countryCard,
-                        isSelected && styles.countryCardSelected,
-                      ]}
-                      onPress={() => setSelectedCountry(country.name)}
-                      activeOpacity={0.8}
-                    >
-                      <Text
+                {row &&
+                  row.map((country) => {
+                    const isSelected = selectedCountry === country.name;
+                    return (
+                      <TouchableOpacity
+                        key={country.name}
                         style={[
-                          styles.countryName,
-                          isSelected && { color: "#1DB954" },
+                          styles.countryCard,
+                          isSelected && styles.countryCardSelected,
                         ]}
-                        numberOfLines={1}
+                        onPress={() => setSelectedCountry(country.name)}
+                        activeOpacity={0.8}
                       >
-                        {country.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                        <Text
+                          style={[
+                            styles.countryName,
+                            isSelected && { color: "#1DB954" },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {country.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
               </View>
             ))}
           </View>
@@ -251,9 +274,9 @@ export default function Countries() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {rows.map((row, index) => (
             <View key={index} style={styles.tournamentRow}>
-              {row.map((item) => (
+              {row.map((item, index) => (
                 <TouchableOpacity
-                  key={item.leagueId}
+                  key={index}
                   style={styles.tournamentGridCard}
                   onPress={() => handleTournament(item.leagueId.toString())}
                   activeOpacity={0.8}

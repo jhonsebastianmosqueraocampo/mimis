@@ -1,6 +1,8 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
-import { VideoYoutube } from "@/types";
-import React, { useEffect, useState } from "react";
+import AdBanner from "@/services/ads/AdBanner";
+import { videosTypeYoutube } from "@/types";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -10,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
 const { width } = Dimensions.get("window");
@@ -18,22 +20,22 @@ const { width } = Dimensions.get("window");
 export default function ResumeAndGoal() {
   const { getFavoritesVideos } = useFetch();
 
-  const [equipos, setEquipos] = useState<VideoYoutube[]>([]);
-  const [jugadores, setJugadores] = useState<VideoYoutube[]>([]);
+  const [equipos, setEquipos] = useState<videosTypeYoutube[]>([]);
+  const [jugadores, setJugadores] = useState<videosTypeYoutube[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"equipos" | "jugadores">("equipos");
-
-  const videosToShow = activeTab === "equipos" ? equipos : jugadores;
+  const [activeTab, setActiveTab] = useState<"equipos" | "jugadores">(
+    "equipos",
+  );
 
   useEffect(() => {
     let isMounted = true;
     const getFavoriteList = async () => {
       setLoading(true);
       try {
-        const { success, videosTeams, videosPlayers, message } = await getFavoritesVideos();
+        const { success, videosTeams, videosPlayers, message } =
+          await getFavoritesVideos();
         if (!isMounted) return;
-
         if (success) {
           setEquipos(videosTeams);
           setJugadores(videosPlayers);
@@ -53,8 +55,18 @@ export default function ResumeAndGoal() {
     };
   }, []);
 
+  const videosToShow = useMemo(() => {
+    return activeTab === "equipos" ? equipos : jugadores;
+  }, [activeTab, equipos, jugadores]);
+
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 40 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   if (error) {
@@ -80,7 +92,12 @@ export default function ResumeAndGoal() {
             style={[styles.tab, activeTab === "equipos" && styles.activeTab]}
             onPress={() => setActiveTab("equipos")}
           >
-            <Text style={[styles.tabText, activeTab === "equipos" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "equipos" && styles.activeTabText,
+              ]}
+            >
               Equipos
             </Text>
           </TouchableOpacity>
@@ -89,7 +106,12 @@ export default function ResumeAndGoal() {
             style={[styles.tab, activeTab === "jugadores" && styles.activeTab]}
             onPress={() => setActiveTab("jugadores")}
           >
-            <Text style={[styles.tabText, activeTab === "jugadores" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "jugadores" && styles.activeTabText,
+              ]}
+            >
               Jugadores
             </Text>
           </TouchableOpacity>
@@ -100,27 +122,59 @@ export default function ResumeAndGoal() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
         >
-          <View style={styles.grid}>
-            {videosToShow.length === 0 ? (
-              <Text style={styles.emptyText}>No hay videos disponibles.</Text>
-            ) : (
-              videosToShow.map((item) => (
-                <TouchableOpacity
-                  key={item.videoId}
-                  style={styles.card}
-                  activeOpacity={0.9}
-                  onPress={() => openVideo(item.videoId)}
-                >
-                  <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-                  <Text numberOfLines={2} style={styles.videoTitle}>
-                    {item.title}
+          {videosToShow.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>
+                {activeTab === "equipos"
+                  ? "⚽ No tienes equipos favoritos"
+                  : "👤 No tienes jugadores favoritos"}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                Agrega favoritos para ver sus videos aquí.
+              </Text>
+            </View>
+          ) : (
+            videosToShow.map((group, groupIndex) => (
+              <View key={groupIndex} style={styles.groupContainer}>
+                {/* Nombre del equipo o jugador */}
+                <Text style={styles.groupTitle}>{group.name}</Text>
+
+                {group.videos.length === 0 ? (
+                  <Text style={styles.noVideosText}>
+                    No hay videos recientes disponibles.
                   </Text>
-                  <Text numberOfLines={1} style={styles.channelTitle}>
-                    {item.channelTitle}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
+                ) : (
+                  <View style={styles.grid}>
+                    {group.videos.map((video) => (
+                      <TouchableOpacity
+                        key={video.videoId}
+                        style={styles.card}
+                        activeOpacity={0.9}
+                        onPress={() => openVideo(video.videoId)}
+                      >
+                        <Image
+                          source={{ uri: video.thumbnail }}
+                          style={styles.thumbnail}
+                        />
+
+                        <View style={styles.cardContent}>
+                          <Text numberOfLines={2} style={styles.videoTitle}>
+                            {video.title}
+                          </Text>
+
+                          <Text numberOfLines={1} style={styles.channelTitle}>
+                            {video.channelTitle}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))
+          )}
+          <View style={{ marginVertical: 10, alignItems: "center" }}>
+            <AdBanner />
           </View>
         </ScrollView>
       </View>
@@ -210,5 +264,45 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  groupContainer: {
+    marginBottom: 24,
+  },
+
+  groupTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+    color: "#1e1e1e",
+  },
+
+  cardContent: {
+    padding: 8,
+  },
+
+  noVideosText: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 8,
+    fontStyle: "italic",
+  },
+
+  emptyContainer: {
+    alignItems: "center",
+    marginTop: 80,
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+    paddingHorizontal: 20,
   },
 });

@@ -18,37 +18,53 @@ type Props = {
 
 export default function PlayersStatsTable({ stats }: Props) {
   const [selected, setSelected] = useState<any>(null);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // Ligas únicas
-  const leagues = stats
-    .map((s) => s.players[0]?.statistics[0]?.league)
-    .filter(Boolean);
+  const leagues = Array.from(
+    new Map(
+      stats.map((s) => {
+        const league = s.players
+          ?.flatMap((p) => p.statistics ?? [])
+          ?.find((st) => st.league)?.league;
+
+        return [s.leagueId, league];
+      }),
+    ).values(),
+  ).filter(Boolean);
 
   // Jugadores únicos
   const playersMap: Record<number, any> = {};
-  stats.forEach((leagueStats) => {
-    leagueStats.players.forEach((p) => {
-      if (!playersMap[p.player.id]) {
-        playersMap[p.player.id] = { ...p, totalGoals: 0 };
+  stats.forEach((doc) => {
+    doc.players.forEach((p) => {
+      const playerId = p.player.id;
+
+      if (!playersMap[playerId]) {
+        playersMap[playerId] = {
+          player: p.player,
+          totalGoals: 0,
+        };
       }
-      const goals = p.statistics[0]?.goals.total ?? 0;
-      playersMap[p.player.id].totalGoals += goals;
+
+      // 👇 SOLO el stat de ESTE doc (una liga)
+      const stat = p.statistics[0];
+      playersMap[playerId].totalGoals += stat?.goals?.total ?? 0;
     });
   });
   const players = Object.values(playersMap).sort(
-    (a: any, b: any) => b.totalGoals - a.totalGoals
+    (a: any, b: any) => b.totalGoals - a.totalGoals,
   );
 
   const fixedColWidth = 160; // ajustar según estilo
 
   const handlePlayer = (id: string) => {
-    navigation.navigate('player', {id})
-  }
+    navigation.navigate("player", { id });
+  };
 
   const handleLeague = (id: string) => {
-    navigation.navigate('tournament', {id})
-  }
+    navigation.navigate("tournament", { id });
+  };
 
   return (
     <View style={styles.container}>
@@ -71,7 +87,10 @@ export default function PlayersStatsTable({ stats }: Props) {
           </DataTable.Header>
 
           {players.map((player: any) => (
-            <DataTable.Row key={player.player.id} onPress={()=>handlePlayer(player.player.id)}>
+            <DataTable.Row
+              key={player.player.id}
+              onPress={() => handlePlayer(player.player.id)}
+            >
               <DataTable.Cell
                 style={[styles.playerCol, { width: fixedColWidth }]}
               >
@@ -98,7 +117,7 @@ export default function PlayersStatsTable({ stats }: Props) {
                 style={styles.leagueGroup}
                 key={idx}
                 numeric={false}
-                onPress={()=>handleLeague(league.id)}
+                onPress={() => handleLeague(league.id)}
               >
                 <View style={styles.leagueHeader}>
                   <Avatar.Image size={24} source={{ uri: league.logo }} />
@@ -123,10 +142,15 @@ export default function PlayersStatsTable({ stats }: Props) {
           {players.map((player: any) => (
             <DataTable.Row key={player.player.id}>
               {leagues.map((league, idx) => {
-                const leagueStat = stats
-                  .find((s) => s.leagueId === league.id)
-                  ?.players.find((p) => p.player.id === player.player.id)
-                  ?.statistics[0];
+                const leagueBlock = stats.find((s) => s.leagueId === league.id);
+
+                const playerBlock = leagueBlock?.players.find(
+                  (p) => p.player.id === player.player.id,
+                );
+
+                const leagueStat = playerBlock?.statistics?.find(
+                  (st) => st.league?.id === league.id,
+                );
 
                 return (
                   <React.Fragment key={idx}>
@@ -173,8 +197,6 @@ export default function PlayersStatsTable({ stats }: Props) {
         </DataTable>
       </ScrollView>
 
-      
-
       {/* Modal detalle */}
       <Portal>
         <Modal
@@ -183,7 +205,7 @@ export default function PlayersStatsTable({ stats }: Props) {
           contentContainerStyle={styles.modal}
         >
           {selected && (
-            <TouchableOpacity onPress={()=>handlePlayer(selected.player.id)}>
+            <TouchableOpacity onPress={() => handlePlayer(selected.player.id)}>
               <Card.Title
                 title={`${selected.player.name} - ${selected.league}`}
               />
@@ -201,10 +223,6 @@ export default function PlayersStatsTable({ stats }: Props) {
                   Tarjetas amarillas: {selected.stats.cards.yellow ?? 0}
                 </Text>
                 <Text>Tarjetas rojas: {selected.stats.cards.red ?? 0}</Text>
-
-                {/* Opcionales: si tienes esos datos en tu tipo, puedes descomentar y agregar */}
-                {/* <Text>Pie dominante: {selected.player.foot ?? "-"}</Text> */}
-                {/* <Text>Número camiseta: {selected.stats.games.number ?? "-"}</Text> */}
               </Card.Content>
             </TouchableOpacity>
           )}

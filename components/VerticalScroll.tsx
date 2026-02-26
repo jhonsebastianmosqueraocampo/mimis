@@ -1,44 +1,40 @@
+import AdBanner from "@/services/ads/AdBanner";
 import React from "react";
 import { Linking, StyleSheet, Text, View } from "react-native";
 import { Card, Paragraph, Title } from "react-native-paper";
 import type { VerticalScrollProps } from "../types";
 
-export default function VerticalScroll({
-  listItems,
-  actionGeneralList,
-}: VerticalScrollProps) {
+export default function VerticalScroll({ listItems }: VerticalScrollProps) {
   return (
     <View style={styles.container}>
       {listItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No hay noticias disponibles</Text>
+          <Text style={styles.emptyText}>No hay información disponible</Text>
         </View>
       ) : (
         listItems.map((item, index) => (
-          <Card
-            key={item.id || index}
-            style={styles.card}
-            mode="elevated"
-            onPress={() => Linking.openURL(item.pathTo)}
-          >
-            <Card.Content>
-              <Title style={styles.title}>{item.title}</Title>
-              {item.source && (
-                <Paragraph style={styles.source}>{item.source}</Paragraph>
-              )}
-              {item.date && (
-                <Text style={styles.date}>
-                  {new Date(item.date).toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </Text>
-              )}
-            </Card.Content>
-          </Card>
+          <React.Fragment key={index}>
+            {/* Cada 4 noticias insertamos banner */}
+            {index > 0 && index % 4 === 0 && (
+              <View style={{ marginVertical: 10 }}>
+                <AdBanner />
+              </View>
+            )}
+
+            <Card
+              style={styles.card}
+              mode="elevated"
+              onPress={() => Linking.openURL(item.pathTo)}
+            >
+              <Card.Content>
+                <Title style={styles.title}>{item.title}</Title>
+                {item.source && (
+                  <Paragraph style={styles.source}>{item.source}</Paragraph>
+                )}
+                {item.date && <Text style={styles.date}>{item.date}</Text>}
+              </Card.Content>
+            </Card>
+          </React.Fragment>
         ))
       )}
     </View>

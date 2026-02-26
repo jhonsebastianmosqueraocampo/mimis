@@ -3,7 +3,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import React, { useEffect, useState } from "react";
 import { Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import {
-  ActivityIndicator,
   Avatar,
   Card,
   Chip,
@@ -15,9 +14,11 @@ import {
 dayjs.extend(relativeTime);
 
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { PlayerFixtureStats, Prediction } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AdvancedMatchStats from "./AdvancedMatchStats";
+import Loading from "./Loading";
 
 type MatchPredictionsProps = {
   fixtureId: string;
@@ -27,7 +28,7 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
   const { getFixturePrediction, getFeaturedPlayerByTeamLeague } = useFetch();
   const [predictions, setPredictions] = useState<Prediction>();
   const [featuredPlayers, setFeaturedPlayers] = useState<PlayerFixtureStats[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,9 +38,8 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
     const getFixturePreview = async () => {
       setLoading(true);
       try {
-        const { success, prediction, message } = await getFixturePrediction(
-          fixtureId
-        );
+        const { success, prediction, message } =
+          await getFixturePrediction(fixtureId);
 
         if (!isMounted) return;
 
@@ -94,7 +94,13 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
   }, [fixtureId]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const renderForm = (form: string[]) => (
@@ -104,10 +110,10 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
           result === "W"
             ? "green"
             : result === "D"
-            ? "#888"
-            : result === "L"
-            ? "red"
-            : "#ccc";
+              ? "#888"
+              : result === "L"
+                ? "red"
+                : "#ccc";
         return (
           <View key={idx} style={[styles.formCircle, { backgroundColor: bg }]}>
             <RNText style={styles.formText}>{result}</RNText>
@@ -138,14 +144,20 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
           {predictions?.teams.home.name} (
           {predictions?.predictions.percent.home})
         </Text>
-        <ProgressBar progress={safeProgress(predictions?.predictions.percent.home)} />
+        <ProgressBar
+          progress={safeProgress(predictions?.predictions.percent.home)}
+        />
         <Text>Empate ({predictions?.predictions.percent.draw})</Text>
-        <ProgressBar progress={safeProgress(predictions?.predictions.percent.draw)} />
+        <ProgressBar
+          progress={safeProgress(predictions?.predictions.percent.draw)}
+        />
         <Text>
           {predictions?.teams.away.name} (
           {predictions?.predictions.percent.away})
         </Text>
-        <ProgressBar progress={safeProgress(predictions?.predictions.percent.away)} />
+        <ProgressBar
+          progress={safeProgress(predictions?.predictions.percent.away)}
+        />
       </View>
 
       <Divider style={styles.divider} />
@@ -196,7 +208,10 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
                 🎯 Asistencias: {p.statistics[0].goals.assists || 0}
               </Text>
               <Text style={styles.statLine}>
-                ⭐ Rating: {p.statistics[0].games.rating ? Number(p.statistics[0].games.rating).toFixed(1) : "-"}
+                ⭐ Rating:{" "}
+                {p.statistics[0].games.rating
+                  ? Number(p.statistics[0].games.rating).toFixed(1)
+                  : "-"}
               </Text>
               <Text style={styles.statLine}>
                 ⏱️ Minutos jugados: {p.statistics[0].games.minutes || 0}
@@ -223,11 +238,15 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
       </Text>
       <View style={styles.statRow}>
         <Text>{predictions?.teams.home.name}: </Text>
-        <Text>{Number(predictions?.predictions.goals.home ?? 0).toFixed(2)}</Text>
+        <Text>
+          {Number(predictions?.predictions.goals.home ?? 0).toFixed(2)}
+        </Text>
       </View>
       <View style={styles.statRow}>
         <Text>{predictions?.teams.away.name}: </Text>
-        <Text>{Number(predictions?.predictions.goals.away ?? 0).toFixed(2)}</Text>
+        <Text>
+          {Number(predictions?.predictions.goals.away ?? 0).toFixed(2)}
+        </Text>
       </View>
 
       <Divider style={styles.divider} />
@@ -353,6 +372,10 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
         🤖 Score Predictor (IA)
       </Text>
       {/* <Text>{prediction.aiAnalysis}</Text> */}
+
+      <View style={{ marginVertical: 24, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </ScrollView>
   );
 }

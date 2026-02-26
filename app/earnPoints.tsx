@@ -1,46 +1,75 @@
-import React, { useState } from "react";
+import Loading from "@/components/Loading";
+import { useFetch } from "@/hooks/FetchContext";
+import { RootStackParamList } from "@/types";
+import { useNavigation } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Button, Card } from "react-native-paper";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
 export default function EarnPoints() {
-  const [points, setPoints] = useState<number>(120);
+  const { getUserPoints } = useFetch();
+  const [loading, setLoading] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    let mounted = true;
+    const loadUserPoints = async () => {
+      setLoading(true);
+      try {
+        const { success, points, message } = await getUserPoints();
+        if (!mounted) return;
+        if (success) {
+          setUserPoints(points);
+        }
+      } catch (err) {
+        console.error("❌ Error cargando favoritos:", err);
+      }
+      setLoading(false);
+    };
+
+    loadUserPoints();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleStart = () => {
     console.log("Iniciar actividades para ganar puntos");
   };
 
   const handleRedeem = () => {
-    console.log("Redimir puntos");
+    navigation.navigate("store");
   };
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando paises"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
       <View style={styles.container}>
-        <Text style={styles.title}>🎯 Gana puntos</Text>
-        <Text style={styles.subtitle}>
-          Participa en actividades, retos o encuestas para acumular puntos y
-          canjéalos por recompensas exclusivas.
-        </Text>
+        <Text style={styles.title}>Gana puntos</Text>
+        <Text style={styles.subtitle}></Text>
 
         <Card style={styles.card}>
           <Text style={styles.pointsLabel}>Tus puntos actuales</Text>
-          <Text style={styles.pointsValue}>{points}</Text>
+          <Text style={styles.pointsValue}>{userPoints}</Text>
         </Card>
-
-        <Button
-          mode="contained"
-          onPress={handleStart}
-          style={styles.buttonPrimary}
-          labelStyle={{ fontSize: 16 }}
-        >
-          Iniciar y ganar puntos
-        </Button>
 
         <View style={styles.redeemSection}>
           <Text style={styles.redeemText}>
-            💡 Puedes redimir tus puntos por beneficios, premios o descuentos
-            cuando alcances los mínimos requeridos.
+            💡 Puedes redimir tus puntos por productos en la tienda de la app
           </Text>
 
           <Button

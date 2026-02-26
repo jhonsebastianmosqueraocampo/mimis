@@ -1,16 +1,17 @@
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import React, { useEffect, useState } from "react";
-import { ScrollView } from "react-native";
-import { ActivityIndicator, Divider } from "react-native-paper";
+import { ScrollView, View } from "react-native";
+import { Divider } from "react-native-paper";
 import type { swiperItem } from "../types";
+import Loading from "./Loading";
 import ScrollSection from "./ScrollSection"; // debe estar adaptado a RN
 
 type SigningsAndRumorsProps = {
   teamId: string;
-}
+};
 
-export default function SigningsAndRumors({teamId}: SigningsAndRumorsProps) {
-
+export default function SigningsAndRumors({ teamId }: SigningsAndRumorsProps) {
   const { getNewsSignAndRumorTeam } = useFetch();
   const [newSigns, setNewSigns] = useState<swiperItem[]>();
   const [newRumors, setNewRumor] = useState<swiperItem[]>();
@@ -23,7 +24,8 @@ export default function SigningsAndRumors({teamId}: SigningsAndRumorsProps) {
 
   const getNews = async () => {
     setLoading(true);
-    const { success, newSigns, newRumor, message } = await getNewsSignAndRumorTeam(teamId);
+    const { success, newSigns, newRumor, message } =
+      await getNewsSignAndRumorTeam(teamId);
     if (success) {
       setNewSigns(newSigns);
       setNewRumor(newRumor);
@@ -34,7 +36,13 @@ export default function SigningsAndRumors({teamId}: SigningsAndRumorsProps) {
   };
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const signingAndRumorAction = (id: string) => {
@@ -56,6 +64,9 @@ export default function SigningsAndRumors({teamId}: SigningsAndRumorsProps) {
         shape="news"
         action={signingAndRumorAction}
       />
+      <View style={{ marginVertical: 24, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </ScrollView>
   );
 }

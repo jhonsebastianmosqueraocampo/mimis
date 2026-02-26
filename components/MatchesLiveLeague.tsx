@@ -1,11 +1,18 @@
 import PrivateLayout from "@/app/privateLayout";
 import { useFetch } from "@/hooks/FetchContext";
-import { LiveMatch, RootStackParamList } from "@/types";
+import { LiveMatch, RootStackParamList, swiperItem } from "@/types";
 import { useNavigation } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   AppState,
   AppStateStatus,
+  Image,
   LayoutAnimation,
   ScrollView,
   StyleSheet,
@@ -19,19 +26,28 @@ import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/n
 
 type MatchesLiveLeagueProps = {
   leagueId: string;
+  equiposFavoritos?: swiperItem[];
 };
 
 const mergeById = (oldArr: LiveMatch[], newArr: LiveMatch[]): LiveMatch[] => {
   const map = new Map<number, LiveMatch>();
   oldArr.forEach((m) => map.set(m.fixtureId, m));
-  newArr.forEach((m) => map.set(m.fixtureId, { ...m, status: { ...m.status } }));
+  newArr.forEach((m) =>
+    map.set(m.fixtureId, { ...m, status: { ...m.status } })
+  );
   return Array.from(map.values());
 };
 
-export default function MatchesLiveLeague({ leagueId }: MatchesLiveLeagueProps) {
+export default function MatchesLiveLeague({
+  leagueId,
+  equiposFavoritos,
+}: MatchesLiveLeagueProps) {
   const { getMatchesTodayFromLeague } = useFetch();
   const [allMatches, setAllMatches] = useState<LiveMatch[]>([]);
   const [searchText, setSearchText] = useState("");
+  const [selectedFavoriteTeam, setSelectedFavoriteTeam] = useState<
+    string | "ALL"
+  >("ALL");
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -47,6 +63,21 @@ export default function MatchesLiveLeague({ leagueId }: MatchesLiveLeagueProps) 
       return [];
     }
   };
+
+  const favoriteTeamsInAllMatches = useMemo(() => {
+    if (!equiposFavoritos || !allMatches) return [];
+
+    const teamsInMatches = new Set(
+      allMatches.flatMap((m) => [
+        m.teams.home.name.toLowerCase(),
+        m.teams.away.name.toLowerCase(),
+      ])
+    );
+
+    return equiposFavoritos.filter((fav) =>
+      teamsInMatches.has(fav.title.toLowerCase())
+    );
+  }, [equiposFavoritos, allMatches]);
 
   // 🔹 Inicia polling solo mientras la pantalla está activa
   const startPolling = useCallback(() => {
@@ -87,20 +118,35 @@ export default function MatchesLiveLeague({ leagueId }: MatchesLiveLeagueProps) 
     };
   }, [fetchMatches, startPolling, stopPolling]);
 
-  // 🧠 Filtro por nombre del equipo
   const filteredMatches = useMemo(() => {
-    if (!searchText.trim()) return allMatches;
-    const query = searchText.toLowerCase();
-    return allMatches.filter(
-      (m) =>
-        m.teams.home.name.toLowerCase().includes(query) ||
-        m.teams.away.name.toLowerCase().includes(query)
-    );
-  }, [allMatches, searchText]);
+    let results = [...allMatches];
 
-  const actionMatch = (id:string) => {
+    // 🟢 Filtrar por favorito seleccionado
+    if (selectedFavoriteTeam !== "ALL") {
+      const favLower = selectedFavoriteTeam.toLowerCase();
+      results = results.filter(
+        (match) =>
+          match.teams.home.name.toLowerCase() === favLower ||
+          match.teams.away.name.toLowerCase() === favLower
+      );
+    }
+
+    // 🔍 Filtrar por texto
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      results = results.filter(
+        (match) =>
+          match.teams.home.name.toLowerCase().includes(q) ||
+          match.teams.away.name.toLowerCase().includes(q)
+      );
+    }
+
+    return results;
+  }, [allMatches, selectedFavoriteTeam, searchText]);
+
+  const actionMatch = (id: string) => {
     navigation.navigate("match", { id });
-  }
+  };
 
   return (
     <PrivateLayout>
@@ -115,6 +161,59 @@ export default function MatchesLiveLeague({ leagueId }: MatchesLiveLeagueProps) 
           onChangeText={setSearchText}
         />
 
+        {/* Filtro por favoritos */}
+        {favoriteTeamsInAllMatches.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.chipsRowHorizontal,
+              { marginTop: 4 },
+            ]}
+          >
+            <Chip
+              selected={selectedFavoriteTeam === "ALL"}
+              onPress={() => setSelectedFavoriteTeam("ALL")}
+              style={[styles.chip, { backgroundColor: "#FFFBEA" }]}
+              avatar={<Text style={{ fontSize: 16 }}>⭐</Text>}
+            >
+              Favoritos
+            </Chip>
+
+            {favoriteTeamsInAllMatches.map((eq) => (
+              <Chip
+                key={eq.id}
+                selected={selectedFavoriteTeam === eq.title}
+                onPress={() =>
+                  setSelectedFavoriteTeam((prev) =>
+                    prev === eq.title ? "ALL" : eq.title
+                  )
+                }
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor:
+                      selectedFavoriteTeam === eq.title ? "#D6F5D6" : "#F0F0F0",
+                  },
+                ]}
+                avatar={
+                  <Image
+                    source={{ uri: eq.img }}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: "#fff",
+                    }}
+                  />
+                }
+              >
+                {eq.title}
+              </Chip>
+            ))}
+          </ScrollView>
+        )}
+
         <ScrollView
           style={{ marginTop: 10 }}
           contentContainerStyle={{ paddingBottom: 60 }}
@@ -127,7 +226,7 @@ export default function MatchesLiveLeague({ leagueId }: MatchesLiveLeagueProps) 
               <TouchableOpacity
                 key={match.fixtureId}
                 activeOpacity={0.9}
-                onPress={() =>actionMatch(match.fixtureId.toString())}
+                onPress={() => actionMatch(match.fixtureId.toString())}
               >
                 <Card style={styles.card}>
                   <View style={styles.row}>
@@ -168,7 +267,9 @@ export default function MatchesLiveLeague({ leagueId }: MatchesLiveLeagueProps) 
                     </View>
                   </View>
 
-                  <Text style={styles.venueText}>{match.fixture.venue?.name}</Text>
+                  <Text style={styles.venueText}>
+                    {match.fixture.venue?.name}
+                  </Text>
                 </Card>
               </TouchableOpacity>
             ))
@@ -259,5 +360,11 @@ const styles = StyleSheet.create({
     color: "#777",
     marginTop: 40,
     fontSize: 16,
+  },
+  chip: { marginRight: 8, marginBottom: 8 },
+  chipsRowHorizontal: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingRight: 12,
   },
 });

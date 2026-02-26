@@ -1,47 +1,29 @@
 // components/OneByOneForm.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import {
-    ActivityIndicator,
-    Button,
-    Card,
-    Chip,
-    Text,
-    TextInput,
-} from "react-native-paper";
+import { Button, Card, Chip, Text, TextInput } from "react-native-paper";
 
 import { useFetch } from "@/hooks/FetchContext";
 import {
-    LiveMatch,
-    OneByOne,
-    PlayerLive,
-    PlayerOneByOne,
-    PlayerRating,
-    SquadOneByOne,
-    TeamLineupLive,
+  LeagueItem,
+  Lineup,
+  LiveMatch,
+  OneByOneType,
+  PlayerLive,
+  PlayerOneByOne,
+  PlayerRating,
+  Section,
+  SquadOneByOne,
+  TeamLineup,
+  TeamLineupLive,
 } from "@/types";
 import PlayerRatingModal from "./PlayerRatingModal";
-
-// Chips para filtrar ligas
-const LEAGUE_CHIPS = [
-  "LaLiga",
-  "Premier League",
-  "Serie A",
-  "Bundesliga",
-  "Ligue 1",
-  "Liga Colombiana",
-  "Champions League",
-  "Europa League",
-  "Libertadores",
-  "Eliminatorias",
-];
 
 function mapLineupToSquad(lineup: TeamLineupLive): SquadOneByOne {
   const convert = (p: PlayerLive): PlayerOneByOne => ({
@@ -62,38 +44,39 @@ function mapLineupToSquad(lineup: TeamLineupLive): SquadOneByOne {
 
 type OneByOneFormProps = {
   oneByOneId: string | null;
-  oneByOne: OneByOne | null;
+  oneByOne: OneByOneType | null;
+  leagues: LeagueItem[];
+  sections: Section[];
+  existingOneByOnes: OneByOneType[];
   onCancel: () => void;
-  onSave: (item: OneByOne) => void;
+  onSave: (item: OneByOneType) => void;
 };
 
 export default function OneByOneForm({
   oneByOneId,
   oneByOne,
+  leagues,
+  sections,
+  existingOneByOnes,
   onCancel,
   onSave,
 }: OneByOneFormProps) {
-  const { getFinishedMatches, saveOneByOne, editOneByOne } = useFetch();
+  const { saveOneByOne, editOneByOne, getLineUp } = useFetch();
 
   const isEditing = !!oneByOneId;
 
-  const [fixtures, setFixtures] = useState<LiveMatch[]>([]);
-  const [loadingFixtures, setLoadingFixtures] = useState(true);
-  const [fixturesError, setFixturesError] = useState<string | null>(null);
-
   const [selectedLeagueChip, setSelectedLeagueChip] = useState<string | null>(
-    null
+    null,
   );
   const [fixtureSearch, setFixtureSearch] = useState("");
 
   const [selectedMatch, setSelectedMatch] = useState<LiveMatch | null>(null);
 
-  const [localOneByOne, setLocalOneByOne] = useState<OneByOne>(() => {
+  const [localOneByOne, setLocalOneByOne] = useState<OneByOneType>(() => {
     if (oneByOne) return oneByOne;
 
     const now = new Date().toISOString();
     return {
-      id: "",
       fixtureId: 0,
       result: { home: 0, away: 0 },
       teams: {
@@ -119,7 +102,7 @@ export default function OneByOneForm({
   });
 
   const [playerRatings, setPlayerRatings] = useState<PlayerRating[]>(
-    () => localOneByOne.playerRatings ?? []
+    () => localOneByOne.playerRatings ?? [],
   );
 
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
@@ -130,50 +113,30 @@ export default function OneByOneForm({
     teamId: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (isEditing) {
-      setLoadingFixtures(false);
-      return;
-    }
+  const { finishedFixtures, upcomingFixtures } = useMemo(() => {
+    const all = sections.flatMap((s) => s.data);
 
-    let isMounted = true;
-
-    const loadFixtures = async () => {
-      setLoadingFixtures(true);
-      try {
-        const { success, message, fixtures } = await getFinishedMatches();
-
-        if (!isMounted) return;
-
-        if (!success) {
-          setFixturesError(message || "Error cargando fixtures");
-          return;
-        }
-
-        setFixtures(fixtures);
-      } catch (err) {
-        if (isMounted) {
-          setFixturesError("Error cargando fixtures");
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingFixtures(false);
-        }
-      }
+    return {
+      finishedFixtures: all.filter((m) => m.fixture.status.short === "FT"),
+      upcomingFixtures: all.filter((m) =>
+        ["NS", "TBD"].includes(m.fixture.status.short),
+      ),
     };
+  }, [sections]);
 
-    loadFixtures();
-    return () => {
-      isMounted = false;
-    };
-  }, [isEditing]);
+  const fixturesToShow =
+    finishedFixtures.length > 0 ? finishedFixtures : upcomingFixtures;
+
+  const showingUpcoming = finishedFixtures.length === 0;
 
   useEffect(() => {
-    if (isEditing && oneByOne && fixtures.length > 0) {
-      const found = fixtures.find((f) => f.fixtureId === oneByOne.fixtureId);
+    if (isEditing && oneByOne && fixturesToShow.length > 0) {
+      const found = fixturesToShow.find(
+        (f) => f.fixtureId === oneByOne.fixtureId,
+      );
       if (found) setSelectedMatch(found);
     }
-  }, [fixtures, isEditing, oneByOne]);
+  }, [fixturesToShow, isEditing, oneByOne]);
 
   const openRatingModalForPlayer = (player: PlayerOneByOne, teamId: number) => {
     setSelectedPlayerForRating({
@@ -193,7 +156,7 @@ export default function OneByOneForm({
   const handleSavePlayerRating = (rating: PlayerRating) => {
     setPlayerRatings((prev) => {
       const i = prev.findIndex(
-        (r) => r.playerId === rating.playerId && r.teamId === rating.teamId
+        (r) => r.playerId === rating.playerId && r.teamId === rating.teamId,
       );
 
       if (i >= 0) {
@@ -211,8 +174,12 @@ export default function OneByOneForm({
   const getRatingForPlayer = (playerId: number, teamId: number) =>
     playerRatings.find((r) => r.playerId === playerId && r.teamId === teamId);
 
+  const usedFixtureIds = useMemo(() => {
+    return new Set(existingOneByOnes.map((o) => o.fixtureId));
+  }, [existingOneByOnes]);
+
   const filteredFixtures = useMemo(() => {
-    let list = fixtures;
+    let list = fixturesToShow;
 
     if (selectedLeagueChip) {
       const key = selectedLeagueChip.toLowerCase();
@@ -224,55 +191,85 @@ export default function OneByOneForm({
       list = list.filter(
         (m) =>
           m.teams.home.name.toLowerCase().includes(s) ||
-          m.teams.away.name.toLowerCase().includes(s)
+          m.teams.away.name.toLowerCase().includes(s),
       );
     }
 
-    return list;
-  }, [selectedLeagueChip, fixtureSearch, fixtures]);
+    // 🔥 FILTRO CLAVE
+    if (!isEditing) {
+      list = list.filter((m) => !usedFixtureIds.has(m.fixtureId));
+    }
 
-  const handleSelectFixture = (match: LiveMatch) => {
+    return list;
+  }, [
+    selectedLeagueChip,
+    fixtureSearch,
+    fixturesToShow,
+    usedFixtureIds,
+    isEditing,
+  ]);
+
+  const normalizeTeamLineups = (
+    lineup?: Lineup | { lineups: TeamLineup[] } | null,
+  ): TeamLineup[] => {
+    if (!lineup) return [];
+    if (Array.isArray((lineup as any).lineups)) {
+      return (lineup as any).lineups;
+    }
+    if (Array.isArray(lineup)) return lineup as TeamLineup[];
+    return [];
+  };
+
+  const handleSelectFixture = async (match: LiveMatch) => {
     setSelectedMatch(match);
 
+    let homeLineup: TeamLineup | undefined;
+    let awayLineup: TeamLineup | undefined;
+
+    try {
+      const response = await getLineUp(match.fixtureId.toString());
+
+      if (!response?.success) {
+        console.warn("No se pudieron cargar alineaciones", response?.message);
+        return;
+      }
+
+      const lineups: TeamLineup[] = normalizeTeamLineups(response.lineup);
+
+      homeLineup = lineups.find((l) => l.team.id === match.teams.home.id);
+
+      awayLineup = lineups.find((l) => l.team.id === match.teams.away.id);
+    } catch (error) {
+      console.error("Error cargando alineaciones", error);
+    }
+
     const now = new Date().toISOString();
-
-    const homeLineup = match.lineups.find(
-      (l) => l.team.id === match.teams.home.id
-    );
-
-    const awayLineup = match.lineups.find(
-      (l) => l.team.id === match.teams.away.id
-    );
-
-    const homeSquad = homeLineup
-      ? mapLineupToSquad(homeLineup)
-      : { titulares: [], suplentes: [] };
-
-    const awaySquad = awayLineup
-      ? mapLineupToSquad(awayLineup)
-      : { titulares: [], suplentes: [] };
+    const isFinished = match.fixture.status.short === "FT";
 
     setLocalOneByOne((prev) => ({
       ...prev,
       fixtureId: match.fixtureId,
-      result: {
-        home: match.goals.home,
-        away: match.goals.away,
-      },
+      result: isFinished
+        ? { home: match.goals.home, away: match.goals.away }
+        : { home: 0, away: 0 },
       teams: {
         home: {
           teamId: match.teams.home.id,
           name: match.teams.home.name,
           logo: match.teams.home.logo,
-          winner: match.goals.home > match.goals.away,
-          players: homeSquad,
+          winner: false,
+          players: homeLineup
+            ? mapLineupToSquad(homeLineup)
+            : { titulares: [], suplentes: [] },
         },
         away: {
           teamId: match.teams.away.id,
           name: match.teams.away.name,
           logo: match.teams.away.logo,
-          winner: match.goals.away > match.goals.home,
-          players: awaySquad,
+          winner: false,
+          players: awayLineup
+            ? mapLineupToSquad(awayLineup)
+            : { titulares: [], suplentes: [] },
         },
       },
       updatedAt: now,
@@ -284,7 +281,7 @@ export default function OneByOneForm({
 
     const now = new Date().toISOString();
 
-    const item: OneByOne = {
+    const item: OneByOneType = {
       ...localOneByOne,
       updatedAt: now,
       playerRatings,
@@ -294,7 +291,7 @@ export default function OneByOneForm({
       if (isEditing && oneByOne) {
         const { success, oneByOneItem, message } = await editOneByOne(
           oneByOneId,
-          item
+          item,
         );
         if (!success) {
           alert(message || "Error guardando uno por uno");
@@ -355,37 +352,49 @@ export default function OneByOneForm({
   const renderPlayerColumn = (
     players: PlayerOneByOne[],
     teamName: string,
-    teamId: number
+    teamId: number,
   ) => (
     <View style={styles.playersColumn}>
       <Text style={styles.playersColumnTitle}>{teamName}</Text>
 
-      {players.map((p) => {
+      {players.map((p, index) => {
         const rating = getRatingForPlayer(p.playerId, teamId);
 
         return (
           <Card
-            key={`${teamId}_${p.playerId}`}
-            style={styles.playerCard}
-            onPress={() => openRatingModalForPlayer(p, teamId)}
+            key={index}
+            style={[styles.playerCard, rating && styles.playerCardRated]}
+            disabled={selectedMatch?.fixture.status.short !== "FT"}
+            onPress={() => {
+              if (selectedMatch?.fixture.status.short === "FT") {
+                openRatingModalForPlayer(p, teamId);
+              }
+            }}
           >
-            <Card.Content>
+            <View style={styles.playerCardInner}>
+              {/* Badge rating */}
+              {rating && (
+                <View style={styles.ratingBadge}>
+                  <Text style={styles.ratingText}>
+                    {rating.rating.toFixed(1)}
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.playerRow}>
                 <View style={styles.playerInfo}>
                   <Image source={{ uri: p.photo }} style={styles.playerPhoto} />
                   <View style={styles.playerTextContainer}>
-                    <Text style={styles.playerName}>{p.name}</Text>
-                    <Text style={styles.playerSub}>{teamName}</Text>
+                    <Text style={styles.playerName} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                    <Text style={styles.playerSub} numberOfLines={1}>
+                      {teamName}
+                    </Text>
                   </View>
                 </View>
-
-                {rating && (
-                  <Chip compact icon="star">
-                    {rating.rating.toFixed(1)}
-                  </Chip>
-                )}
               </View>
-            </Card.Content>
+            </View>
           </Card>
         );
       })}
@@ -408,45 +417,49 @@ export default function OneByOneForm({
         </Text>
       </View>
 
+      {showingUpcoming && (
+        <Card style={styles.infoCard}>
+          <Card.Content>
+            <Text style={styles.infoTitle}>⚠️ No hay partidos finalizados</Text>
+            <Text style={styles.infoText}>
+              Puedes preparar el uno por uno con los próximos partidos. Las
+              calificaciones se podrán completar cuando finalice el encuentro.
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+
       {/* MODO CREAR → SELECCIONAR FIXTURE */}
       {needsFixture ? (
         <View style={styles.fixtureSelectContainer}>
-          {loadingFixtures && (
-            <ActivityIndicator style={{ marginTop: 20 }} size="large" />
-          )}
-
-          {fixturesError && (
-            <Text style={{ color: "red", marginVertical: 20 }}>
-              {fixturesError}
-            </Text>
-          )}
-
-          {!loadingFixtures && fixtures.length === 0 && (
-            <Text style={{ textAlign: "center", marginVertical: 20 }}>
-              No hay partidos finalizados disponibles.
-            </Text>
-          )}
-
-          {!loadingFixtures && fixtures.length > 0 && (
+          {fixturesToShow.length > 0 && (
             <>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.chipsScroll}
               >
-                {LEAGUE_CHIPS.map((chip) => (
+                {leagues.map((league) => (
                   <Chip
-                    key={chip}
+                    key={league.id}
                     style={styles.chip}
-                    selected={selectedLeagueChip === chip}
-                    mode={selectedLeagueChip === chip ? "flat" : "outlined"}
+                    selected={
+                      selectedLeagueChip?.toString() === league.id.toString()
+                    }
+                    mode={
+                      selectedLeagueChip?.toString() === league.id.toString()
+                        ? "flat"
+                        : "outlined"
+                    }
                     onPress={() =>
                       setSelectedLeagueChip((prev) =>
-                        prev === chip ? null : chip
+                        prev?.toString() === league.id.toString()
+                          ? null
+                          : league.id.toString(),
                       )
                     }
                   >
-                    {chip}
+                    {league.name}
                   </Chip>
                 ))}
               </ScrollView>
@@ -460,12 +473,22 @@ export default function OneByOneForm({
                 style={styles.fixtureSearchInput}
               />
 
-              <FlatList
-                data={filteredFixtures}
-                keyExtractor={(i) => String(i.fixtureId)}
-                renderItem={renderFixtureItem}
+              <ScrollView
                 contentContainerStyle={styles.fixtureListContent}
-              />
+                showsVerticalScrollIndicator={false}
+              >
+                {filteredFixtures.length === 0 ? (
+                  <Text style={styles.emptyText}>
+                    No hay partidos disponibles
+                  </Text>
+                ) : (
+                  filteredFixtures.map((item) => (
+                    <View key={item.fixtureId} style={styles.fixtureItem}>
+                      {renderFixtureItem({ item })}
+                    </View>
+                  ))
+                )}
+              </ScrollView>
             </>
           )}
         </View>
@@ -524,13 +547,13 @@ export default function OneByOneForm({
               {renderPlayerColumn(
                 localOneByOne.teams.home.players.titulares,
                 localOneByOne.teams.home.name,
-                localOneByOne.teams.home.teamId
+                localOneByOne.teams.home.teamId,
               )}
 
               {renderPlayerColumn(
                 localOneByOne.teams.away.players.titulares,
                 localOneByOne.teams.away.name,
-                localOneByOne.teams.away.teamId
+                localOneByOne.teams.away.teamId,
               )}
             </View>
           </View>
@@ -542,13 +565,13 @@ export default function OneByOneForm({
               {renderPlayerColumn(
                 localOneByOne.teams.home.players.suplentes,
                 localOneByOne.teams.home.name,
-                localOneByOne.teams.home.teamId
+                localOneByOne.teams.home.teamId,
               )}
 
               {renderPlayerColumn(
                 localOneByOne.teams.away.players.suplentes,
                 localOneByOne.teams.away.name,
-                localOneByOne.teams.away.teamId
+                localOneByOne.teams.away.teamId,
               )}
             </View>
           </View>
@@ -578,7 +601,7 @@ export default function OneByOneForm({
           player={selectedPlayerForRating}
           existingRating={getRatingForPlayer(
             selectedPlayerForRating.playerId,
-            selectedPlayerForRating.teamId
+            selectedPlayerForRating.teamId,
           )}
           onSave={handleSavePlayerRating}
         />
@@ -644,7 +667,12 @@ const styles = StyleSheet.create({
   playersColumn: { flex: 1 },
   playersColumnTitle: { marginBottom: 6, opacity: 0.7 },
 
-  playerCard: { marginBottom: 6 },
+  playerCard: {
+    marginBottom: 6,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    elevation: 1,
+  },
 
   playerRow: {
     flexDirection: "row",
@@ -676,5 +704,60 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#ddd",
     backgroundColor: "white",
+  },
+  infoCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    backgroundColor: "#FFF8E1",
+  },
+
+  infoTitle: {
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  infoText: {
+    opacity: 0.8,
+    lineHeight: 18,
+  },
+
+  pendingText: {
+    marginTop: 6,
+    fontSize: 12,
+    opacity: 0.6,
+    fontStyle: "italic",
+  },
+
+  fixtureItem: {
+    marginBottom: 8,
+  },
+
+  emptyText: {
+    textAlign: "center",
+    opacity: 0.6,
+    marginTop: 24,
+  },
+  playerCardRated: {
+    borderWidth: 1.5,
+    borderColor: "#1DB954",
+    backgroundColor: "#F1FAF4",
+  },
+  playerCardInner: {
+    padding: 10,
+  },
+  ratingBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "#1DB954",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 2,
+  },
+  ratingText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

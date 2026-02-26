@@ -1,9 +1,10 @@
+import Loading from "@/components/Loading";
 import ScrollSection from "@/components/ScrollSection";
 import { useFetch } from "@/hooks/FetchContext";
 import { RootStackParamList, swiperItem } from "@/types";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Divider } from "react-native-paper";
+import { Divider } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
@@ -44,7 +45,13 @@ export default function FavoriteTeams() {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando equipos favoritos"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const actionTeams = (id: string) => {
@@ -56,7 +63,7 @@ export default function FavoriteTeams() {
       <ScrollSection
         title="Equipos seguidos"
         list={equipos}
-        shape="square"
+        shape="circle"
         action={actionTeams}
       />
       <Divider />

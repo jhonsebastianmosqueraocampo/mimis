@@ -1,12 +1,13 @@
 import CoachHistory from "@/components/CoachHistory";
 import CoachProfileCard from "@/components/CoachProfileCard";
+import Loading from "@/components/Loading";
 import VerticalScroll from "@/components/VerticalScroll";
 import { useFetch } from "@/hooks/FetchContext";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { ActivityIndicator, Chip, Text } from "react-native-paper";
+import { Chip, Text } from "react-native-paper";
 import AvatarCard from "../components/AvatarCard";
 import type { CoachStats, RootStackParamList, swiperItem } from "../types";
 import PrivateLayout from "./privateLayout";
@@ -14,7 +15,6 @@ import PrivateLayout from "./privateLayout";
 const items = [
   { id: "1", name: "Información Personal" },
   { id: "2", name: "Noticias" },
-  { id: "4", name: "Videos" },
   { id: "5", name: "Trayectoria" },
 ];
 
@@ -74,7 +74,7 @@ export default function Coach() {
 
     if (id && selectedItem) {
       getCoach();
-      coachNews()
+      coachNews();
     }
 
     return () => {
@@ -83,7 +83,13 @@ export default function Coach() {
   }, [id]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando entrenadores"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const actionGeneralListNews = (id: string) => console.log(id);

@@ -1,3 +1,5 @@
+import { ImagePickerAsset } from "expo-image-picker";
+
 export type LoginFormValues = {
   identifier: string;
   password: string;
@@ -140,6 +142,7 @@ export type Standing = {
 export type SeasonResultsProps = {
   teamId?: string;
   league?: LeagueB;
+  equiposFavoritos?: swiperItem[];
 };
 
 export type LeagueTableProps = {
@@ -147,6 +150,7 @@ export type LeagueTableProps = {
   matches?: LiveMatch[];
   teamId?: string;
   selectedTeam?: string;
+  equiposFavoritos?: swiperItem[];
   setSelectedTeam: (value: React.SetStateAction<string | null>) => void;
 };
 
@@ -171,6 +175,7 @@ export type TopPlayerTeamStatsListProps = {
 };
 
 export type RootStackParamList = {
+  oauthredirect: undefined;
   index: undefined;
   favorites: undefined;
   profile: undefined;
@@ -202,8 +207,8 @@ export type RootStackParamList = {
   search: undefined;
   earnPoints: undefined;
   syntheticMatch: undefined;
-  weekResumeVideos: undefined;
-  worldResumeVideos: undefined;
+  worldTop10Screen: undefined;
+  WeekSyntheticResumeVideos: undefined;
   loadWorldResumeVideos: undefined;
   loadSyntheticResumeVideos: undefined;
   addNews: undefined;
@@ -212,12 +217,13 @@ export type RootStackParamList = {
   oneByOne: undefined;
   loadShorts: undefined;
   shorts: undefined;
+  cart: undefined;
+  purchaseSummary: { products: ProductStore[] };
+  purchaseHistory: undefined;
 };
 
 export type paramsProduct = {
-  pointsBalance: number;
   product: Product;
-  setPointsBalance: (newBalance: number) => void;
 };
 
 export type Country = {
@@ -381,20 +387,34 @@ export type Favorites = {
   entrenadores: string[];
 };
 
+export type PointsHistoryItem = {
+  action: string;
+  points: number;
+  date: string;
+};
+
 export type User = {
   id: string;
   nickName: string;
   email: string;
   password?: string;
+  role?: string;
 
   points: number;
   xp: number;
-  level: "Novato" | "Intermedio" | "Avanzado" | "Experto" | "Leyenda";
+  level: string;
 
   betsWon: number;
   betsLost: number;
   redeemed: number;
   badges: string[];
+  communityStats?: {
+    officialMatchesPlayed: number;
+    newsPublished: number;
+    highlightsUploaded: number;
+    matchesRated: number;
+  };
+  pointsHistory?: PointsHistoryItem[];
 };
 
 export type NotificationItem = {
@@ -412,7 +432,7 @@ export type Fixture = {
   status?: {
     short: string;
     long: string;
-    elapsed: number
+    elapsed: number;
   };
   venue: {
     id: number;
@@ -424,13 +444,13 @@ export type Fixture = {
       id: number;
       name: string;
       logo: string;
-      winner?: boolean
+      winner?: boolean;
     };
     away: {
       id: number;
       name: string;
       logo: string;
-      winner?: boolean
+      winner?: boolean;
     };
   };
   league: {
@@ -825,6 +845,11 @@ export type VideoYoutube = {
   thumbnail: string;
 };
 
+export type videosTypeYoutube = {
+  name: string;
+  videos: VideoYoutube[];
+};
+
 export type Tally3 = {
   home: number;
   away: number;
@@ -1120,7 +1145,7 @@ export type PlayerLineup = {
   pos: string;
   photo: string;
   grid: string;
-  rating?: number
+  rating?: number;
 };
 
 export type LiveMatch = {
@@ -1130,7 +1155,7 @@ export type LiveMatch = {
     id: number;
     referee?: string;
     timezone: string;
-    date: string;       // ISO string que viene de la API
+    date: string; // ISO string que viene de la API
     timestamp: number;
     periods: {
       first?: number | null;
@@ -1205,6 +1230,11 @@ export type TeamStatistics = {
   statistics: StatItem[];
 };
 
+export type UserPlayerRating = {
+  avg: number;
+  votes: number;
+};
+
 export type PlayerLive = {
   id: number;
   name: string;
@@ -1213,7 +1243,8 @@ export type PlayerLive = {
   photo?: string;
   grid: string;
   isSub?: boolean;
-  rating?: number
+  rating?: number;
+  minutes?: number;
 };
 
 export type TeamLineupLive = {
@@ -1299,23 +1330,13 @@ export type PredictionOddsItem = {
   lastUpdate: string;
 };
 
-export type Product = {
-  id: number;
-  name: string;
-  image: string;
-  category: string;
-  points: number;
-  description: string;
-  details?: string;
-};
-
 export type setBet = {
   userId: string;
-  winner: boolean
-}
+  winner: boolean;
+};
 
 export type UserBet = {
-  userId: string
+  userId: string;
   name: string;
   result: string;
   selection: SelectionBet;
@@ -1327,6 +1348,7 @@ export type Bet = {
   stake: string;
   betType: string;
   users: UserBet[];
+  liveMatch?: LiveMatch;
 };
 
 export type BetInfo = {
@@ -1334,53 +1356,113 @@ export type BetInfo = {
   predictionOdds: PredictionOddsItem;
 };
 
-export type SelectionBet =
-  | {
-      market: "RESULT_1X2";
-      pick: "LOCAL" | "DRAW" | "AWAY";
-    }
-  | {
-      market: "EXACT_SCORE";
-      home: number;
-      away: number;
-    }
-  | {
-      market: "OVER_UNDER";
-      side: "OVER" | "UNDER";
-      line: number;
-    };
+export type SelectionBet = {
+  pick?: "LOCAL" | "DRAW" | "AWAY";
+  home?: number;
+  away?: number;
+  side?: "OVER" | "UNDER";
+  line?: number;
+};
+
+export type SyntheticMatchStatus =
+  | "invitation"
+  | "scheduled"
+  | "rejected"
+  | "cancelled"
+  | "finished";
 
 export type SyntheticMatch = {
-  _id: string;
-  matchNumber: string;
-  score: string;
-  date: string;
+  id: string;
+
+  user: {
+    nickName: string;
+    email: string;
+  };
+
+  status: SyntheticMatchStatus;
+
+  rejectionReason?: string;
+
+  homeTeam?: {
+    name: string;
+    logo?: string;
+  };
+
+  awayTeam?: {
+    name: string;
+    logo?: string;
+  };
+
+  scheduledAt?: string;
+
+  location?: {
+    city?: string;
+    field?: string;
+    address?: string;
+    mapsUrl?: string;
+  };
+
+  liveUrl?: string;
+
+  score?: {
+    home: number | null;
+    away: number | null;
+  };
+
+  youtubeUrl?: string;
+
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type SyntheticMatchPayload = {
+  homeTeam: { name: string; logo?: string };
+  awayTeam: { name: string; logo?: string };
+  scheduledAt: string;
+  status: SyntheticMatchStatus;
+  score: { home: number | null; away: number | null };
+  location: {
+    city: string;
+    field: string;
+    address?: string;
+    mapsUrl?: string;
+  };
+  youtubeUrl?: string;
+  liveUrl?: string;
+};
+
+export type CreateSyntheticMatchDTO = Omit<SyntheticMatchPayload, "score"> & {
+  score?: { home: number; away: number }; // opcional si lo creas ya “finished/live”
+};
+
+export type UpdateSyntheticMatchDTO = Partial<CreateSyntheticMatchDTO> & {
+  status?: SyntheticMatchStatus;
 };
 
 //teamsummary
 
 export type SeasonProgress = {
-  matchday: number;       // número de jornada
-  points: number;         // puntos acumulados hasta esa jornada
-  opponent: string;       // nombre del rival
+  matchday: number; // número de jornada
+  points: number; // puntos acumulados hasta esa jornada
+  opponent: string; // nombre del rival
   result: "W" | "D" | "L"; // resultado
-  score: string;          // marcador (ej: "2-1")
-  date: string;           // fecha del partido
-  position: number;       // posición en la tabla
-}
+  score: string; // marcador (ej: "2-1")
+  date: string; // fecha del partido
+  position: number; // posición en la tabla
+};
 
 export type TopPlayer = {
   name: string;
   photo: string;
   goals: number;
   assists: number;
-}
+};
 
 export type NextMatch = {
   opponent: string;
   date: string;
   home: boolean;
-}
+};
 
 export type TeamSummary = {
   teamId: number;
@@ -1400,7 +1482,7 @@ export type TeamSummary = {
   nextMatch: NextMatch | null;
   seasonProgress: SeasonProgress[];
   lastUpdated: string | Date;
-}
+};
 
 // fin teamsummary
 
@@ -1422,7 +1504,6 @@ export type NationalLeague = {
   seasons: Season[];
   updatedAt: string | Date;
 };
-
 
 export type WeeklyGoalVideo = {
   id: string;
@@ -1451,14 +1532,14 @@ export type WeeklyWorldTopVideo = {
 };
 
 export type NewsItem = {
-  id: string;
+  id?: string;
   titulo: string;
   entidad: string;
   user: { id: string; name: string };
-  fotoPrincipal: string;
+  fotoPrincipal: any;
   urlFotoPrincipal: string;
   desarrolloInicialNoticia: string;
-  carruselFotos: { foto: string; url: string }[];
+  carruselFotos: { foto: string | ImagePickerAsset; url: string }[];
   desarrolloFinalNoticia: string;
   fecha?: string;
 };
@@ -1466,11 +1547,16 @@ export type NewsItem = {
 export type NewsPayload = {
   titulo: string;
   entidad: string;
-  fotoPrincipal: string;
+  fotoPrincipal: any; // puede ser un File o una URL
   urlFotoPrincipal: string;
   desarrolloInicialNoticia: string;
-  carruselFotos: { foto: string; url: string }[];
+  carruselFotos: { foto: string | ImagePickerAsset; url: string }[];
   desarrolloFinalNoticia: string;
+};
+
+export type CarruselFoto = {
+  foto: string | ImagePickerAsset;
+  url: string;
 };
 
 export type PlayerOneByOne = {
@@ -1504,8 +1590,8 @@ export type TeamOneByOne = {
   winner: boolean;
 };
 
-export type OneByOne = {
-  id: string;
+export type OneByOneType = {
+  id?: string;
 
   fixtureId: number;
 
@@ -1526,8 +1612,8 @@ export type OneByOne = {
 };
 
 export type LoadShortItem = {
-  video: string;
-  thumbnail: string;
+  video: any;
+  thumbnail: any;
   fecha: string;
   descripcion: string;
 };
@@ -1535,8 +1621,173 @@ export type LoadShortItem = {
 export type ShortItem = LoadShortItem & {
   id: string;
   favoritos: number;
+  liked: boolean;
   comentarios: {
     user: User;
     comment: string;
   }[];
 };
+
+export type AnalysisOpenAi = {
+  text: string;
+  summary?: {
+    title?: string;
+    keyPoints?: string[];
+    strengths?: string[];
+    weaknesses?: string[];
+    recommendations?: string[];
+  };
+  charts?: AnalysisCharts;
+  generatedAt: string;
+};
+
+export type AnalysisCharts = {
+  barCharts?: BarChartData[];
+  lineCharts?: LineChartData[];
+  pieCharts?: PieChartData[];
+  radarCharts?: RadarChartData[];
+  heatMaps?: HeatMapData[];
+};
+
+/* ---------------- Bar Chart ---------------- */
+export type BarChartData = {
+  id: string; // ej: "expected_goals"
+  title: string;
+  xLabels: string[];
+  values: number[];
+};
+
+/* ---------------- Line Chart ---------------- */
+export type LineChartData = {
+  id: string; // ej: "form_last_10_games"
+  title: string;
+  points: number[]; // ej: [2,3,1,5,4]
+  labels?: string[];
+};
+
+/* ---------------- Pie Chart ---------------- */
+export type PieChartData = {
+  id: string; // ej: "possession_distribution"
+  title: string;
+  slices: {
+    label: string;
+    value: number;
+  }[];
+};
+
+/* ---------------- Radar Chart ---------------- */
+export type RadarChartData = {
+  id: string; // ej: "player_skills"
+  title: string;
+  axes: string[]; // ["pace","passing","shooting","defense"]
+  values: number[]; // [85, 78, 92, 65]
+};
+
+/* ---------------- HeatMap ---------------- */
+export type HeatMapData = {
+  id: string; // ej: "player_touchmap"
+  title: string;
+  matrix: number[][]; // ej: zonas del campo
+};
+
+export type PlayerAnalysisProps = {
+  playerId: string;
+  stats: any;
+};
+
+export type FixtureAnalysisProps = {
+  fixtureId: string;
+  stats: any;
+};
+
+export type TeamSeasonAnalysisProps = {
+  teamId: string;
+  season: string;
+  stats: any;
+};
+
+export type Product = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+
+  variants: {
+    color: string;
+    colorHex?: String;
+    images: string[];
+
+    storeConfigs: {
+      storeId: string;
+      storeName?: string;
+      size: string;
+      price: number;
+      stock: number;
+    }[];
+  }[];
+};
+
+//pedidos que hace el usuario
+export type ProductStore = {
+  id: string;
+  storeId: string;
+  productId: string;
+  name: string;
+  image: string;
+  category: string;
+  color: string;
+  size: string;
+  price: number;
+  quantity: number;
+  stock: number;
+};
+
+export type Purchase = {
+  id: string;
+  date: string;
+  totalPoints: number;
+  status?: string;
+  items: {
+    id: string;
+    name: string;
+    color: string;
+    size: string;
+    quantity: number;
+    price: number;
+  }[];
+};
+
+export type AddressForm = {
+  recipientName: string;
+  phone: string;
+
+  city: string;
+  neighborhood: string;
+  streetType: "Calle" | "Carrera" | "Avenida" | "Diagonal" | "Transversal";
+  streetNumber: string; // ej: "80"
+  streetNumber2: string; // ej: "25"
+  complement: string; // ej: "Apto 301, Torre 2, Conjunto X"
+
+  references: string; // ej: "Portería, casa esquinera..."
+  mapsUrl?: string; // opcional
+};
+
+// Estructura esperada para crear órdenes (una por tienda)
+export type CreateOrderPayload = {
+  address: string;
+  orders: Array<{
+    storeId: string;
+    items: Array<{
+      productId: string;
+      name?: string;
+      color: string;
+      colorHex?: string;
+      size: string;
+      price: number;
+      quantity: number;
+    }>;
+  }>;
+};
+
+export type Section = { title: string; data: LiveMatch[] };
+export type LeagueItem = { id: number; name: string; logo: string };

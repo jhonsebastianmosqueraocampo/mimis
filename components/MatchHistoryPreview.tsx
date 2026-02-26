@@ -1,60 +1,25 @@
-import { useFetch } from "@/hooks/FetchContext";
 import { GoalEvent, PreMatchStats, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { TouchableOpacity, View } from "react-native";
-import {
-  ActivityIndicator,
-  Avatar,
-  Card,
-  Divider,
-  Text,
-} from "react-native-paper";
+import { Avatar, Card, Divider, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
-type MatchHistoryPreviewProps = { fixtureId: string };
+type MatchHistoryPreviewProps = { stats: PreMatchStats };
 
 export default function MatchHistoryPreview({
-  fixtureId,
+  stats,
 }: MatchHistoryPreviewProps) {
-  const { getPreMatchStats } = useFetch();
-  const [stats, setStats] = useState<PreMatchStats>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchStats = async () => {
-      setLoading(true);
-      try {
-        const { success, stats, message } = await getPreMatchStats(fixtureId);
-        if (!isMounted) return;
-        if (success) setStats(stats!);
-        else setError(message!);
-      } catch {
-        if (isMounted) setError("Error al cargar el fixture");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    if (fixtureId) fetchStats();
-    return () => {
-      isMounted = false;
-    };
-  }, [fixtureId]);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const orderedMatches = useMemo(() => {
     if (!stats?.headToHead) return [];
     return [...stats.headToHead].sort(
       (a, b) =>
-        new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime()
+        new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime(),
     );
   }, [stats]);
-
-  if (loading) {
-    return <ActivityIndicator animating={true} style={{ marginTop: 20 }} />;
-  }
 
   const handleFixture = (id: string) => {
     navigation.navigate("match", { id });

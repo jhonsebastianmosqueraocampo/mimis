@@ -1,3 +1,4 @@
+import Loading from "@/components/Loading";
 import { betTypes } from "@/data/betTypes";
 import { useFetch } from "@/hooks/FetchContext";
 import { Bet, PredictionOddsItem, RootStackParamList } from "@/types";
@@ -7,11 +8,11 @@ import {
   Image,
   Linking,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
 import {
-  ActivityIndicator,
   Button,
   Card,
   Chip,
@@ -31,18 +32,18 @@ export default function CreateBetScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [betType, setBetType] = useState("RESULT_1X2");
   const [selectedMatch, setSelectedMatch] = useState<PredictionOddsItem | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(true);
   const [predictionOdds, setPredictionOdds] = useState<PredictionOddsItem[]>(
-    []
+    [],
   );
   const [error, setError] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [betId, setBetId] = useState("");
   const [successVisible, setSuccessVisible] = useState(false);
   const navigation =
-      useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let isMounted = true;
@@ -73,23 +74,29 @@ export default function CreateBetScreen() {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Creando la apuesta"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const handleCreateBet = async () => {
     try {
       const bet: Bet = {
-        _id: '',
+        _id: "",
         fixtureId: selectedMatch?.fixture.fixtureId ?? "",
         stake,
         betType,
-        users: []
+        users: [],
       };
       const { message, success, accessCode, betId } = await createBet(bet);
       if (success) {
         setSuccessVisible(true);
-        setAccessCode(accessCode)
-        setBetId(betId)
+        setAccessCode(accessCode);
+        setBetId(betId);
       } else {
         setError(message ?? "");
       }
@@ -99,8 +106,8 @@ export default function CreateBetScreen() {
   };
 
   const handleTeam = (id: string) => {
-    navigation.navigate('team', {id})
-  }
+    navigation.navigate("team", { id });
+  };
 
   return (
     <PrivateLayout>
@@ -135,10 +142,10 @@ export default function CreateBetScreen() {
                           .includes(query)
                       );
                     })
-                    .map((item) => {
+                    .map((item, index) => {
                       return (
                         <TouchableOpacity
-                          key={item.fixture.fixtureId}
+                          key={index}
                           onPress={() => setSelectedMatch(item)}
                         >
                           <Card style={{ marginBottom: 12, padding: 12 }}>
@@ -183,7 +190,7 @@ export default function CreateBetScreen() {
                                 </Text>
                                 <Text style={{ fontSize: 12, color: "#555" }}>
                                   {new Date(
-                                    item.fixture.date
+                                    item.fixture.date,
                                   ).toLocaleTimeString([], {
                                     hour: "2-digit",
                                     minute: "2-digit",
@@ -250,7 +257,20 @@ export default function CreateBetScreen() {
                       );
                     })
                 ) : (
-                  <Text>No hay partidos próximos a empezar</Text>
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyTitle}>
+                      ⚽ Aún no hay partidos disponibles
+                    </Text>
+
+                    <Text style={styles.emptySubtitle}>
+                      Las apuestas se habilitan 30 minutos antes del inicio del
+                      partido.
+                    </Text>
+
+                    <Text style={styles.emptyHint}>
+                      Revisa la hora del encuentro en la página principal.
+                    </Text>
+                  </View>
                 )}
               </Card.Content>
             </Card>
@@ -268,7 +288,12 @@ export default function CreateBetScreen() {
                   }}
                 >
                   {/* Equipo local */}
-                  <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(selectedMatch.fixture.teams.home.id)}>
+                  <TouchableOpacity
+                    style={{ alignItems: "center", flex: 1 }}
+                    onPress={() =>
+                      handleTeam(selectedMatch.fixture.teams.home.id)
+                    }
+                  >
                     <Image
                       source={{ uri: selectedMatch.fixture.teams.home.logo }}
                       style={{ width: 60, height: 60, marginBottom: 6 }}
@@ -302,13 +327,18 @@ export default function CreateBetScreen() {
                         {
                           hour: "2-digit",
                           minute: "2-digit",
-                        }
+                        },
                       )}
                     </Text>
                   </View>
 
                   {/* Equipo visitante */}
-                  <TouchableOpacity style={{ alignItems: "center", flex: 1 }} onPress={()=>handleTeam(selectedMatch.fixture.teams.away.id)}>
+                  <TouchableOpacity
+                    style={{ alignItems: "center", flex: 1 }}
+                    onPress={() =>
+                      handleTeam(selectedMatch.fixture.teams.away.id)
+                    }
+                  >
                     <Image
                       source={{ uri: selectedMatch.fixture.teams.away.logo }}
                       style={{ width: 60, height: 60, marginBottom: 6 }}
@@ -416,7 +446,7 @@ export default function CreateBetScreen() {
         <Modal
           visible={successVisible}
           onDismiss={() => {
-            setSuccessVisible(false)
+            setSuccessVisible(false);
             navigation.navigate("betInvite", { id: betId });
           }}
           contentContainerStyle={{
@@ -463,7 +493,7 @@ export default function CreateBetScreen() {
               onPress={() => {
                 const message = `Únete a mi mesa de apuesta con este código: ${accessCode}`;
                 const url = `https://wa.me/?text=${encodeURIComponent(
-                  message
+                  message,
                 )}`;
                 Linking.openURL(url);
               }}
@@ -476,7 +506,7 @@ export default function CreateBetScreen() {
             style={{ marginTop: 16, width: "100%" }}
             onPress={() => {
               setSuccessVisible(false);
-              navigation.navigate("betInvite", {id: betId});
+              navigation.navigate("betInvite", { id: betId });
             }}
           >
             Entrar a la apuesta
@@ -486,3 +516,32 @@ export default function CreateBetScreen() {
     </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+
+  emptyHint: {
+    fontSize: 13,
+    color: "#1DB954",
+    textAlign: "center",
+  },
+});

@@ -25,7 +25,6 @@ import {
   Text,
   TextInput,
 } from "react-native-paper";
-import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 const primaryColor = "#1DB954";
@@ -40,7 +39,7 @@ export default function SelectFavorite() {
     getPlayerFromTeam,
     getCoachesFromLeague,
     saveFavorites,
-    getFavorites
+    getFavorites,
   } = useFetch();
   const [step, setStep] = useState(0);
   const [search, setSearch] = useState("");
@@ -87,31 +86,30 @@ export default function SelectFavorite() {
       };
 
       setSelectedFavorites(favoritos);
-
     }
   };
 
   const filteredCountries = countries.filter((country) =>
-    country.name.includes(countrySearch)
+    country.name.includes(countrySearch),
   );
 
   const filteredLeagues = leagues.filter(({ league }) =>
-    league.name.includes(leagueSearch)
+    league.name.includes(leagueSearch),
   );
 
   const filteredTeams = teams.filter((team) => team.name.includes(search));
 
   const filteredPlayers = players.filter((player) =>
-    player.name.includes(playerSearch)
+    player.name.includes(playerSearch),
   );
 
   const filteredCoaches = coaches.filter((coach) =>
-    coach.name.includes(coachSearch)
+    coach.name.includes(coachSearch),
   );
 
   useEffect(() => {
     const selectedIndex = filteredCountries.findIndex(
-      (country) => country.name === selectedCountry
+      (country) => country.name === selectedCountry,
     );
 
     if (selectedIndex >= 0) {
@@ -246,7 +244,11 @@ export default function SelectFavorite() {
   }, [selectedTeam]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
+    >
       <Text variant="titleLarge" style={styles.title}>
         👋 ¡Hola, {user?.nickName}!
       </Text>
@@ -262,12 +264,7 @@ export default function SelectFavorite() {
       <Text> {error} </Text>
 
       <Card mode="contained" style={styles.card}>
-        <Animated.View
-          key={step}
-          entering={FadeInRight}
-          exiting={FadeOutLeft}
-          style={{ padding: 16 }}
-        >
+        <View key={step} style={{ padding: 16 }}>
           {selectedFavorites[currentKey].length > 0 && (
             <Button
               mode="contained-tonal"
@@ -483,36 +480,40 @@ export default function SelectFavorite() {
                 showsHorizontalScrollIndicator={false}
                 style={{ marginBottom: 12 }}
               >
-                {filteredLeagues.map(({ league }) => (
-                  <Chip
-                    key={league.id}
-                    avatar={
-                      <Image
-                        source={{ uri: league.logo }}
-                        style={{ width: 24, height: 24 }}
-                        resizeMode="contain"
-                      />
-                    }
-                    onPress={() => setSelectedLeague(league.id)}
-                    style={[
-                      styles.chip,
-                      {
-                        marginRight: 8,
-                        backgroundColor:
-                          league.id === selectedLeague ? primaryColor : "#fff",
-                      },
-                    ]}
-                    textStyle={{
-                      color: league.id === selectedLeague ? "#fff" : "#000",
-                      fontWeight: "500",
-                    }}
-                  >
-                    {league.name}
-                  </Chip>
-                ))}
+                {filteredLeagues.length > 0 &&
+                  filteredLeagues.map(({ league }) => (
+                    <Chip
+                      key={league.id}
+                      avatar={
+                        <Image
+                          source={{ uri: league.logo }}
+                          style={{ width: 24, height: 24 }}
+                          resizeMode="contain"
+                        />
+                      }
+                      onPress={() => setSelectedLeague(league.id)}
+                      style={[
+                        styles.chip,
+                        {
+                          marginRight: 8,
+                          backgroundColor:
+                            league.id === selectedLeague
+                              ? primaryColor
+                              : "#fff",
+                        },
+                      ]}
+                      textStyle={{
+                        color: league.id === selectedLeague ? "#fff" : "#000",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {league.name}
+                    </Chip>
+                  ))}
               </ScrollView>
-              {selectedLeague && (
-                <>
+
+              {selectedLeague != null && (
+                <View>
                   <TextInput
                     mode="outlined"
                     placeholder="Buscar equipo..."
@@ -528,33 +529,35 @@ export default function SelectFavorite() {
                     showsHorizontalScrollIndicator={false}
                     style={{ marginBottom: 12 }}
                   >
-                    {filteredTeams.map((team) => (
-                      <Chip
-                        key={team.teamId}
-                        onPress={() => setSelectedTeam(team.teamId)}
-                        style={[
-                          styles.chip,
-                          {
-                            marginRight: 8,
-                            backgroundColor:
-                              team.teamId === selectedTeam
-                                ? primaryColor
-                                : "#fff",
-                          },
-                        ]}
-                        textStyle={{
-                          color: team.teamId === selectedTeam ? "#fff" : "#000",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {team.name}
-                      </Chip>
-                    ))}
+                    {filteredTeams.length > 0 &&
+                      filteredTeams.map((team) => (
+                        <Chip
+                          key={team.teamId}
+                          onPress={() => setSelectedTeam(team.teamId)}
+                          style={[
+                            styles.chip,
+                            {
+                              marginRight: 8,
+                              backgroundColor:
+                                team.teamId === selectedTeam
+                                  ? primaryColor
+                                  : "#fff",
+                            },
+                          ]}
+                          textStyle={{
+                            color:
+                              team.teamId === selectedTeam ? "#fff" : "#000",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {team.name}
+                        </Chip>
+                      ))}
                   </ScrollView>
-                </>
+                </View>
               )}
 
-              {selectedTeam && (
+              {selectedTeam != null && (
                 <>
                   <TextInput
                     mode="outlined"
@@ -572,35 +575,38 @@ export default function SelectFavorite() {
                     showsHorizontalScrollIndicator={false}
                     style={{ marginBottom: 12 }}
                   >
-                    {filteredPlayers.map((player) => (
-                      <Chip
-                        key={player.playerId}
-                        onPress={() => handleToggle("jugadores", player.name)}
-                        avatar={
-                          <Image
-                            source={{ uri: player.photo }}
-                            style={{ width: 24, height: 24 }}
-                            resizeMode="contain"
-                          />
-                        }
-                        style={[
-                          styles.chip,
-                          selectedFavorites.jugadores.includes(player.name) && {
-                            backgroundColor: primaryColor,
-                          },
-                        ]}
-                        textStyle={{
-                          color: selectedFavorites.jugadores.includes(
-                            player.name
-                          )
-                            ? "#fff"
-                            : "#000",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {player.name}
-                      </Chip>
-                    ))}
+                    {filteredPlayers.length > 0 &&
+                      filteredPlayers.map((player) => (
+                        <Chip
+                          key={player.playerId}
+                          onPress={() => handleToggle("jugadores", player.name)}
+                          avatar={
+                            <Image
+                              source={{ uri: player.photo }}
+                              style={{ width: 24, height: 24 }}
+                              resizeMode="contain"
+                            />
+                          }
+                          style={[
+                            styles.chip,
+                            selectedFavorites.jugadores.includes(
+                              player.name,
+                            ) && {
+                              backgroundColor: primaryColor,
+                            },
+                          ]}
+                          textStyle={{
+                            color: selectedFavorites.jugadores.includes(
+                              player.name,
+                            )
+                              ? "#fff"
+                              : "#000",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {player.name}
+                        </Chip>
+                      ))}
                   </ScrollView>
                 </>
               )}
@@ -653,12 +659,12 @@ export default function SelectFavorite() {
                 ))}
               </ScrollView>
 
-              {selectedLeague && (
+              {selectedLeague != null && (
                 <>
                   <TextInput
                     mode="outlined"
                     placeholder="Buscar entrenador..."
-                    value={search}
+                    value={coachSearch}
                     onChangeText={setCoachSearch}
                     style={{ marginBottom: 12 }}
                     left={<TextInput.Icon icon="magnify" />}
@@ -685,14 +691,14 @@ export default function SelectFavorite() {
                         style={[
                           styles.chip,
                           selectedFavorites.entrenadores.includes(
-                            coach.name
+                            coach.name,
                           ) && {
                             backgroundColor: primaryColor,
                           },
                         ]}
                         textStyle={{
                           color: selectedFavorites.entrenadores.includes(
-                            coach.name
+                            coach.name,
                           )
                             ? "#fff"
                             : "#000",
@@ -707,7 +713,7 @@ export default function SelectFavorite() {
               )}
             </>
           )}
-        </Animated.View>
+        </View>
       </Card>
 
       <Divider style={{ marginVertical: 12 }} />
@@ -783,7 +789,7 @@ export default function SelectFavorite() {
       </Snackbar>
 
       <Loading visible={loading} />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -791,18 +797,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#E8F5E9",
-    justifyContent: "center",
     padding: 16,
   },
   card: {
     elevation: 4,
     borderRadius: 16,
-    paddingBottom: 20,
     borderWidth: 1.5,
     borderColor: primaryColor,
     backgroundColor: "#fff",
-    maxHeight: 700,
-    overflow: "scroll",
   },
   title: {
     fontWeight: "bold",

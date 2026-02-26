@@ -1,5 +1,6 @@
 import AvatarCard from "@/components/AvatarCard";
 import LeagueStatsScreen from "@/components/LeagueStatsScreen";
+import Loading from "@/components/Loading";
 import MatchesLeagueInfo from "@/components/MatchesLeagueInfo";
 import SeasonResults from "@/components/SeasonResults";
 import VerticalScroll from "@/components/VerticalScroll";
@@ -8,7 +9,7 @@ import { LeagueB, RootStackParamList, swiperItem } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useEffect, useMemo, useState } from "react";
 import { Image, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Chip, Text } from "react-native-paper";
+import { Chip, Text } from "react-native-paper";
 import { SvgUri } from "react-native-svg";
 import PrivateLayout from "./privateLayout";
 
@@ -29,23 +30,52 @@ const items = [
     id: "4",
     name: "Estadísticas",
   },
-  {
-    id: "5",
-    name: "Análisis de temporada",
-  },
+  // {
+  //   id: "5",
+  //   name: "Análisis de temporada",
+  // },
 ];
 
 type TournamentScreenRouteProp = RouteProp<RootStackParamList, "tournament">;
 
 export default function TournamentScreen() {
-  const { getLeague, getLeagueNews } = useFetch();
+  const { getLeague, getLeagueNews, getFavorites } = useFetch();
   const route = useRoute<TournamentScreenRouteProp>();
   const { id } = route.params;
   const [selectedItem, setSelectedItem] = useState(items[0]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [infoLeague, setInfoLeague] = useState<LeagueB>();
   const [leagueNews, setLeagueNews] = useState<swiperItem[]>();
+
+  const [equipos, setEquipos] = useState<swiperItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const getFavoriteList = async () => {
+      setLoading(true);
+      try {
+        const { success, teams, message } = await getFavorites();
+        if (!isMounted) return;
+
+        if (success) {
+          setEquipos(teams);
+        } else {
+          setError(message!);
+        }
+      } catch (err) {
+        if (isMounted) setError("Error al cargar los equipos favoritos");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    getFavoriteList();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -107,7 +137,13 @@ export default function TournamentScreen() {
   }, [id]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   return (
@@ -173,12 +209,14 @@ export default function TournamentScreen() {
           <Text style={styles.title}>{selectedItem.name.toUpperCase()}</Text>
 
           <ScrollView>
-            {selectedItem.name.toLowerCase() === "noticias" && (leagueNews && leagueNews?.length > 0) && (
-              <VerticalScroll
-                listItems={leagueNews!}
-                actionGeneralList={actionGeneralListNews}
-              />
-            )}
+            {selectedItem.name.toLowerCase() === "noticias" &&
+              leagueNews &&
+              leagueNews?.length > 0 && (
+                <VerticalScroll
+                  listItems={leagueNews!}
+                  actionGeneralList={actionGeneralListNews}
+                />
+              )}
           </ScrollView>
 
           {selectedItem.name.toLowerCase() === "partidos" && (
@@ -186,11 +224,12 @@ export default function TournamentScreen() {
           )}
 
           {selectedItem.name.toLowerCase() === "posiciones" && (
-            <SeasonResults league={infoLeague}
-            />
+            <SeasonResults league={infoLeague} equiposFavoritos={equipos} />
           )}
 
-          {selectedItem.name.toLowerCase() === "estadísticas" && <LeagueStatsScreen leagueId={id} />}
+          {selectedItem.name.toLowerCase() === "estadísticas" && (
+            <LeagueStatsScreen leagueId={id} />
+          )}
 
           {/* 
           {selectedItem.name.toLowerCase() === "análisis de temporada" && (

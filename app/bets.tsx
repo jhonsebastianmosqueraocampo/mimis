@@ -1,24 +1,20 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
-import { BetInfo, RootStackParamList } from "@/types";
+import AdBanner from "@/services/ads/AdBanner";
+import { Bet, RootStackParamList } from "@/types";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
-import {
-    ActivityIndicator,
-    Button,
-    Card,
-    List,
-    Text,
-} from "react-native-paper";
+import { Button, Card, List, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
 export default function Bets() {
   const { myBets } = useFetch();
-  const [bets, setBets] = useState<BetInfo[]>([]);
+  const [bets, setBets] = useState<Bet[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation =
-        useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let mounted = true;
@@ -26,7 +22,9 @@ export default function Bets() {
       setLoading(true);
       try {
         const { success, bets } = await myBets();
-        if (mounted && success && bets) setBets(bets);
+        if (success) {
+          setBets(bets);
+        }
       } catch (err) {
         console.log("❌ Error cargando apuestas", err);
       } finally {
@@ -40,15 +38,24 @@ export default function Bets() {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando apuestas"
+        subtitle="Estamos trabajando en las apuestas"
+      />
+    );
   }
 
-  const activeBets = bets.filter(
-    (b) => b.predictionOdds.fixture.status.short !== "FT"
-  );
-  const finishedBets = bets.filter(
-    (b) => b.predictionOdds.fixture.status.short === "FT"
-  );
+  const activeBets = (bets ?? []).filter((b) => {
+    const status = b?.liveMatch?.status?.short;
+    return status && status !== "FT";
+  });
+
+  const finishedBets = (bets ?? []).filter((b) => {
+    const status = b?.liveMatch?.status?.short;
+    return status === "FT";
+  });
 
   return (
     <PrivateLayout>
@@ -62,6 +69,10 @@ export default function Bets() {
           Unirme a la apuesta
         </Button>
 
+        <View style={{ marginBottom: 16 }}>
+          <AdBanner />
+        </View>
+
         {/* ACTIVAS */}
         <Card style={{ marginBottom: 16 }}>
           <Card.Title title="Apuestas activas" />
@@ -69,20 +80,30 @@ export default function Bets() {
             {activeBets.length === 0 ? (
               <Text>No tienes apuestas activas.</Text>
             ) : (
-              activeBets.map((info) => (
-                <List.Item
-                  onPress={() => navigation.navigate("liveBet", { id: info.bet._id })}
-                  key={info.bet._id}
-                  title={`${info.predictionOdds.fixture.teams.home.name} vs ${info.predictionOdds.fixture.teams.away.name}`}
-                  description={`Tipo: ${info.bet.betType} | Stake: ${info.bet.stake}`}
-                  right={() => (
-                    <Text>
-                      {info.predictionOdds.fixture.status.short} - Min{" "}
-                      {info.predictionOdds.fixture.status.elapsed}
-                    </Text>
-                  )}
-                />
-              ))
+              activeBets.map((bet) => {
+                const match = bet.liveMatch;
+
+                return (
+                  <List.Item
+                    key={bet._id}
+                    onPress={() =>
+                      navigation.navigate("liveBet", { id: bet._id })
+                    }
+                    title={`${match?.teams?.home?.name ?? "-"} vs ${
+                      match?.teams?.away?.name ?? "-"
+                    }`}
+                    description={`Tipo: ${bet.betType} | Cuota: x${bet.stake}`}
+                    right={() => (
+                      <Text>
+                        {match?.status?.short ?? "-"}{" "}
+                        {match?.status?.elapsed
+                          ? `- ${match.status.elapsed}'`
+                          : ""}
+                      </Text>
+                    )}
+                  />
+                );
+              })
             )}
           </Card.Content>
         </Card>
@@ -94,67 +115,71 @@ export default function Bets() {
             {finishedBets.length === 0 ? (
               <Text>No tienes apuestas finalizadas.</Text>
             ) : (
-              finishedBets.map((info) => (
-                <List.Accordion
-                  key={info.bet._id}
-                  title={`${info.predictionOdds.fixture.teams.home.name} ${info.predictionOdds.fixture.goals.home} - ${info.predictionOdds.fixture.goals.away} ${info.predictionOdds.fixture.teams.away.name}`}
-                  description={`Tipo: ${info.bet.betType} | Stake: ${info.bet.stake}`}
-                >
-                  <View style={{ padding: 8 }}>
-                    <Text style={{ fontWeight: "bold" }}>
-                      Resultado final: {info.predictionOdds.fixture.teams.home.name}{" "}
-                      {info.predictionOdds.fixture.goals.home} -{" "}
-                      {info.predictionOdds.fixture.goals.away}{" "}
-                      {info.predictionOdds.fixture.teams.away.name}
-                    </Text>
-                    <Text>
-                      Apuesta: {info.bet.betType} | Cuota:{" "}
-                      {info.bet.users?.length > 0
-                        ? info.predictionOdds.odds ?? "-"
-                        : "-"}
-                    </Text>
+              finishedBets.map((bet) => {
+                const match = bet.liveMatch;
+                const totalPot =
+                  (Number(bet.stake) ?? 0) * (bet.users?.length ?? 0);
 
-                    <List.Section>
-                      {info.bet.users.map((u, idx) => (
-                        <List.Item
-                          key={idx}
-                          title={u.name}
-                          description={() => (
-                            <View>
-                              <Text>
-                                Selección: {formatSelection(u.selection)}
-                              </Text>
-                              <Text>Resultado: {u.result}</Text>
-                              {u.result === "WIN" && (
-                                <Text
-                                  style={{
-                                    fontWeight: "bold",
-                                    color: "green",
-                                  }}
-                                >
-                                  Ganó:{" "}
-                                  {Number(info.bet.stake) *
-                                    (info.predictionOdds.odds ?? 1)}{" "}
-                                  pts
+                const winnersCount =
+                  bet.users?.filter((u) => u.result === "WIN").length ?? 0;
+
+                const prizePerWinner =
+                  winnersCount > 0 ? totalPot / winnersCount : 0;
+                return (
+                  <List.Accordion
+                    key={bet._id}
+                    title={`${match?.teams?.home?.name ?? "-"} ${
+                      match?.goals?.home ?? 0
+                    } - ${match?.goals?.away ?? 0} ${
+                      match?.teams?.away?.name ?? "-"
+                    }`}
+                    description={`Tipo: ${bet.betType} | Cuota: x${bet.stake}`}
+                  >
+                    <View style={{ padding: 8 }}>
+                      <Text style={{ fontWeight: "bold" }}>
+                        Resultado final:
+                      </Text>
+
+                      <List.Section>
+                        {(bet.users ?? []).map((u, idx) => (
+                          <List.Item
+                            key={idx}
+                            title={u?.name ?? "Usuario"}
+                            description={() => (
+                              <View>
+                                <Text>
+                                  Selección: {formatSelection(u?.selection)}
                                 </Text>
-                              )}
-                            </View>
-                          )}
-                          left={() => (
-                            <Text style={{ marginRight: 10 }}>
-                              {u.result === "WIN"
-                                ? "🏆"
-                                : u.result === "LOSE"
-                                ? "❌"
-                                : "➖"}
-                            </Text>
-                          )}
-                        />
-                      ))}
-                    </List.Section>
-                  </View>
-                </List.Accordion>
-              ))
+                                <Text>Resultado: {u?.result ?? "-"}</Text>
+
+                                {u?.result === "WIN" && (
+                                  <Text
+                                    style={{
+                                      fontWeight: "bold",
+                                      color: "#1DB954",
+                                    }}
+                                  >
+                                    Ganó: {prizePerWinner.toLocaleString()} pts
+                                  </Text>
+                                )}
+                              </View>
+                            )}
+                            left={() => (
+                              <Text style={{ marginRight: 10 }}>
+                                {u?.result === "WIN"
+                                  ? "🏆"
+                                  : u?.result === "LOSE"
+                                    ? "❌"
+                                    : "➖"}
+                              </Text>
+                            )}
+                          />
+                        ))}
+                      </List.Section>
+                    </View>
+                  </List.Accordion>
+                );
+              })
             )}
           </Card.Content>
         </Card>

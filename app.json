@@ -36,9 +36,14 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-6519234150543133~5999869194"
+        }
+      ],
       "expo-video",
-      "expo-audio",
-      "react-native-reanimated/plugin"
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

@@ -12,7 +12,10 @@ type DynamicMatchViewProps = {
   live: LiveMatch;
 };
 
-export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewProps) {
+export default function DynamicMatchView({
+  fixtureId,
+  live,
+}: DynamicMatchViewProps) {
   // ⚽ posición del balón
   const ballX = useRef(new Animated.Value(FIELD_WIDTH / 2)).current;
   const ballY = useRef(new Animated.Value(FIELD_HEIGHT / 2)).current;
@@ -23,6 +26,86 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
 
   // 🆕 Último evento recordado
   const lastEventRef = useRef<LiveEvent | null>(null);
+
+  // ✅ NUEVO: “flash” del campo en eventos importantes
+  const fieldFlash = useRef(new Animated.Value(0)).current;
+
+  // ✅ NUEVO: control del idle loop
+  const idleLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  // ✅ NUEVO: helper para Y con sentido (no random puro)
+  const getZoneY = (type?: string) => {
+    // Valores en pixels dentro del FIELD_HEIGHT
+    // Arriba = más ataque / peligro, Medio = disputa, Abajo = transición/repliegue
+    if (type === "Goal") return FIELD_HEIGHT * 0.18;
+    if (type === "Card") return FIELD_HEIGHT * 0.5;
+    if (type === "Substitution") return FIELD_HEIGHT * 0.62;
+    return FIELD_HEIGHT * 0.72;
+  };
+
+  // ✅ NUEVO: iniciar / detener idle (balón “respira”)
+  const startIdle = () => {
+    if (idleLoopRef.current) return;
+
+    // Suave, lento, casi imperceptible: da vida sin molestar
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ballY, {
+          toValue: FIELD_HEIGHT * 0.46,
+          duration: 3800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: false,
+        }),
+        Animated.timing(ballY, {
+          toValue: FIELD_HEIGHT * 0.54,
+          duration: 3800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+
+    idleLoopRef.current = loop;
+    loop.start();
+  };
+
+  const stopIdle = () => {
+    idleLoopRef.current?.stop?.();
+    idleLoopRef.current = null;
+  };
+
+  // ✅ NUEVO: flash suave del campo para eventos importantes
+  const flashField = (event: LiveEvent) => {
+    const isBig =
+      event.type === "Goal" ||
+      (event.type === "Card" && event.detail?.includes("Red"));
+    if (!isBig) return;
+
+    fieldFlash.stopAnimation();
+    fieldFlash.setValue(0);
+
+    Animated.sequence([
+      Animated.timing(fieldFlash, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(fieldFlash, {
+        toValue: 0,
+        duration: 420,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  // ✅ NUEVO: inicia idle al montar (para que nunca se vea “muerta”)
+  useEffect(() => {
+    startIdle();
+    return () => stopIdle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 🧠 Detectar nuevo evento en vivo
   useEffect(() => {
@@ -37,18 +120,37 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
       latest.player?.id !== lastEventRef.current.player?.id
     ) {
       lastEventRef.current = latest;
+
+      // ✅ NUEVO: al haber evento, pausa idle para que el movimiento “tenga sentido”
+      stopIdle();
+
       triggerEventAnimation(latest);
       animateBall(latest, live);
+
+      // ✅ NUEVO: flash en eventos importantes
+      flashField(latest);
+
+      // ✅ NUEVO: después de un rato sin acción, vuelve el idle
+      // (si llegan eventos seguidos, este timer se “pisa” naturalmente)
+      const t = setTimeout(() => startIdle(), 4500);
+      return () => clearTimeout(t);
     }
-  }, [live.events]);
+  }, [live.events]); // mantenemos tu dependencia
 
   // 🎬 Mover el balón según el evento
-  const animateBall = (event: LiveEvent, live: LiveMatch | null) => {
-    const isHome = event.team?.id === live?.teams.home.id;
+  const animateBall = (event: LiveEvent, liveMatch: LiveMatch | null) => {
+    const isHome = event.team?.id === liveMatch?.teams.home.id;
+
+    // X con sentido: home ataca hacia un lado, away hacia el otro
     const toX = isHome ? FIELD_WIDTH * 0.3 : FIELD_WIDTH * 0.7;
-    const toY =
-      Math.random() * (FIELD_HEIGHT * 0.8 - FIELD_HEIGHT * 0.2) +
-      FIELD_HEIGHT * 0.2;
+
+    // ✅ NUEVO: Y con sentido (según tipo) + pequeña variación controlada
+    const baseY = getZoneY(event.type);
+    const jitter = Math.random() * FIELD_HEIGHT * 0.06 - FIELD_HEIGHT * 0.03; // +/- 3%
+    const toY = Math.max(
+      FIELD_HEIGHT * 0.12,
+      Math.min(FIELD_HEIGHT * 0.88, baseY + jitter),
+    );
 
     Animated.sequence([
       Animated.timing(ballX, {
@@ -72,9 +174,7 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
 
     switch (event.type) {
       case "Goal":
-        message = `⚽ ¡Gol de ${event.player?.name || "Jugador"}! (${
-          event.team?.name
-        })`;
+        message = `⚽ ¡Gol de ${event.player?.name || "Jugador"}! (${event.team?.name})`;
         break;
       case "Card":
         if (event.detail?.includes("Yellow"))
@@ -106,17 +206,21 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
     ]).start();
   };
 
+  // ✅ NUEVO: color del campo con “flash”
+  const fieldBg = fieldFlash.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#0b6623", "#1fa84f"], // flash suave
+  });
+
   return (
     <View style={{ marginTop: 10 }}>
       {/* 🟩 Cancha */}
-      <View
+      <Animated.View
         style={{
           borderWidth: 1,
           borderColor: "#ccc",
           borderRadius: 12,
-          overflow: "hidden",
-          height: FIELD_HEIGHT,
-          backgroundColor: "#0b6623",
+          backgroundColor: fieldBg as any, // Animated color
         }}
       >
         {live && (
@@ -141,6 +245,7 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
             alignItems: "center",
             transform: [{ translateX: ballX }, { translateY: ballY }],
           }}
+          pointerEvents="none"
         >
           <Text style={{ fontSize: 10 }}>⚽</Text>
         </Animated.View>
@@ -157,6 +262,7 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
             borderRadius: 10,
             opacity: eventOpacity,
           }}
+          pointerEvents="none"
         >
           <Text
             style={{
@@ -168,7 +274,7 @@ export default function DynamicMatchView({ fixtureId, live }: DynamicMatchViewPr
             {eventMessage}
           </Text>
         </Animated.View>
-      </View>
+      </Animated.View>
     </View>
   );
 }

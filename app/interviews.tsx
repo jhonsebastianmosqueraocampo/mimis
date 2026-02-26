@@ -1,23 +1,19 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { swiperItem } from "@/types";
 import React, { useEffect, useState } from "react";
-import {
-  Dimensions,
-  Modal,
-  ScrollView,
-  View,
-} from "react-native";
+import { Alert, Dimensions, Linking, ScrollView, View } from "react-native";
 import {
   ActivityIndicator,
   Card,
+  Chip,
   Divider,
-  IconButton,
   Text,
 } from "react-native-paper";
-import { WebView } from "react-native-webview";
 import PrivateLayout from "./privateLayout";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 type Video = {
   id: string;
@@ -34,19 +30,22 @@ type VideoYoutube = {
   thumbnail: string;
 };
 
+type FilterType = "favorites" | "general";
+
 export default function Interviews() {
   const { getFavorites, getVideoFromYoutube } = useFetch();
   const [equipos, setEquipos] = useState<swiperItem[]>([]);
   const [jugadores, setJugadores] = useState<swiperItem[]>([]);
-  const [videosEquipos, setVideosEquipos] = useState<Record<string, Video[]>>({});
-  const [videosJugadores, setVideosJugadores] = useState<Record<string, Video[]>>({});
+  const [videosEquipos, setVideosEquipos] = useState<Record<string, Video[]>>(
+    {},
+  );
+  const [videosJugadores, setVideosJugadores] = useState<
+    Record<string, Video[]>
+  >({});
   const [videosGenerales, setVideosGenerales] = useState<Video[]>([]);
+  const [filter, setFilter] = useState<FilterType>("favorites");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Modal
-  const [modalVideos, setModalVideos] = useState<Video[]>([]);
-  const [startIndex, setStartIndex] = useState(0);
 
   const mapYoutubeToVideo = (yt: VideoYoutube): Video => ({
     id: yt.videoId,
@@ -54,6 +53,22 @@ export default function Interviews() {
     thumbnail: yt.thumbnail,
     url: `https://www.youtube.com/watch?v=${yt.videoId}`,
   });
+
+  const openYoutubeApp = async (videoId: string) => {
+    const appUrl = `vnd.youtube://${videoId}`;
+    const webUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    try {
+      const supported = await Linking.canOpenURL(appUrl);
+      if (supported) {
+        await Linking.openURL(appUrl); // 📱 Abre app YouTube
+      } else {
+        await Linking.openURL(webUrl); // 🌐 Fallback navegador
+      }
+    } catch (error) {
+      Alert.alert("Error", "No se pudo abrir el video");
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -82,7 +97,9 @@ export default function Interviews() {
           for (const player of players) {
             const query = `${player.title} entrevista post partido declaraciones rueda de prensa ${year} fútbol`;
             const { success, videos } = await getVideoFromYoutube(query);
-            plVideos[player.title] = success ? videos.map(mapYoutubeToVideo) : [];
+            plVideos[player.title] = success
+              ? videos.map(mapYoutubeToVideo)
+              : [];
           }
           setVideosJugadores(plVideos);
 
@@ -106,11 +123,6 @@ export default function Interviews() {
     };
   }, []);
 
-  const handleOpenVideo = (videos: Video[], index: number) => {
-    setModalVideos(videos);
-    setStartIndex(index);
-  };
-
   if (loading) {
     return (
       <PrivateLayout>
@@ -121,149 +133,140 @@ export default function Interviews() {
 
   if (error) {
     return (
-      <PrivateLayout>
-        <Text style={{ color: "red", margin: 20 }}>{error}</Text>
-      </PrivateLayout>
+      <Loading
+        visible={loading}
+        title="Cargando entrevistas"
+        subtitle="Pronto tendrás la información"
+      />
     );
   }
 
   return (
     <PrivateLayout>
       <ScrollView contentContainerStyle={{ padding: 12 }}>
-        {/* 🔹 Sección entrevistas de equipos */}
-        {equipos.map((team) => (
-          <View key={team.id} style={{ marginBottom: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-              {team.title} - Entrevistas
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            >
-              {videosEquipos[team.title]?.map((video, idx) => (
-                <Card
-                  key={video.id}
-                  style={{
-                    width: width * 0.6,
-                    marginRight: 12,
-                    borderRadius: 12,
-                  }}
-                  onPress={() => handleOpenVideo(videosEquipos[team.title], idx)}
-                >
-                  <Card.Cover source={{ uri: video.thumbnail }} />
-                  <Card.Content>
-                    <Text variant="bodyMedium" numberOfLines={2}>
-                      {video.title}
-                    </Text>
-                  </Card.Content>
-                </Card>
-              ))}
-            </ScrollView>
-            <Divider style={{ marginVertical: 12 }} />
-          </View>
-        ))}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 16 }}
+        >
+          <Chip
+            selected={filter === "favorites"}
+            onPress={() => setFilter("favorites")}
+            style={{ marginRight: 8 }}
+            compact
+          >
+            ⭐ Favoritos
+          </Chip>
 
-        {/* 🔹 Sección entrevistas de jugadores */}
-        {jugadores.map((player) => (
-          <View key={player.id} style={{ marginBottom: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-              {player.title} - Entrevistas
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            >
-              {videosJugadores[player.title]?.map((video, idx) => (
-                <Card
-                  key={video.id}
-                  style={{
-                    width: width * 0.6,
-                    marginRight: 12,
-                    borderRadius: 12,
-                  }}
-                  onPress={() => handleOpenVideo(videosJugadores[player.title], idx)}
-                >
-                  <Card.Cover source={{ uri: video.thumbnail }} />
-                  <Card.Content>
-                    <Text variant="bodyMedium" numberOfLines={2}>
-                      {video.title}
-                    </Text>
-                  </Card.Content>
-                </Card>
-              ))}
-            </ScrollView>
-            <Divider style={{ marginVertical: 12 }} />
-          </View>
-        ))}
-
-        {/* 🔹 Entrevistas generales */}
-        <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-          Entrevistas en general
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {videosGenerales.map((video, idx) => (
-            <Card
-              key={video.id}
-              style={{
-                width: width * 0.6,
-                marginRight: 12,
-                borderRadius: 12,
-              }}
-              onPress={() => handleOpenVideo(videosGenerales, idx)}
-            >
-              <Card.Cover source={{ uri: video.thumbnail }} />
-              <Card.Content>
-                <Text variant="bodyMedium" numberOfLines={2}>
-                  {video.title}
-                </Text>
-              </Card.Content>
-            </Card>
-          ))}
+          <Chip
+            selected={filter === "general"}
+            onPress={() => setFilter("general")}
+            compact
+          >
+            🌍 General
+          </Chip>
         </ScrollView>
-      </ScrollView>
+        {filter === "favorites" && (
+          <>
+            {/* 🔹 Sección entrevistas de equipos */}
+            {equipos.map((team) => (
+              <View key={team.id} style={{ marginBottom: 20 }}>
+                <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+                  {team.title} - Entrevistas
+                </Text>
 
-      {/* 🔹 Modal scroll horizontal con entrevistas */}
-      <Modal visible={modalVideos.length > 0} animationType="slide">
-        <View style={{ flex: 1, backgroundColor: "#000" }}>
-          {/* Cerrar */}
-          <View
-            style={{
-              position: "absolute",
-              top: 40,
-              right: 20,
-              zIndex: 10,
-              backgroundColor: "rgba(0,0,0,0.6)",
-              borderRadius: 24,
-              padding: 4,
-            }}
-          >
-            <IconButton
-              icon="close"
-              size={28}
-              iconColor="#fff"
-              onPress={() => setModalVideos([])}
-            />
-          </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {videosEquipos[team.title]?.map((video) => (
+                    <Card
+                      key={video.id}
+                      style={{
+                        width: width * 0.6,
+                        marginRight: 12,
+                        borderRadius: 12,
+                      }}
+                      onPress={() => openYoutubeApp(video.id)}
+                    >
+                      <Card.Cover source={{ uri: video.thumbnail }} />
+                      <Card.Content>
+                        <Text variant="bodyMedium" numberOfLines={2}>
+                          {video.title}
+                        </Text>
+                      </Card.Content>
+                    </Card>
+                  ))}
+                </ScrollView>
 
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: startIndex * width, y: 0 }}
-          >
-            {modalVideos.map((video) => (
-              <View key={video.id} style={{ width, height }}>
-                <WebView
-                  source={{ uri: `https://www.youtube.com/embed/${video.id}` }}
-                  style={{ flex: 1 }}
-                  javaScriptEnabled
-                  allowsFullscreenVideo
-                />
+                <Divider style={{ marginVertical: 12 }} />
               </View>
             ))}
-          </ScrollView>
+
+            {/* 🔹 Sección entrevistas de jugadores */}
+            {jugadores.map((player) => (
+              <View key={player.id} style={{ marginBottom: 20 }}>
+                <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+                  {player.title} - Entrevistas
+                </Text>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {videosJugadores[player.title]?.map((video) => (
+                    <Card
+                      key={video.id}
+                      style={{
+                        width: width * 0.6,
+                        marginRight: 12,
+                        borderRadius: 12,
+                      }}
+                      onPress={() => openYoutubeApp(video.id)}
+                    >
+                      <Card.Cover source={{ uri: video.thumbnail }} />
+                      <Card.Content>
+                        <Text variant="bodyMedium" numberOfLines={2}>
+                          {video.title}
+                        </Text>
+                      </Card.Content>
+                    </Card>
+                  ))}
+                </ScrollView>
+
+                <Divider style={{ marginVertical: 12 }} />
+              </View>
+            ))}
+          </>
+        )}
+
+        {/* 🔹 Entrevistas generales */}
+        {filter === "general" && (
+          <>
+            <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+              Entrevistas en general
+            </Text>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {videosGenerales.map((video) => (
+                <Card
+                  key={video.id}
+                  style={{
+                    width: width * 0.6,
+                    marginRight: 12,
+                    borderRadius: 12,
+                  }}
+                  onPress={() => openYoutubeApp(video.id)}
+                >
+                  <Card.Cover source={{ uri: video.thumbnail }} />
+                  <Card.Content>
+                    <Text variant="bodyMedium" numberOfLines={2}>
+                      {video.title}
+                    </Text>
+                  </Card.Content>
+                </Card>
+              ))}
+            </ScrollView>
+          </>
+        )}
+        <View style={{ marginVertical: 24, alignItems: "center" }}>
+          <AdBanner />
         </View>
-      </Modal>
+      </ScrollView>
     </PrivateLayout>
   );
 }

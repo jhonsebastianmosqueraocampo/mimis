@@ -1,5 +1,6 @@
 import MainMenu from "@/components/MainMenu";
 import { useAuth } from "@/hooks/AuthContext";
+import { useStore } from "@/hooks/storeContext";
 import React from "react";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import Login from "./login";
@@ -10,6 +11,7 @@ type Props = {
 
 export default function PrivateLayout({ children }: Props) {
   const { isLoggedIn } = useAuth();
+  const { productsStore } = useStore();
 
   return (
     <>
@@ -18,7 +20,7 @@ export default function PrivateLayout({ children }: Props) {
       ) : (
         <View style={styles.root}>
           <StatusBar backgroundColor="#1DB954" barStyle="light-content" />
-          <MainMenu />
+          <MainMenu productsStore={productsStore} />
 
           {/* 🔹 Aquí el contenido siempre ocupará toda la altura */}
           <View style={styles.container}>

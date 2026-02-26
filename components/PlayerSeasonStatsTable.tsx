@@ -1,8 +1,16 @@
-import { PlayerB, RootStackParamList } from '@/types';
-import { useNavigation } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { NativeStackNavigationProp } from 'react-native-screens/lib/typescript/native-stack/types';
+import AdBanner from "@/services/ads/AdBanner";
+import { PlayerB, RootStackParamList } from "@/types";
+import { useNavigation } from "expo-router";
+import React, { useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 type PlayerStatsProps = {
   player: PlayerB;
@@ -11,11 +19,12 @@ type PlayerStatsProps = {
 export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
   const [selectedLeagueIndex, setSelectedLeagueIndex] = useState(0);
   const selectedStat = player.statistics[selectedLeagueIndex];
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleLeague = (id: string) => {
-    navigation.navigate('tournament', {id})
-  }
+    navigation.navigate("tournament", { id });
+  };
 
   return (
     <>
@@ -34,20 +43,24 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
       </View>
 
       {/* Chips de ligas */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 16 }}
+      >
         {player.statistics.map((stat, index) => (
           <TouchableOpacity
             key={index}
             style={[
               styles.chip,
-              index === selectedLeagueIndex && styles.chipSelected
+              index === selectedLeagueIndex && styles.chipSelected,
             ]}
             onPress={() => setSelectedLeagueIndex(index)}
           >
             <Text
               style={[
                 styles.chipText,
-                index === selectedLeagueIndex && styles.chipTextSelected
+                index === selectedLeagueIndex && styles.chipTextSelected,
               ]}
             >
               {stat.league.name}
@@ -59,14 +72,21 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
       {/* Estadísticas de la liga seleccionada */}
       <View style={styles.card}>
         {/* Encabezado liga */}
-        <TouchableOpacity style={styles.leagueHeader} onPress={()=>handleLeague(selectedStat.league.id?.toString() ?? '')}>
+        <TouchableOpacity
+          style={styles.leagueHeader}
+          onPress={() => handleLeague(selectedStat.league.id?.toString() ?? "")}
+        >
           {selectedStat.league.logo && (
-            <Image source={{ uri: selectedStat.league.logo }} style={styles.leagueLogo} />
+            <Image
+              source={{ uri: selectedStat.league.logo }}
+              style={styles.leagueLogo}
+            />
           )}
           <View>
             <Text style={styles.leagueName}>{selectedStat.league.name}</Text>
             <Text style={styles.subText}>
-              {selectedStat.league.country} • Temporada {selectedStat.league.season}
+              {selectedStat.league.country} • Temporada{" "}
+              {selectedStat.league.season}
             </Text>
           </View>
         </TouchableOpacity>
@@ -75,12 +95,14 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
         <Text style={styles.sectionTitle}>Juegos</Text>
         <View style={styles.row}>
           <Text style={styles.label}>Posición:</Text>
-          <Text style={styles.value}>{selectedStat.games.position ?? '-'}</Text>
+          <Text style={styles.value}>{selectedStat.games.position ?? "-"}</Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Partidos (Titular / Suplente):</Text>
           <Text style={styles.value}>
-            {selectedStat.games.appearences ?? 0} ({selectedStat.games.lineups ?? 0} / {selectedStat.substitutes.in ?? 0})
+            {selectedStat.games.appearences ?? 0} (
+            {selectedStat.games.lineups ?? 0} /{" "}
+            {selectedStat.substitutes.in ?? 0})
           </Text>
         </View>
         <View style={styles.row}>
@@ -89,7 +111,9 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Capitán:</Text>
-          <Text style={styles.value}>{selectedStat.games.captain ? 'Sí' : 'No'}</Text>
+          <Text style={styles.value}>
+            {selectedStat.games.captain ? "Sí" : "No"}
+          </Text>
         </View>
 
         {/* Sección Ataque */}
@@ -111,7 +135,8 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
         <View style={styles.row}>
           <Text style={styles.label}>Dribles (éxito):</Text>
           <Text style={styles.value}>
-            {selectedStat.dribbles.attempts ?? 0} ({selectedStat.dribbles.success ?? 0})
+            {selectedStat.dribbles.attempts ?? 0} (
+            {selectedStat.dribbles.success ?? 0})
           </Text>
         </View>
 
@@ -127,7 +152,9 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Precisión:</Text>
-          <Text style={styles.value}>{selectedStat.passes.accuracy ?? '-'}</Text>
+          <Text style={styles.value}>
+            {selectedStat.passes.accuracy ?? "-"}
+          </Text>
         </View>
 
         {/* Sección Defensa */}
@@ -138,7 +165,9 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Intercepciones:</Text>
-          <Text style={styles.value}>{selectedStat.tackles.interceptions ?? 0}</Text>
+          <Text style={styles.value}>
+            {selectedStat.tackles.interceptions ?? 0}
+          </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Duelos (Ganados / Totales):</Text>
@@ -152,13 +181,16 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
         <View style={styles.row}>
           <Text style={styles.label}>Faltas (Cometidas / Recibidas):</Text>
           <Text style={styles.value}>
-            {selectedStat.fouls.committed ?? 0} / {selectedStat.fouls.drawn ?? 0}
+            {selectedStat.fouls.committed ?? 0} /{" "}
+            {selectedStat.fouls.drawn ?? 0}
           </Text>
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Tarjetas:</Text>
           <Text style={styles.value}>
-            🟨 {selectedStat.cards.yellow ?? 0} | 🟧 {selectedStat.cards.yellowred ?? 0} | 🟥 {selectedStat.cards.red ?? 0}
+            🟨 {selectedStat.cards.yellow ?? 0} | 🟧{" "}
+            {selectedStat.cards.yellowred ?? 0} | 🟥{" "}
+            {selectedStat.cards.red ?? 0}
           </Text>
         </View>
 
@@ -177,86 +209,117 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
           <Text style={styles.value}>{selectedStat.penalty.saved ?? 0}</Text>
         </View>
       </View>
+
+      <View style={{ marginTop: 24, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
+
   photo: {
     width: 70,
     height: 70,
-    borderRadius: 50,
+    borderRadius: 35,
+    backgroundColor: "#eee",
   },
+
   playerName: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#222222',
+    fontWeight: "700",
+    color: "#222",
   },
+
   subText: {
-    color: '#aaa',
+    color: "#666",
     fontSize: 14,
+    marginTop: 2,
   },
+
+  /* Chips */
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: '#333',
+    backgroundColor: "#F2F2F2",
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
   },
+
   chipSelected: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#1DB954",
+    borderColor: "#1DB954",
   },
+
   chipText: {
-    color: '#ccc',
+    color: "#555",
     fontSize: 14,
   },
+
   chipTextSelected: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "600",
   },
+
+  /* Card */
   card: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
   },
+
   leagueHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
+
   leagueLogo: {
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 32,
     marginRight: 10,
   },
+
   leagueName: {
-    color: '#fff',
+    color: "#222",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "700",
   },
+
   sectionTitle: {
-    color: '#fff',
+    color: "#1DB954",
     fontSize: 15,
-    fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 4,
+    fontWeight: "700",
+    marginTop: 14,
+    marginBottom: 6,
   },
+
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
   },
+
   label: {
-    color: '#bbb',
+    color: "#555",
+    fontSize: 14,
+    flex: 1,
   },
+
   value: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#222",
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });

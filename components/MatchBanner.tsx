@@ -31,9 +31,13 @@ export default function MatchBanner({
 }: MatchProps) {
   const matchDate = dayjs(datetime);
   const now = dayjs();
-  const timeLeft = matchDate.isAfter(now)
-    ? matchDate.fromNow(true)
-    : "En curso";
+
+  const isFuture = matchDate.isAfter(now);
+  const isPast = matchDate.isBefore(now);
+
+  // Si solo tienes fecha y no estado real, lo más seguro:
+  const timeLabel = isFuture ? "Empieza en:" : "Estado:";
+  const timeValue = isFuture ? matchDate.fromNow(true) : "En curso";
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -109,7 +113,9 @@ export default function MatchBanner({
       </TouchableOpacity>
 
       <View style={styles.timeLeftBox}>
-        <Text style={styles.timeLeftText}>Faltan: {timeLeft}</Text>
+        <Text style={styles.timeLeftText}>
+          {timeLabel} {timeValue}
+        </Text>
       </View>
     </View>
   );

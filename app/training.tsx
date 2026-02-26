@@ -1,20 +1,10 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { swiperItem } from "@/types";
 import React, { useEffect, useState } from "react";
-import {
-  Dimensions,
-  Modal,
-  ScrollView,
-  View,
-} from "react-native";
-import {
-  ActivityIndicator,
-  Card,
-  Divider,
-  IconButton,
-  Text,
-} from "react-native-paper";
-import { WebView } from "react-native-webview";
+import { Alert, Dimensions, Linking, ScrollView, View } from "react-native";
+import { ActivityIndicator, Card, Divider, Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
 const { width, height } = Dimensions.get("window");
@@ -37,14 +27,12 @@ type VideoYoutube = {
 export default function Training() {
   const { getFavorites, getVideoFromYoutube } = useFetch();
   const [equipos, setEquipos] = useState<swiperItem[]>([]);
-  const [videosFavoritos, setVideosFavoritos] = useState<Record<string, Video[]>>({});
+  const [videosFavoritos, setVideosFavoritos] = useState<
+    Record<string, Video[]>
+  >({});
   const [videosGenerales, setVideosGenerales] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Modal
-  const [modalVideos, setModalVideos] = useState<Video[]>([]);
-  const [startIndex, setStartIndex] = useState(0);
 
   const mapYoutubeToVideo = (yt: VideoYoutube): Video => ({
     id: yt.videoId,
@@ -69,7 +57,9 @@ export default function Training() {
           for (const team of teams) {
             const query = `${team.title} entrenamiento práctica training session preparación ${year} fútbol`;
             const { success, videos } = await getVideoFromYoutube(query);
-            favVideos[team.title] = success ? videos.map(mapYoutubeToVideo) : [];
+            favVideos[team.title] = success
+              ? videos.map(mapYoutubeToVideo)
+              : [];
           }
           setVideosFavoritos(favVideos);
 
@@ -92,9 +82,21 @@ export default function Training() {
     };
   }, []);
 
-  const handleOpenVideo = (videos: Video[], index: number) => {
-    setModalVideos(videos);
-    setStartIndex(index);
+  const openYoutubeApp = async (videoId: string) => {
+    const appUrl = `vnd.youtube://${videoId}`;
+    const webUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    try {
+      const supported = await Linking.canOpenURL(appUrl);
+
+      if (supported) {
+        await Linking.openURL(appUrl);
+      } else {
+        await Linking.openURL(webUrl);
+      }
+    } catch (error) {
+      Alert.alert("Error", "No se pudo abrir el video");
+    }
   };
 
   if (loading) {
@@ -107,9 +109,11 @@ export default function Training() {
 
   if (error) {
     return (
-      <PrivateLayout>
-        <Text style={{ color: "red", margin: 20 }}>{error}</Text>
-      </PrivateLayout>
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
     );
   }
 
@@ -131,7 +135,7 @@ export default function Training() {
                     marginRight: 12,
                     borderRadius: 12,
                   }}
-                  onPress={() => handleOpenVideo(videosFavoritos[team.title], idx)}
+                  onPress={() => openYoutubeApp(video.id)}
                 >
                   <Card.Cover source={{ uri: video.thumbnail }} />
                   <Card.Content>
@@ -159,7 +163,7 @@ export default function Training() {
                 marginRight: 12,
                 borderRadius: 12,
               }}
-              onPress={() => handleOpenVideo(videosGenerales, idx)}
+              onPress={() => openYoutubeApp(video.id)}
             >
               <Card.Cover source={{ uri: video.thumbnail }} />
               <Card.Content>
@@ -171,50 +175,9 @@ export default function Training() {
           ))}
         </ScrollView>
       </ScrollView>
-
-      {/* Modal con Scroll de videos */}
-      <Modal visible={modalVideos.length > 0} animationType="slide">
-        <View style={{ flex: 1, backgroundColor: "#000" }}>
-          {/* Botón de cerrar */}
-          <View
-            style={{
-              position: "absolute",
-              top: 40,
-              right: 20,
-              zIndex: 10,
-              backgroundColor: "rgba(0,0,0,0.6)",
-              borderRadius: 24,
-              padding: 4,
-            }}
-          >
-            <IconButton
-              icon="close"
-              size={28}
-              iconColor="#fff"
-              onPress={() => setModalVideos([])}
-            />
-          </View>
-
-          {/* Scroll horizontal con videos */}
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: startIndex * width, y: 0 }}
-          >
-            {modalVideos.map((video) => (
-              <View key={video.id} style={{ width, height }}>
-                <WebView
-                  source={{ uri: `https://www.youtube.com/embed/${video.id}` }}
-                  style={{ flex: 1 }}
-                  javaScriptEnabled
-                  allowsFullscreenVideo
-                />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </Modal>
+      <View style={{ marginVertical: 10, alignItems: "center" }}>
+        <AdBanner />
+      </View>
     </PrivateLayout>
   );
 }

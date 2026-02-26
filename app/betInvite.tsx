@@ -1,12 +1,12 @@
+import Loading from "@/components/Loading";
 import { betTypes } from "@/data/betTypes";
 import { useFetch } from "@/hooks/FetchContext";
 import { BetInfo, RootStackParamList, SelectionBet } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, ViewStyle } from "react-native";
+import { ScrollView, StyleSheet, View, ViewStyle } from "react-native";
 import {
-  ActivityIndicator,
   Avatar,
   Button,
   Card,
@@ -49,8 +49,9 @@ export default function JoinBetScreen() {
   const [exactScore, setExactScore] = useState({ home: "", away: "" });
   const [ouSide, setOuSide] = useState<"OVER" | "UNDER" | null>(null);
   const [ouLine, setOuLine] = useState<number | null>(2.5);
-  const [betId, setBetId] = useState(route.params?.id ?? '');
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [betId, setBetId] = useState(route.params?.id ?? "");
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let isMounted = true;
@@ -233,65 +234,82 @@ export default function JoinBetScreen() {
 
   const handleBet = async () => {
     if (!betInfo) return;
-    const market = betInfo.bet.betType as SelectionBet["market"];
+
+    const betType = betInfo.bet.betType;
     let selection: SelectionBet | null = null;
 
-    switch (market) {
+    switch (betType) {
       case "RESULT_1X2":
-        if (!selectedBet)
-          return console.log("⚠️ Selecciona Local/Empate/Visitante");
+        if (!selectedBet) {
+          console.log("⚠️ Selecciona Local/Empate/Visitante");
+          return;
+        }
+
         selection = {
-          market,
           pick: selectedBet as "LOCAL" | "DRAW" | "AWAY",
         };
         break;
 
-      case "EXACT_SCORE":
+      case "EXACT_SCORE": {
         const h = toNumber(exactScore.home);
         const a = toNumber(exactScore.away);
-        if (Number.isNaN(h) || Number.isNaN(a))
-          return console.log("⚠️ Marcador inválido");
+
+        if (Number.isNaN(h) || Number.isNaN(a)) {
+          console.log("⚠️ Marcador inválido");
+          return;
+        }
+
         selection = {
-          market,
           home: h,
           away: a,
         };
         break;
+      }
 
       case "OVER_UNDER":
-        if (!ouSide || !ouLine)
-          return console.log("⚠️ Selecciona lado y línea");
+        if (!ouSide || ouLine === undefined) {
+          console.log("⚠️ Selecciona lado y línea");
+          return;
+        }
+
         selection = {
-          market,
           side: ouSide,
-          line: ouLine,
+          line: ouLine ?? undefined,
         };
         break;
 
       default:
-        return console.log("⚠️ Tipo de apuesta no soportado:", market);
+        console.log("⚠️ Tipo de apuesta no soportado:", betType);
+        return;
     }
 
     if (!selection) return;
 
     setLoading(true);
+
     try {
       const { success, message } = await joinBet(betId, selection);
 
       if (success) {
         navigation.navigate("liveBet", { id: betId });
       } else {
-        setError(message || "Error al cargar la apuesta");
+        setError(message || "Error al registrar la apuesta");
       }
     } catch (err) {
-      setError("Error al validar código");
+      setError("Error al registrar la apuesta");
     } finally {
       setLoading(false);
     }
   };
 
   if (loading)
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando apuestas"
+        subtitle="Estamos trabajando en las apuestas"
+      />
+    );
   if (error) {
     return (
       <PrivateLayout>
@@ -311,8 +329,8 @@ export default function JoinBetScreen() {
   const pred = predictionOdds?.predictions?.predictions;
 
   const handleFixture = (id: string) => {
-    navigation.navigate('match', {id})
-  }
+    navigation.navigate("match", { id });
+  };
 
   return (
     <PrivateLayout>
@@ -344,7 +362,10 @@ export default function JoinBetScreen() {
         ) : (
           <>
             {/* Fixture */}
-            <Card style={{ marginBottom: 16 }} onPress={()=>handleFixture(fixture.fixtureId)}>
+            <Card
+              style={{ marginBottom: 16 }}
+              onPress={() => handleFixture(fixture.fixtureId)}
+            >
               <Card.Title
                 title="Partido"
                 subtitle={`${fixture.venue.name}, ${fixture.venue.city}`}
@@ -431,7 +452,7 @@ export default function JoinBetScreen() {
                                         selectedHouse ===
                                           `${bm.name}-${bet.name}-${v.value}`
                                           ? null
-                                          : `${bm.name}-${bet.name}-${v.value}`
+                                          : `${bm.name}-${bet.name}-${v.value}`,
                                       )
                                     }
                                     style={{ margin: 4 }}
@@ -539,7 +560,7 @@ export default function JoinBetScreen() {
                           {val.away}
                         </Text>
                       </View>
-                    )
+                    ),
                   )
                 ) : (
                   <Text>No hay datos de comparación</Text>
@@ -558,7 +579,7 @@ export default function JoinBetScreen() {
                       title={u.name}
                       description={`Apostó: ${formatUserSelection(
                         u.selection,
-                        bet.betType
+                        bet.betType,
                       )}`}
                     />
                   ))}
@@ -586,6 +607,11 @@ export default function JoinBetScreen() {
               </Card.Content>
             </Card>
 
+            <View style={styles.oddsBadge}>
+              <Text style={styles.oddsLabel}>Cuota de la apuesta</Text>
+              <Text style={styles.oddsValue}>{bet.stake}</Text>
+            </View>
+
             <Button
               mode="contained"
               buttonColor="#1DB954"
@@ -600,3 +626,27 @@ export default function JoinBetScreen() {
     </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  oddsBadge: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 70,
+  },
+
+  oddsLabel: {
+    fontSize: 10,
+    color: "#aaa",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+
+  oddsValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1DB954",
+  },
+});

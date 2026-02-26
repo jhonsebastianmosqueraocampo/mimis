@@ -1,17 +1,30 @@
-import ScrollSection from "@/components/ScrollSection";
+import Loading from "@/components/Loading";
+import VerticalScroll from "@/components/VerticalScroll";
 import { useFetch } from "@/hooks/FetchContext";
+import AdBanner from "@/services/ads/AdBanner";
 import { swiperItem } from "@/types";
 import React, { useEffect, useState } from "react";
-import { ScrollView } from "react-native";
-import { ActivityIndicator, Divider, Text } from "react-native-paper";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { Button, Chip, Text, TextInput } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
 export default function TransferNews() {
   const { getNewsSignAndRumorFavoritesAndGeneral } = useFetch();
   const [newsFavorties, setNewsFavorties] = useState<swiperItem[]>();
   const [newsGeneral, setNewsGeneral] = useState<swiperItem[]>();
+  const [selectedTab, setSelectedTab] = useState<"favorites" | "general">(
+    "favorites",
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const PAGE_SIZE = 6;
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedTab, search]);
 
   useEffect(() => {
     let isMounted = true;
@@ -44,38 +57,181 @@ export default function TransferNews() {
     };
   }, []);
 
+  const activeNews =
+    selectedTab === "favorites" ? (newsFavorties ?? []) : (newsGeneral ?? []);
+
+  const filteredAndSortedNews = React.useMemo(() => {
+    return activeNews.filter((n) =>
+      n.title?.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [activeNews, search]);
+
+  const paginatedNews = filteredAndSortedNews.slice(0, page * PAGE_SIZE);
+
+  const hasMore = paginatedNews.length < filteredAndSortedNews.length;
+
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const actionGeneralListNews = (id: string) => console.log(id);
 
   return (
     <PrivateLayout>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text
-          variant="titleMedium"
-          style={{ fontSize: 15, color: "#333", marginBottom: 16 }}
-        >
-          Fichajes y rumores
-        </Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.chipsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.chipsRow}>
+              <Chip
+                selected={selectedTab === "favorites"}
+                onPress={() => setSelectedTab("favorites")}
+                style={styles.chip}
+                selectedColor="#1DB954"
+              >
+                ⭐ Favoritos
+              </Chip>
 
-        <ScrollSection
-          title="De tus equipos"
-          list={newsFavorties ?? []}
-          shape="news"
-          action={actionGeneralListNews}
-        />
-        <Divider style={{ marginVertical: 16 }} />
+              <Chip
+                selected={selectedTab === "general"}
+                onPress={() => setSelectedTab("general")}
+                style={styles.chip}
+                selectedColor="#1DB954"
+              >
+                🌍 Generales
+              </Chip>
+            </View>
+          </ScrollView>
+        </View>
 
-        <ScrollSection
-          title="En general"
-          list={newsGeneral ?? []}
-          shape="news"
-          action={actionGeneralListNews}
+        <TextInput
+          placeholder="Buscar noticia..."
+          value={search}
+          onChangeText={setSearch}
+          style={styles.searchInput}
+          mode="outlined"
         />
-        <Divider style={{ marginVertical: 16 }} />
+
+        <View style={{ marginVertical: 12, alignItems: "center" }}>
+          <AdBanner />
+        </View>
+
+        {/* 🟢 SECCIÓN: FAVORITOS */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {selectedTab === "favorites"
+                ? "⭐ Tus equipos"
+                : "🌍 Fútbol mundial"}
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              {selectedTab === "favorites"
+                ? "Fichajes y rumores de tus favoritos"
+                : "Noticias generales y rumores del mercado"}
+            </Text>
+          </View>
+
+          {paginatedNews.length > 0 ? (
+            <>
+              <VerticalScroll
+                listItems={paginatedNews}
+                actionGeneralList={actionGeneralListNews}
+              />
+
+              {hasMore && (
+                <Button
+                  mode="outlined"
+                  onPress={() => setPage((p) => p + 1)}
+                  style={{ marginTop: 12 }}
+                >
+                  Ver más noticias
+                </Button>
+              )}
+            </>
+          ) : (
+            <Text style={styles.emptyText}>
+              No hay resultados con estos filtros 🔍
+            </Text>
+          )}
+        </View>
+
+        <View style={{ height: 24 }} />
       </ScrollView>
     </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+
+  sectionCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+
+  sectionHeader: {
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#222",
+  },
+
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#777",
+    marginTop: 2,
+  },
+
+  sectionSpacer: {
+    height: 20,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  chipsContainer: {
+    marginBottom: 12,
+  },
+
+  chipsRow: {
+    flexDirection: "row",
+  },
+
+  chip: {
+    marginRight: 8,
+    backgroundColor: "#f0f0f0",
+  },
+  searchInput: {
+    marginBottom: 8,
+  },
+
+  orderRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+});

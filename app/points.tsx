@@ -1,12 +1,13 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import { User } from "@/types";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ActivityIndicator, Avatar, Card, ProgressBar } from "react-native-paper";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Avatar, Card, ProgressBar } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
 export default function Points() {
-    const { getUser } = useFetch()
+  const { getUser } = useFetch();
   const [user, setUser] = useState<User>();
 
   const [loading, setLoading] = useState(true);
@@ -42,41 +43,88 @@ export default function Points() {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   // Cálculo de progreso al siguiente nivel
-  const nextLevelXp = user && user.level === "Novato" ? 1000 :
-                      user && user.level === "Intermedio" ? 2500 :
-                      user && user.level === "Avanzado" ? 5000 :
-                      user && user.level === "Experto" ? 10000 : 12000;
+  const nextLevelXp =
+    user && user.level === "Novato"
+      ? 1000
+      : user && user.level === "Intermedio"
+        ? 2500
+        : user && user.level === "Avanzado"
+          ? 5000
+          : user && user.level === "Experto"
+            ? 10000
+            : 12000;
   const progress = user && Math.min(user.xp / nextLevelXp, 1);
 
   return (
     <PrivateLayout>
       <ScrollView contentContainerStyle={styles.container}>
         {/* 🏅 Encabezado */}
-        <Text style={styles.title}>Tus Puntos</Text>
-        <Text style={styles.subtitle}>¡Sigue acumulando y sube de nivel!</Text>
+        <Text style={styles.title}>Tu trayectoria</Text>
+        <Text style={styles.subtitle}>
+          Tu participación en MIMIS refleja tu compromiso con el fútbol ⚽
+        </Text>
 
         {/* 💎 Tarjeta principal */}
         <Card style={styles.card}>
           <View style={styles.cardHeader}>
-            <Avatar.Icon icon="star-circle" size={52} color="#FFD700" />
+            <Avatar.Icon icon="soccer" size={52} color="#1DB954" />
             <View style={{ marginLeft: 12 }}>
-              <Text style={styles.points}>{user && user.points} pts</Text>
-              <Text style={styles.level}>{user && user.level}</Text>
+              <Text style={styles.level}>{user?.level ?? "Novato"}</Text>
+              <Text style={styles.xpHighlight}>
+                {user?.xp ?? 0} XP acumulados
+              </Text>
             </View>
           </View>
 
           <View style={{ marginTop: 16 }}>
-            <Text style={styles.progressLabel}>Progreso hacia el siguiente nivel</Text>
-            <ProgressBar progress={progress} color="#1DB954" style={styles.progressBar} />
+            <Text style={styles.progressLabel}>
+              Progreso hacia el siguiente nivel
+            </Text>
+            <ProgressBar
+              progress={progress ?? 0}
+              color="#1DB954"
+              style={styles.progressBar}
+            />
             <Text style={styles.xp}>
-              {user && user.xp} XP / {nextLevelXp} XP
+              {user?.xp ?? 0} / {nextLevelXp} XP
+            </Text>
+          </View>
+
+          <View style={{ marginTop: 18 }}>
+            <Text style={styles.pointsSecondary}>
+              {user?.points ?? 0} pts disponibles para redimir
             </Text>
           </View>
         </Card>
+
+        <View style={{ marginTop: 30 }}>
+          <Text style={styles.sectionTitle}>Últimas actividades</Text>
+          <Card style={styles.historyCard}>
+            {user?.pointsHistory
+              ?.slice(-5)
+              .reverse()
+              .map((h, i) => (
+                <Text key={i} style={styles.historyText}>
+                  {h.points > 0 ? "+" : ""}
+                  {h.points} pts — {h.action}
+                </Text>
+              )) ?? (
+              <Text style={styles.historyText}>
+                Aún no tienes actividad registrada.
+              </Text>
+            )}
+          </Card>
+        </View>
 
         {/* 📋 Cómo ganar puntos */}
         <View style={{ marginTop: 24 }}>
@@ -98,18 +146,20 @@ export default function Points() {
         </View>
 
         {/* 🟢 Botón para ganar puntos */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>🎯 Gana puntos</Text>
-        </TouchableOpacity>
-
-        {/* 🏆 Historial (opcional futuro) */}
-        <View style={{ marginTop: 30 }}>
-          <Text style={styles.sectionTitle}>Últimas actividades</Text>
-          <Card style={styles.historyCard}>
-            <Text style={styles.historyText}>+20 pts — Victoria en apuesta</Text>
-            <Text style={styles.historyText}>+10 pts — Vista previa de partido</Text>
-            <Text style={styles.historyText}>+15 pts — Reto diario completado</Text>
-          </Card>
+        <Text style={styles.sectionTitle}>Cómo crecer en MIMIS</Text>
+        <View style={styles.tipBox}>
+          <Text style={styles.tipText}>
+            ⚽ Participa en partidos y apuestas responsables.
+          </Text>
+          <Text style={styles.tipText}>
+            📰 Publica noticias y comparte jugadas.
+          </Text>
+          <Text style={styles.tipText}>
+            🏟️ Juega partidos sintéticos oficiales.
+          </Text>
+          <Text style={styles.tipText}>
+            🤝 Forma parte activa de la comunidad.
+          </Text>
         </View>
       </ScrollView>
     </PrivateLayout>
@@ -207,5 +257,15 @@ const styles = StyleSheet.create({
     color: "#333",
     fontSize: 13,
     marginBottom: 4,
+  },
+  xpHighlight: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1DB954",
+  },
+  pointsSecondary: {
+    fontSize: 13,
+    color: "#666",
+    textAlign: "center",
   },
 });

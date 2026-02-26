@@ -1,12 +1,15 @@
+import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import { WeeklyWorldTopVideo } from "@/types";
+import { Video } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import React, { useEffect, useState } from "react";
 import {
-  FlatList,
   Image,
   Modal,
+  SafeAreaView,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -17,16 +20,21 @@ import {
   Card,
   Chip,
   IconButton,
+  Portal,
   Text,
   TextInput,
 } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
-
 export default function LoadWorldResumeVideos() {
-  const { loadWorldTop10, getVideosWorldTop10, editWorldTop10, deleteWorldTop10 } = useFetch();
+  const {
+    loadWorldTop10,
+    getVideosWorldTop10,
+    editWorldTop10,
+    deleteWorldTop10,
+  } = useFetch();
 
-  const [ videos, setVideos ] = useState<WeeklyWorldTopVideo[]>([])
+  const [videos, setVideos] = useState<WeeklyWorldTopVideo[]>([]);
   const [mode, setMode] = useState<"upload" | "edit">("upload");
 
   // Estados para subir
@@ -40,7 +48,9 @@ export default function LoadWorldResumeVideos() {
   // Estados para editar
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [videoToEdit, setVideoToEdit] = useState<WeeklyWorldTopVideo | null>(null);
+  const [videoToEdit, setVideoToEdit] = useState<WeeklyWorldTopVideo | null>(
+    null,
+  );
   const [editVideo, setEditVideo] = useState<any>(null);
   const [editThumbnail, setEditThumbnail] = useState<any>(null);
 
@@ -70,10 +80,6 @@ export default function LoadWorldResumeVideos() {
       isMounted = false;
     };
   }, []);
-
-  if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
-  }
 
   // 📅 Calcular el próximo domingo por defecto
   useEffect(() => {
@@ -201,7 +207,10 @@ export default function LoadWorldResumeVideos() {
       setLoading(true);
       setMessage("");
 
-      const { success, message } = await editWorldTop10(videoToEdit.id, formData);
+      const { success, message } = await editWorldTop10(
+        videoToEdit.id,
+        formData,
+      );
 
       if (success) {
         setMessage(`✅ Video ${videoToEdit.id} actualizado correctamente`);
@@ -222,6 +231,16 @@ export default function LoadWorldResumeVideos() {
     : videos;
 
   const uniqueWeeks = Array.from(new Set(videos.map((v) => v.week)));
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <PrivateLayout>
@@ -309,129 +328,164 @@ export default function LoadWorldResumeVideos() {
             <Text variant="titleMedium" style={{ marginBottom: 10 }}>
               Filtrar por semana:
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {uniqueWeeks.map((week) => (
-                <Chip
-                  key={week}
-                  selected={selectedWeek === week}
-                  onPress={() =>
-                    setSelectedWeek(selectedWeek === week ? null : week)
-                  }
-                  style={{ marginRight: 8 }}
-                >
-                  {week}
-                </Chip>
-              ))}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
+            >
+              {uniqueWeeks.map((week) => {
+                const selected = selectedWeek === week;
+
+                return (
+                  <Chip
+                    key={week}
+                    compact
+                    selected={selected}
+                    onPress={() => setSelectedWeek(selected ? null : week)}
+                    style={[
+                      styles.weekChip,
+                      selected && styles.weekChipSelected,
+                    ]}
+                    textStyle={[
+                      styles.weekChipText,
+                      selected && styles.weekChipTextSelected,
+                    ]}
+                  >
+                    {week}
+                  </Chip>
+                );
+              })}
             </ScrollView>
 
             {/* GRID */}
-            <FlatList
-              data={filteredVideos}
-              keyExtractor={(item) => item.id}
-              numColumns={2}
-              contentContainerStyle={{ paddingVertical: 20 }}
-              renderItem={({ item }) => (
-                <View style={{ flex: 1, margin: 5 }}>
+            <ScrollView contentContainerStyle={styles.grid}>
+              {filteredVideos.map((item) => (
+                <View key={item.id} style={styles.cardWrapper}>
                   <Card>
-                    <Card.Cover source={{ uri: item.thumbail }} />
-                    <View
-                      style={{
-                        position: "absolute",
-                        top: 5,
-                        right: 5,
-                        flexDirection: "row",
+                    <Image
+                      source={{
+                        uri: editThumbnail?.uri
+                          ? editThumbnail.uri
+                          : `http://192.168.10.16:3001/api/weeklyWorldTop/image/${item.thumbail}`,
                       }}
-                    >
+                      style={styles.thumbnail}
+                    />
+
+                    <View style={styles.actions}>
                       <IconButton
                         icon="pencil"
                         size={20}
                         iconColor="white"
                         onPress={() => handleOpenEdit(item)}
-                        style={{
-                          backgroundColor: "rgba(0,0,0,0.6)",
-                          marginRight: 4,
-                        }}
+                        style={styles.editBtn}
                       />
                       <IconButton
                         icon="delete"
                         size={20}
                         iconColor="white"
                         onPress={() => handleDelete(item.id)}
-                        style={{ backgroundColor: "rgba(255,0,0,0.6)" }}
+                        style={styles.deleteBtn}
                       />
                     </View>
                   </Card>
                 </View>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         )}
 
         {/* MODAL DE EDICIÓN */}
-        <Modal visible={editModalVisible} animationType="slide">
-          <View style={{ flex: 1, padding: 20, backgroundColor: "#fff" }}>
-            <Text variant="titleLarge" style={{ marginBottom: 20 }}>
-              ✏️ Editar video de la semana {videoToEdit?.week}
-            </Text>
+        <Portal>
+          <Modal
+            visible={editModalVisible}
+            onDismiss={() => setEditModalVisible(false)}
+          >
+            <SafeAreaView style={{ flex: 1 }}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalContent}
+              >
+                {/* Header */}
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>✏️ Editar video</Text>
+                  <Text style={styles.modalSubtitle}>
+                    Semana {videoToEdit?.week}
+                  </Text>
 
-            {videoToEdit && (
-              <Image
-                source={{ uri: videoToEdit.thumbail }}
-                style={{
-                  width: "100%",
-                  height: 200,
-                  borderRadius: 10,
-                  marginBottom: 20,
-                }}
-              />
-            )}
+                  <IconButton
+                    icon="close"
+                    size={22}
+                    onPress={() => setEditModalVisible(false)}
+                  />
+                </View>
 
-            <Button
-              icon="video"
-              mode="outlined"
-              onPress={async () => {
-                const res = await DocumentPicker.getDocumentAsync({
-                  type: "video/*",
-                });
-                if (!res.canceled && res.assets?.length > 0)
-                  setEditVideo(res.assets[0]);
-              }}
-              style={{ marginBottom: 10 }}
-            >
-              Cambiar video
-            </Button>
+                {/* 🎬 VIDEO */}
+                {videoToEdit && (
+                  <Video
+                    source={{
+                      uri: editVideo?.uri
+                        ? editVideo.uri
+                        : `http://192.168.10.16:3001/api/weeklyWorldTop/video/${videoToEdit.video}`,
+                    }}
+                    style={styles.video}
+                    useNativeControls
+                  />
+                )}
 
-            <Button
-              icon="image"
-              mode="outlined"
-              onPress={async () => {
-                const res = await DocumentPicker.getDocumentAsync({
-                  type: "image/*",
-                });
-                if (!res.canceled && res.assets?.length > 0)
-                  setEditThumbnail(res.assets[0]);
-              }}
-            >
-              Cambiar thumbnail
-            </Button>
+                {/* 🖼 THUMBNAIL */}
+                {videoToEdit && (
+                  <Image
+                    source={{
+                      uri: editThumbnail?.uri
+                        ? editThumbnail.uri
+                        : `http://192.168.10.16:3001/api/weeklyWorldTop/image/${videoToEdit.thumbail}`,
+                    }}
+                    style={styles.thumbnail}
+                  />
+                )}
 
-            <Button
-              mode="contained"
-              onPress={handleConfirmEdit}
-              style={{ marginTop: 30, backgroundColor: "#1DB954" }}
-            >
-              Guardar cambios
-            </Button>
+                {/* Actions */}
+                <Button
+                  icon="video"
+                  mode="outlined"
+                  onPress={async () => {
+                    const res = await DocumentPicker.getDocumentAsync({
+                      type: "video/*",
+                    });
+                    if (!res.canceled && res.assets?.length > 0)
+                      setEditVideo(res.assets[0]);
+                  }}
+                  style={styles.actionBtn}
+                >
+                  Cambiar video
+                </Button>
 
-            <Button
-              mode="text"
-              onPress={() => setEditModalVisible(false)}
-              style={{ marginTop: 10 }}
-            >
-              Cancelar
-            </Button>
-          </View>
-        </Modal>
+                <Button
+                  icon="image"
+                  mode="outlined"
+                  onPress={async () => {
+                    const res = await DocumentPicker.getDocumentAsync({
+                      type: "image/*",
+                    });
+                    if (!res.canceled && res.assets?.length > 0)
+                      setEditThumbnail(res.assets[0]);
+                  }}
+                  style={styles.actionBtn}
+                >
+                  Cambiar thumbnail
+                </Button>
+
+                <Button
+                  mode="contained"
+                  onPress={handleConfirmEdit}
+                  style={styles.saveBtn}
+                >
+                  Guardar cambios
+                </Button>
+              </ScrollView>
+            </SafeAreaView>
+          </Modal>
+        </Portal>
 
         {loading && (
           <ActivityIndicator
@@ -454,3 +508,101 @@ export default function LoadWorldResumeVideos() {
     </PrivateLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingVertical: 20,
+  },
+
+  cardWrapper: {
+    width: "50%", // 🔑 2 columnas
+    padding: 6,
+  },
+
+  actions: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    flexDirection: "row",
+  },
+
+  editBtn: {
+    backgroundColor: "rgba(0,0,0,0.6)",
+    marginRight: 4,
+  },
+
+  deleteBtn: {
+    backgroundColor: "rgba(255,0,0,0.7)",
+  },
+  thumbnail: {
+    width: "100%",
+    height: 220,
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    margin: 16,
+    borderRadius: 16,
+    maxHeight: "92%", // 🔑 evita overflow
+  },
+
+  modalContent: {
+    padding: 16,
+  },
+
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+
+  modalSubtitle: {
+    fontSize: 13,
+    color: "#666",
+  },
+
+  video: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: "#000",
+    marginBottom: 16,
+  },
+
+  actionBtn: {
+    marginBottom: 12,
+  },
+
+  saveBtn: {
+    marginTop: 20,
+    backgroundColor: "#1DB954",
+  },
+  weekChip: {
+    marginRight: 8,
+    height: 32, // 🔑 reduce altura
+    justifyContent: "center",
+    backgroundColor: "#f2f2f2",
+  },
+
+  weekChipSelected: {
+    backgroundColor: "#1DB954", // 💚 tu color
+  },
+
+  weekChipText: {
+    fontSize: 13,
+    paddingHorizontal: 6, // 🔑 menos ancho
+    color: "#333",
+  },
+
+  weekChipTextSelected: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+});

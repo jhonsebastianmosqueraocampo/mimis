@@ -1,3 +1,5 @@
+import Loading from "@/components/Loading";
+import PlayerAnalysis from "@/components/PlayerAnalysis";
 import PlayerProfileCard from "@/components/PlayerProfileCard";
 import PlayerStatisticsView from "@/components/PlayerSeasonStatsTable";
 import PlayerTeamsHistory from "@/components/PlayerTeamsHistory";
@@ -7,7 +9,7 @@ import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
-import { ActivityIndicator, Chip, Text } from "react-native-paper";
+import { Chip, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import AvatarCard from "../components/AvatarCard";
 import VerticalScroll from "../components/VerticalScroll";
@@ -18,8 +20,8 @@ const items = [
   { id: "1", name: "Información Personal" },
   { id: "2", name: "Noticias" },
   { id: "3", name: "Estadísticas" },
-  { id: "4", name: "Videos" },
   { id: "5", name: "Trayectoria" },
+  { id: "6", name: "Análisis" },
 ];
 
 type PlayerScreenRouteProp = RouteProp<RootStackParamList, "player">;
@@ -33,9 +35,9 @@ export default function Player() {
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState(items[0]);
   const route = useRoute<PlayerScreenRouteProp>();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { id } = route.params;
-
   useEffect(() => {
     let isMounted = true;
 
@@ -108,14 +110,20 @@ export default function Player() {
   }, [id]);
 
   if (loading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
   }
 
   const actionGeneralListNews = (id: string) => console.log(id);
 
   const handleTeam = (id: string) => {
-    navigation.navigate('team', {id})
-  }
+    navigation.navigate("team", { id });
+  };
 
   return (
     <PrivateLayout>
@@ -127,7 +135,10 @@ export default function Player() {
             typographyProps={{ variant: "titleLarge" }}
           />
 
-          <TouchableOpacity style={styles.headerRow} onPress={()=>handleTeam(player.team?.id.toString() ?? '')}>
+          <TouchableOpacity
+            style={styles.headerRow}
+            onPress={() => handleTeam(player.team?.id.toString() ?? "")}
+          >
             <Image
               source={{ uri: player?.team?.logo ?? "" }}
               style={styles.teamImage}
@@ -196,10 +207,12 @@ export default function Player() {
               <PlayerStatisticsView player={player!} />
             )}
 
-            {selectedItem.name.toLowerCase() === "videos" && <></>}
-
             {selectedItem.name.toLowerCase() === "trayectoria" && (
               <PlayerTeamsHistory seasons={seasons} playerId={id} />
+            )}
+
+            {selectedItem.name.toLowerCase() === "análisis" && (
+              <PlayerAnalysis playerId={id} stats={player.statistics} />
             )}
           </View>
         </>

@@ -1,10 +1,13 @@
 import {
+  AnalysisOpenAi,
   Bet,
   BetInfo,
   Coach,
   CoachStats,
   Competitions,
   Country,
+  CreateOrderPayload,
+  CreateSyntheticMatchDTO,
   CupStanding,
   Favorites,
   Fixture,
@@ -14,16 +17,18 @@ import {
   LiveMatch,
   NationalLeague,
   NewsItem,
-  NewsPayload,
-  OneByOne,
+  OneByOneType,
   PlayerB,
   PlayerCareer,
   PlayerFixtureStats,
   Prediction,
   PredictionOddsItem,
   PreMatchStats,
+  Product,
+  Purchase,
   SelectionBet,
   setBet,
+  ShortItem,
   StatsByCategory,
   swiperItem,
   SyntheticMatch,
@@ -31,16 +36,25 @@ import {
   TeamPlayerStatsByLeague,
   TeamStanding,
   TeamSummary,
+  UpdateSyntheticMatchDTO,
   User,
+  UserPlayerRating,
+  videosTypeYoutube,
   VideoYoutube,
   WeeklyGoalVideo,
   WeeklyWorldTopVideo,
 } from "@/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, ReactNode, useContext } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 // const apiUrl = Constants.expoConfig?.extra?.API_URL;
-const apiUrl = "http://192.168.20.17:3001/api";
+const apiUrl = "http://192.168.10.18:3001/api";
 
 type FetchContextType = {
   getCountries: (isRetry?: boolean) => Promise<{
@@ -50,23 +64,23 @@ type FetchContextType = {
   }>;
   getLeagueFromCountry: (
     country: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; data: LeagueB[]; message?: string }>;
   getTeamsFromLeague: (
     leagueId: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; data: Team[]; message?: string }>;
   getPlayerFromTeam: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; data: PlayerB[]; message?: string }>;
   getCoachesFromLeague: (
     leagueId: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; data: Coach[]; message?: string }>;
   saveFavorites: (
     favoritesList: Favorites,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; message?: string }>;
   getFavorites: (isRetry?: boolean) => Promise<{
     success: boolean;
@@ -78,23 +92,28 @@ type FetchContextType = {
   }>;
   registerNotificationToken: (
     notificationToken: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; message?: string }>;
   getTeam: (
     id: string,
-    isRetry?: boolean
-  ) => Promise<{ success: boolean; message?: string; team: Team }>;
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    team: Team;
+    isFavorite?: boolean;
+  }>;
   getNewsTeam: (
     team: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; message?: string; news: swiperItem[] }>;
   getNextTeamMatch: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{ success: boolean; message?: string; fixture: Fixture | null }>;
   getPreviousAndPostTeamMatches: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -104,7 +123,7 @@ type FetchContextType = {
   getLeaguesByTeam: (
     teamId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -113,17 +132,18 @@ type FetchContextType = {
   getStangingsLeague: (
     leagueId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
     standings: TeamStanding[];
     matches: LiveMatch[];
+    raw?: Record<string, any>;
   }>;
   getStangingsCup: (
     leagueId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -135,7 +155,7 @@ type FetchContextType = {
   getFriendlyMatches: (
     teamId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -143,7 +163,7 @@ type FetchContextType = {
   }>;
   getPlayersStatsByTeam: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -151,7 +171,7 @@ type FetchContextType = {
   }>;
   getSquadByTeam: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -159,7 +179,7 @@ type FetchContextType = {
   }>;
   getCoachByTeam: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -167,7 +187,7 @@ type FetchContextType = {
   }>;
   getNewsSignAndRumorTeam: (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -182,7 +202,7 @@ type FetchContextType = {
   }>;
   getInfoPlayer: (
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -190,7 +210,7 @@ type FetchContextType = {
   }>;
   getPlayerNews: (
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -198,7 +218,7 @@ type FetchContextType = {
   }>;
   getPlayerSeasons: (
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -207,7 +227,7 @@ type FetchContextType = {
   getPlayerCareer: (
     playerId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -215,7 +235,7 @@ type FetchContextType = {
   }>;
   getLeague: (
     leagueId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -223,7 +243,7 @@ type FetchContextType = {
   }>;
   getLeagueNews: (
     leagueId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -232,7 +252,7 @@ type FetchContextType = {
   getPreviousAndPostLeagueMatches: (
     leagueId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -242,7 +262,7 @@ type FetchContextType = {
   getLeagueStats: (
     leagueId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -251,7 +271,7 @@ type FetchContextType = {
   getCoachInfo: (
     coachId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -259,7 +279,7 @@ type FetchContextType = {
   }>;
   getCoachNews: (
     coachId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -267,15 +287,16 @@ type FetchContextType = {
   }>;
   getFixture: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
     fixture: Fixture | null;
+    liveMatchFixture: LiveMatch | null;
   }>;
   getVideoFromYoutube: (
     query: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -285,7 +306,7 @@ type FetchContextType = {
     team: string,
     query: string,
     season?: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -296,7 +317,7 @@ type FetchContextType = {
     teamB: string,
     query: string,
     season?: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -306,7 +327,7 @@ type FetchContextType = {
     player: string,
     query: string,
     season?: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -315,12 +336,12 @@ type FetchContextType = {
   getFavoritesVideos: (isRetry?: boolean) => Promise<{
     success: boolean;
     message?: string;
-    videosTeams: VideoYoutube[];
-    videosPlayers: VideoYoutube[];
+    videosTeams: videosTypeYoutube[];
+    videosPlayers: videosTypeYoutube[];
   }>;
   getFixturePrediction: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -328,7 +349,7 @@ type FetchContextType = {
   }>;
   getFeaturedPlayerByTeamLeague: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -337,7 +358,7 @@ type FetchContextType = {
   }>;
   getPreMatchStats: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -345,7 +366,7 @@ type FetchContextType = {
   }>;
   getLineUp: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -353,7 +374,7 @@ type FetchContextType = {
   }>;
   getLiveMatch: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -366,7 +387,7 @@ type FetchContextType = {
   }>;
   createBet: (
     bet: Bet,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -375,7 +396,7 @@ type FetchContextType = {
   }>;
   getBetAndPredictionOddsByBetId: (
     betId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -383,9 +404,17 @@ type FetchContextType = {
     alreadyBet: Boolean;
     userSelection: SelectionBet | null;
   }>;
+  getLiveBetId: (
+    betId: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    bet: Bet | null;
+  }>;
   getBetAndPredictionOddsByCode: (
     code: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -396,7 +425,7 @@ type FetchContextType = {
   joinBet: (
     betId: string,
     selection: SelectionBet,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -404,12 +433,12 @@ type FetchContextType = {
   myBets: (isRetry?: boolean) => Promise<{
     success: boolean;
     message?: string;
-    bets: BetInfo[];
+    bets: Bet[];
   }>;
   betSetResults: (
     betId: string,
     bet: setBet[],
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -417,11 +446,28 @@ type FetchContextType = {
   getSyntheticMatches: (isRetry?: boolean) => Promise<{
     success: boolean;
     message?: string;
-    syntheticMatch: SyntheticMatch[];
+    matches: SyntheticMatch[];
+  }>;
+  createSyntheticMatch: (
+    dataMatch: CreateSyntheticMatchDTO,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    match: SyntheticMatch | null;
+  }>;
+  updateSyntheticMatch: (
+    id: string,
+    dataMatch: UpdateSyntheticMatchDTO,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+    match: SyntheticMatch | null;
   }>;
   saveSyntheticMatches: (
     score: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -436,14 +482,27 @@ type FetchContextType = {
     message?: string;
     users: User[];
   }>;
-  getMatchesToday: (isRetry?: boolean) => Promise<{
+  getMatchesToday: (
+    params?: {
+      leagueId?: number;
+      team?: string; // nombre del equipo (fav o búsqueda)
+      status?: "ALL" | "LIVE" | "NS" | "FINISHED" | "CANCELLED" | "POSTPONED";
+    },
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
     message?: string;
     matches: LiveMatch[];
+    sections?: Array<{ title: string; data: LiveMatch[] }>;
+    events?: string[];
+    teamPlaysToday?: boolean; // undefined si no mandaste team
+    teamInfo?: { id?: number; name: string; logo?: string };
+    leagues?: Array<{ id: number; name: string; logo: string }>;
+    defaultLeagueId?: number | "ALL";
   }>;
   getMatchesTodayFromLeague: (
     leagueId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -453,7 +512,7 @@ type FetchContextType = {
     teamId: string,
     leagueId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -466,7 +525,7 @@ type FetchContextType = {
   }>;
   isLiveMatch: (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -474,7 +533,7 @@ type FetchContextType = {
   }>;
   getLeaguesCountry: (
     country: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -492,7 +551,7 @@ type FetchContextType = {
   }>;
   searchPlayers: (
     search: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -500,7 +559,7 @@ type FetchContextType = {
   }>;
   searchCoaches: (
     search: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -508,7 +567,7 @@ type FetchContextType = {
   }>;
   searchTeams: (
     search: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -518,14 +577,22 @@ type FetchContextType = {
     rate: number,
     fixtureId: string,
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
+  getRatePlayer: (
+    fixtureId: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    ratings?: Record<string, UserPlayerRating>;
+    message?: string;
+  }>;
   loadWorldTop10: (
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -538,28 +605,28 @@ type FetchContextType = {
   editWorldTop10: (
     id: string,
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
   deleteWorldTop10: (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
   loadSyntheticVideo: (
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
   getSyntheticVideo: (
     week: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     videos: WeeklyGoalVideo[];
     success: boolean;
@@ -568,27 +635,34 @@ type FetchContextType = {
   editSyntheticVideo: (
     id: string,
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
   deleteSyntheticVideo: (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
   toggleFavoriteVideo: (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     favorites: number;
     isFavorite: boolean;
     canVote: boolean;
     votesUsed: number;
+    message?: string;
+  }>;
+  registerVideoView: (
+    id: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
     message?: string;
   }>;
   getUsersNews: (isRetry?: boolean) => Promise<{
@@ -598,23 +672,23 @@ type FetchContextType = {
   }>;
   deleteUsersNews: (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     userNews: NewsItem[];
     message?: string;
   }>;
   createUserNew: (
-    userNew: NewsPayload,
-    isRetry?: boolean
+    formData: FormData,
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
   }>;
   editUserNew: (
     id: string,
-    userNew: NewsPayload,
-    isRetry?: boolean
+    formData: FormData,
+    isRetry?: boolean,
   ) => Promise<{
     success: boolean;
     message?: string;
@@ -624,17 +698,23 @@ type FetchContextType = {
     userNews: NewsItem[];
     message?: string;
   }>;
-  getUserNew: (id: string, isRetry?: boolean) => Promise<{
+  getUserNew: (
+    id: string,
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
     userNews: NewsItem | null;
     message?: string;
   }>;
   getOneByOne: (isRetry?: boolean) => Promise<{
     success: boolean;
-    oneByOneList: OneByOne[];
+    oneByOneList: OneByOneType[];
     message?: string;
   }>;
-  deleteOneByOneItem: (id: string, isRetry?: boolean) => Promise<{
+  deleteOneByOneItem: (
+    id: string,
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
     message?: string;
   }>;
@@ -643,21 +723,143 @@ type FetchContextType = {
     fixtures: LiveMatch[];
     message?: string;
   }>;
-  editOneByOne: (id: string, item: OneByOne, isRetry?: boolean) => Promise<{
+  editOneByOne: (
+    id: string,
+    item: OneByOneType,
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
-    oneByOneItem: OneByOne | null;
+    oneByOneItem: OneByOneType | null;
     message?: string;
   }>;
-  saveOneByOne: (item: OneByOne, isRetry?: boolean) => Promise<{
+  saveOneByOne: (
+    item: OneByOneType,
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
-    oneByOneItem: OneByOne | null;
+    oneByOneItem: OneByOneType | null;
     message?: string;
   }>;
-  sendComment: (id: string, text: string, isRetry?: boolean) => Promise<{
+  sendComment: (
+    id: string,
+    comment: string,
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
     message?: string;
   }>;
-  likeShort: (id: string, isRetry?: boolean) => Promise<{
+  likeShort: (
+    id: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getShorts: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    shorts: ShortItem[];
+    message?: string;
+  }>;
+  getShort: (
+    id: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    short: ShortItem | null;
+    message?: string;
+  }>;
+  createShort: (
+    formData: FormData,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    short: ShortItem | null;
+    message?: string;
+  }>;
+  updateShort: (
+    id: string,
+    formData: FormData,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    short: ShortItem | null;
+    message?: string;
+  }>;
+  deleteShort: (
+    id: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  seasonTeamAnalysis: (
+    stats: any,
+    teamId: string,
+    season: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    analysis: AnalysisOpenAi | null;
+    message?: string;
+  }>;
+  fixtureAnalysis: (
+    stats: any,
+    refernceId: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    analysis: AnalysisOpenAi | null;
+    message?: string;
+  }>;
+  playerAnalysis: (
+    stats: any,
+    playerId: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    analysis: AnalysisOpenAi | null;
+    message?: string;
+  }>;
+  createOrderUser: (
+    order: CreateOrderPayload,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  ordersHistory: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    purchases: Purchase[];
+    message?: string;
+  }>;
+  productsList: (
+    nextPage: number,
+    lat: number,
+    lng: number,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    products: Product[];
+    hasNext: boolean;
+    page: number;
+    message?: string;
+  }>;
+  getUserPoints: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    points: number;
+    message?: string;
+  }>;
+  getLimitAdsPerDay: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    limit: number;
+    message?: string;
+  }>;
+  descountLimitAdsPerDayAndAddPoint: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    limit: number;
+    message?: string;
+  }>;
+  invitationSyntheticMatch: (isRetry?: boolean) => Promise<{
     success: boolean;
     message?: string;
   }>;
@@ -684,8 +886,42 @@ const refreshToken = async () => {
 };
 
 export const FetchProvider = ({ children }: { children: ReactNode }) => {
+  const [equipos, setEquipos] = useState<swiperItem[]>([]);
+  const [jugadores, setJugadores] = useState<swiperItem[]>([]);
+  const [ligas, setLigas] = useState<swiperItem[]>([]);
+  const [entrenadores, setEntrenadores] = useState<swiperItem[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const getFavoriteList = async () => {
+      try {
+        const { success, teams, players, coaches, leagues } =
+          await getFavorites();
+        if (!isMounted) return;
+
+        if (success) {
+          setEquipos(teams);
+          setJugadores(players);
+          setLigas(leagues);
+          setEntrenadores(coaches);
+        } else {
+        }
+      } catch (err) {
+        console.log("error");
+      } finally {
+        console.log("error");
+      }
+    };
+
+    getFavoriteList();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const getCountries = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; data: Country[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
@@ -725,7 +961,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLeagueFromCountry = async (
     country: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; data: LeagueB[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -735,7 +971,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -768,7 +1004,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getTeamsFromLeague = async (
     leagueId: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; data: Team[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     const season = 0;
@@ -779,7 +1015,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -812,7 +1048,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getPlayerFromTeam = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; data: PlayerB[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -852,7 +1088,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getCoachesFromLeague = async (
     leagueId: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; data: Coach[]; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     const season = 0;
@@ -863,7 +1099,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -896,7 +1132,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const saveFavorites = async (
     favoritesList: Favorites,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
@@ -938,7 +1174,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const registerNotificationToken = async (
     notificationToken: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
@@ -981,7 +1217,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getFavorites = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1014,7 +1250,6 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           };
         }
       }
-
       const data = await response.json();
 
       if (data.status !== "success") {
@@ -1048,11 +1283,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getTeam = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
     team: Team;
+    isFavorite?: boolean;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -1100,6 +1336,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       return {
         success: true,
         team: data.team,
+        isFavorite: data.isFavorite,
       };
     } catch (error: any) {
       return {
@@ -1118,7 +1355,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getNewsTeam = async (
     team: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1186,7 +1423,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getNextTeamMatch = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1274,7 +1511,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getPreviousAndPostTeamMatches = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1291,7 +1528,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1340,7 +1577,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getLeaguesByTeam = async (
     teamId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1355,7 +1592,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1398,12 +1635,13 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getStangingsLeague = async (
     leagueId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
     standings: TeamStanding[];
     matches: LiveMatch[];
+    raw?: Record<string, any>;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -1414,7 +1652,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1442,11 +1680,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const { standings, matches } = data;
+      const { standings, raw, matches } = data;
       return {
         success: true,
         standings,
         matches,
+        raw,
       };
     } catch (error: any) {
       return {
@@ -1461,7 +1700,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getStangingsCup = async (
     leagueId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1479,7 +1718,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1533,7 +1772,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getFriendlyMatches = async (
     teamId: string,
     season: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1548,7 +1787,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1589,7 +1828,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getPlayersStatsByTeam = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1605,7 +1844,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1646,7 +1885,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getSquadByTeam = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1699,7 +1938,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getCoachByTeam = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1752,7 +1991,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getNewsSignAndRumorTeam = async (
     teamId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1839,7 +2078,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getNewsSignAndRumorFavoritesAndGeneral = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1894,7 +2133,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
               })
             : undefined,
           source: item.source,
-        })
+        }),
       );
 
       const newsGeneral: swiperItem[] = data.generalNews.map((item: any) => ({
@@ -1930,7 +2169,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getInfoPlayer = async (
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -1946,7 +2185,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -1987,7 +2226,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getPlayerNews = async (
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2055,7 +2294,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getPlayerSeasons = async (
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2070,7 +2309,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2114,7 +2353,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getPlayerCareer = async (
     playerId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2129,7 +2368,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2172,7 +2411,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLeague = async (
     leagueId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2226,7 +2465,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLeagueNews = async (
     leagueId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2295,7 +2534,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getPreviousAndPostLeagueMatches = async (
     leagueId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2311,7 +2550,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2360,7 +2599,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getLeagueStats = async (
     leagueId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2375,7 +2614,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2419,7 +2658,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const getCoachInfo = async (
     coachId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2434,7 +2673,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2477,7 +2716,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getCoachNews = async (
     coachId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2545,11 +2784,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getFixture = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
     fixture: Fixture | null;
+    liveMatchFixture: LiveMatch | null;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -2560,7 +2800,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2572,6 +2812,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             success: false,
             message: "Iniciar sesión",
             fixture: null,
+            liveMatchFixture: null,
           };
         }
       }
@@ -2583,25 +2824,28 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           success: false,
           message: data.message,
           fixture: null,
+          liveMatchFixture: null,
         };
       }
 
       return {
         success: true,
         fixture: data.fixture,
+        liveMatchFixture: data.liveMatchFixture,
       };
     } catch (error: any) {
       return {
         success: false,
         message: error.message,
         fixture: null,
+        liveMatchFixture: null,
       };
     }
   };
 
   const getVideoFromYoutube = async (
     query: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2658,7 +2902,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     team: string,
     query: string,
     season?: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2673,7 +2917,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2719,7 +2963,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     teamB: string,
     query: string,
     season?: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2734,7 +2978,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2745,7 +2989,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             teamB,
             query,
             season,
-            true
+            true,
           );
         } catch (error) {
           return {
@@ -2785,7 +3029,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     player: string,
     query: string,
     season?: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2800,7 +3044,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2842,12 +3086,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getFavoritesVideos = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
-    videosTeams: VideoYoutube[];
-    videosPlayers: VideoYoutube[];
+    videosTeams: videosTypeYoutube[];
+    videosPlayers: videosTypeYoutube[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -2902,7 +3146,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getFixturePrediction = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2917,7 +3161,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -2959,7 +3203,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getFeaturedPlayerByTeamLeague = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -2975,7 +3219,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -3021,7 +3265,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getPreMatchStats = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3036,7 +3280,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -3078,7 +3322,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLineUp = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3093,7 +3337,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -3135,7 +3379,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLiveMatch = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3188,7 +3432,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getPredictionOdds = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3225,11 +3469,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      const { predictionodds } = data;
+      const { predictionodds, message } = data;
 
       return {
         success: true,
         predictionOdds: predictionodds,
+        message,
       };
     } catch (error: any) {
       return {
@@ -3242,7 +3487,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const createBet = async (
     bet: Bet,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3297,7 +3542,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getBetAndPredictionOddsByBetId = async (
     betId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3352,9 +3597,58 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const getLiveBetId = async (
+    betId: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    bet: Bet | null;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/bet/infoLiveBetId/${betId}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getLiveBetId(betId, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            bet: null,
+          };
+        }
+      }
+
+      const data = await response.json();
+      const { bet } = data;
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          bet: null,
+        };
+      }
+      return { success: true, bet };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        bet: null,
+      };
+    }
+  };
+
   const getBetAndPredictionOddsByCode = async (
     code: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3412,7 +3706,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const joinBet = async (
     betId: string,
     selection: SelectionBet,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -3451,11 +3745,11 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const myBets = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
-    bets: BetInfo[];
+    bets: Bet[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
@@ -3501,7 +3795,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const betSetResults = async (
     betId: string,
     bet: setBet[],
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3548,20 +3842,22 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getSyntheticMatches = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
-    syntheticMatch: SyntheticMatch[];
+    matches: SyntheticMatch[];
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
+
     try {
-      const response = await fetch(`${apiUrl}/syntheticMatch/getMatches/`, {
+      const response = await fetch(`${apiUrl}/syntheticMatch/`, {
         method: "GET",
         headers: {
-          authorization: token,
+          Authorization: `Bearer ${token}`,
         },
       });
+
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
@@ -3570,33 +3866,142 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           return {
             success: false,
             message: "Iniciar sesión",
-            syntheticMatch: [],
+            matches: [],
           };
         }
       }
 
       const data = await response.json();
-      const { syntheticMatch } = data;
 
       if (data.status !== "success") {
         return {
           success: false,
           message: data.message,
-          syntheticMatch: [],
+          matches: [],
         };
       }
-      return { success: true, syntheticMatch };
+
+      return {
+        success: true,
+        matches: data.matches || [],
+      };
     } catch (error: any) {
       return {
         success: false,
         message: error.message,
-        syntheticMatch: [],
+        matches: [],
+      };
+    }
+  };
+
+  const createSyntheticMatch = async (
+    dataMatch: CreateSyntheticMatchDTO,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    match: SyntheticMatch | null;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/syntheticMatch/saveMatch/`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataMatch),
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await createSyntheticMatch(dataMatch, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            match: null,
+          };
+        }
+      }
+
+      const data = await response.json();
+      const { match } = data;
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          match: null,
+        };
+      }
+      return { success: true, match };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        match: null,
+      };
+    }
+  };
+
+  const updateSyntheticMatch = async (
+    id: string,
+    dataMatch: UpdateSyntheticMatchDTO,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    match: SyntheticMatch | null;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/syntheticMatch/updateMatch/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            authorization: token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataMatch),
+        },
+      );
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await updateSyntheticMatch(id, dataMatch, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            match: null,
+          };
+        }
+      }
+
+      const data = await response.json();
+      const { match } = data;
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          match: null,
+        };
+      }
+      return { success: true, match };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        match: null,
       };
     }
   };
 
   const getUser = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3643,7 +4048,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getUsers = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3691,7 +4096,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const saveSyntheticMatches = async (
     score: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{ success: boolean; message?: string }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
@@ -3732,61 +4137,76 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getMatchesToday = async (
-    isRetry?: boolean
+    params?: {
+      leagueId?: number;
+      team?: string;
+      status?: "ALL" | "LIVE" | "NS" | "FINISHED" | "CANCELLED" | "POSTPONED";
+    },
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
     matches: LiveMatch[];
+    sections?: Array<{ title: string; data: LiveMatch[] }>;
+    events?: string[];
+    teamPlaysToday?: boolean;
+    teamInfo?: { id?: number; name: string; logo?: string };
+    leagues?: Array<{ id: number; name: string; logo: string }>;
+    defaultLeagueId?: number | "ALL";
   }> => {
-    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    const qs = new URLSearchParams();
+    if (params?.leagueId !== undefined)
+      qs.append("leagueId", String(params.leagueId));
+    if (params?.team) qs.append("team", params.team);
+    if (params?.status) qs.append("status", params.status);
+
+    const url =
+      qs.toString().length > 0
+        ? `${apiUrl}/fixture/getMatchesDay?${qs.toString()}`
+        : `${apiUrl}/fixture/getMatchesDay`;
+
     try {
-      const response = await fetch(`${apiUrl}/fixture/getMatchesDay`, {
+      const response = await fetch(url, {
         method: "GET",
-        headers: {
-          authorization: token,
-        },
+        headers: { authorization: token },
       });
 
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await getMatchesToday(true);
-        } catch (error) {
-          return {
-            success: false,
-            message: "Iniciar sesión",
-            matches: [],
-          };
+          return await getMatchesToday(params, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión", matches: [] };
         }
       }
 
       const data = await response.json();
-      if (data.status !== "success") {
-        return {
-          success: false,
-          message: data.message,
-          matches: [],
-        };
-      }
 
-      const { matches } = data;
+      if (data.status !== "success") {
+        return { success: false, message: data.message, matches: [] };
+      }
 
       return {
         success: true,
-        matches,
+        matches: data.matches || [],
+        sections: data.sections || [],
+        events: data.events || [],
+        leagues: data.leagues || [],
+        defaultLeagueId: data.defaultLeagueId ?? "ALL",
+        teamPlaysToday: data.teamPlaysToday,
+        teamInfo: data.teamInfo,
+        message: data.message,
       };
     } catch (error: any) {
-      return {
-        success: false,
-        message: error.message,
-        matches: [],
-      };
+      return { success: false, message: error.message, matches: [] };
     }
   };
 
   const getMatchesTodayFromLeague = async (
     leagueId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3801,7 +4221,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -3845,7 +4265,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     teamId: string,
     leagueId: string,
     season: number,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3860,7 +4280,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -3901,7 +4321,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getLeagues = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -3955,7 +4375,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const isLiveMatch = async (
     fixtureId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     isLive: boolean;
@@ -3970,7 +4390,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -4012,7 +4432,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getLeaguesCountry = async (
     country: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4027,7 +4447,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
           headers: {
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -4068,7 +4488,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getNationalTournaments = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4121,7 +4541,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getNationalMatchesToday = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4175,7 +4595,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const searchPlayers = async (
     search: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4229,7 +4649,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const searchCoaches = async (
     search: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4283,7 +4703,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const searchTeams = async (
     search: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4339,7 +4759,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     rate: number,
     fixtureId: string,
     playerId: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4355,7 +4775,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             authorization: token,
           },
           body: JSON.stringify({ rate }),
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -4389,9 +4809,62 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const getRatePlayer = async (
+    fixtureId: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    ratings?: Record<string, UserPlayerRating>;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/fixture/player-ratings/${fixtureId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getRatePlayer(fixtureId, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+        ratings: data.ratings as Record<string, UserPlayerRating>,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
   const loadWorldTop10 = async (
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4438,7 +4911,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getVideosWorldTop10 = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     videos: WeeklyWorldTopVideo[];
     success: boolean;
@@ -4493,7 +4966,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const editWorldTop10 = async (
     id: string,
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4541,7 +5014,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteWorldTop10 = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4589,7 +5062,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const loadSyntheticVideo = async (
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4637,7 +5110,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getSyntheticVideo = async (
     week: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     videos: WeeklyGoalVideo[];
     success: boolean;
@@ -4645,15 +5118,16 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
     try {
+      const encodedWeek = encodeURIComponent(week);
       const response = await fetch(
-        `${apiUrl}/weeklySyntheticTop/weekVideo/${week}`,
+        `${apiUrl}/weeklySyntheticTop/weekVideo/${encodedWeek}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -4696,7 +5170,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   const editSyntheticVideo = async (
     id: string,
     formData: FormData,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4711,7 +5185,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             authorization: token,
           },
           body: formData,
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -4747,7 +5221,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteSyntheticVideo = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4762,7 +5236,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             "Content-Type": "application/json",
             authorization: token,
           },
-        }
+        },
       );
 
       if (response.status === 403 && !isRetry) {
@@ -4798,7 +5272,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const toggleFavoriteVideo = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     videoId: string;
@@ -4809,7 +5283,6 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     message?: string;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
-
     try {
       const response = await fetch(
         `${apiUrl}/weeklySyntheticTop/setFavorite/${id}`,
@@ -4819,7 +5292,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
             "Content-Type": "application/json",
             authorization: token,
           },
-        }
+        },
       );
 
       // Si el token expiró → refrescar
@@ -4875,8 +5348,61 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const registerVideoView = async (
+    id: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/weeklySyntheticTop/registerView/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+        },
+      );
+
+      // Si el token expiró → refrescar
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await registerVideoView(id, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
   const getUsersNews = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     userNews: NewsItem[];
@@ -4932,7 +5458,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteUsersNews = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     userNews: NewsItem[];
@@ -4987,8 +5513,8 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const createUserNew = async (
-    userNew: NewsPayload,
-    isRetry?: boolean
+    formData: FormData,
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -4999,17 +5525,16 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch(`${apiUrl}/userNews/createNew`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           authorization: token,
         },
-        body: JSON.stringify(userNew),
+        body: formData,
       });
 
       // Token expirado → refrescar y reintentar
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await createUserNew(userNew, true);
+          return await createUserNew(formData, true);
         } catch {
           return {
             success: false,
@@ -5028,7 +5553,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       }
 
       return {
-        success: true
+        success: true,
       };
     } catch (error: any) {
       return {
@@ -5040,8 +5565,8 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const editUserNew = async (
     id: string,
-    userNew: NewsPayload,
-    isRetry?: boolean
+    formData: FormData,
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -5052,17 +5577,16 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch(`${apiUrl}/userNews/editNew/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           authorization: token,
         },
-        body: JSON.stringify(userNew),
+        body: formData,
       });
 
       // Token expirado → refrescar y reintentar
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await editUserNew(id, userNew, true);
+          return await editUserNew(id, formData, true);
         } catch {
           return {
             success: false,
@@ -5081,7 +5605,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       }
 
       return {
-        success: true
+        success: true,
       };
     } catch (error: any) {
       return {
@@ -5092,7 +5616,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getGeneralUsersNews = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     userNews: NewsItem[];
@@ -5148,7 +5672,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const getUserNew = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     userNews: NewsItem | null;
@@ -5203,10 +5727,10 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getOneByOne = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
-    oneByOneList: OneByOne[];
+    oneByOneList: OneByOneType[];
     message?: string;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
@@ -5259,7 +5783,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteOneByOneItem = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -5309,7 +5833,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getFinishedMatches = async (
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     fixtures: LiveMatch[];
@@ -5365,26 +5889,24 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const editOneByOne = async (
     id: string,
-    item: OneByOne,
-    isRetry?: boolean
+    item: OneByOneType,
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
-    oneByOneItem: OneByOne | null;
+    oneByOneItem: OneByOneType | null;
     message?: string;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
     try {
-      const response = await fetch(`${apiUrl}/oneByOne/edit/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: token,
-          },
-          body: JSON.stringify(item)
-        }
-      );
+      const response = await fetch(`${apiUrl}/oneByOne/edit/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify(item),
+      });
 
       // Si el token expiró → refrescar
       if (response.status === 403 && !isRetry) {
@@ -5413,7 +5935,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       return {
         success: true,
         oneByOneItem: data.oneByOne,
-        message: ''
+        message: "",
       };
     } catch (error: any) {
       return {
@@ -5425,26 +5947,24 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const saveOneByOne = async (
-    item: OneByOne,
-    isRetry?: boolean
+    item: OneByOneType,
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
-    oneByOneItem: OneByOne | null;
+    oneByOneItem: OneByOneType | null;
     message?: string;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
     try {
-      const response = await fetch(`${apiUrl}/oneByOne/save/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: token,
-          },
-          body: JSON.stringify(item)
-        }
-      );
+      const response = await fetch(`${apiUrl}/oneByOne/save/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify(item),
+      });
 
       // Si el token expiró → refrescar
       if (response.status === 403 && !isRetry) {
@@ -5473,7 +5993,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       return {
         success: true,
         oneByOneItem: data.oneByOne,
-        message: ''
+        message: "",
       };
     } catch (error: any) {
       return {
@@ -5486,8 +6006,8 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const sendComment = async (
     id: string,
-    text: string,
-    isRetry?: boolean
+    comment: string,
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -5495,21 +6015,20 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
     try {
-      const response = await fetch(`${apiUrl}/shorts/comment/${id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: token,
-          },
-        }
-      );
+      const response = await fetch(`${apiUrl}/shorts/comentario/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify({ comment }),
+      });
 
       // Si el token expiró → refrescar
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await sendComment(id, text, true);
+          return await sendComment(id, comment, true);
         } catch {
           return {
             success: false,
@@ -5529,7 +6048,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
       return {
         success: true,
-        message: ''
+        message: "",
       };
     } catch (error: any) {
       return {
@@ -5541,7 +6060,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
   const likeShort = async (
     id: string,
-    isRetry?: boolean
+    isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
@@ -5549,14 +6068,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
 
     try {
-      const response = await fetch(`${apiUrl}/shorts/like/${id}`,
-        {
-          method: "POST",
-          headers: {
-            authorization: token,
-          },
-        }
-      );
+      const response = await fetch(`${apiUrl}/shorts/favorito/${id}`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+        },
+      });
 
       // Si el token expiró → refrescar
       if (response.status === 403 && !isRetry) {
@@ -5582,8 +6099,698 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
       return {
         success: true,
-        message: ''
+        message: "",
       };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const getShorts = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    shorts: ShortItem[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/shorts/`, {
+        method: "GET",
+        headers: { authorization: token },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getShorts(true);
+        } catch {
+          return { success: false, shorts: [], message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, shorts: [], message: data.message };
+      }
+
+      return { success: true, shorts: data.shorts };
+    } catch (error: any) {
+      return { success: false, shorts: [], message: error.message };
+    }
+  };
+
+  const getShort = async (
+    id: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    short: ShortItem | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/shorts/short/${id}`, {
+        method: "GET",
+        headers: { authorization: token },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getShort(id, true);
+        } catch {
+          return { success: false, short: null, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, short: null, message: data.message };
+      }
+
+      return { success: true, short: data.short };
+    } catch (error: any) {
+      return { success: false, short: null, message: error.message };
+    }
+  };
+
+  const createShort = async (
+    formData: FormData,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    short: ShortItem | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/shorts/short`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+        },
+        body: formData,
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await createShort(formData, true);
+        } catch {
+          return { success: false, short: null, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, short: null, message: data.message };
+      }
+
+      return { success: true, short: data.short };
+    } catch (error: any) {
+      return { success: false, short: null, message: error.message };
+    }
+  };
+
+  const updateShort = async (
+    id: string,
+    formData: FormData,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    short: ShortItem | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/shorts/short/${id}`, {
+        method: "PUT",
+        headers: {
+          authorization: token,
+        },
+        body: formData,
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await updateShort(id, formData, true);
+        } catch {
+          return { success: false, short: null, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, short: null, message: data.message };
+      }
+
+      return { success: true, short: data.short };
+    } catch (error: any) {
+      return { success: false, short: null, message: error.message };
+    }
+  };
+
+  const deleteShort = async (
+    id: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/shorts/short/${id}`, {
+        method: "DELETE",
+        headers: { authorization: token },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await deleteShort(id, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  const seasonTeamAnalysis = async (
+    stats: any,
+    teamId: string,
+    season: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    analysis: AnalysisOpenAi | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/analysis/seasonTeam/${season}/${teamId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+          body: JSON.stringify(stats),
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await seasonTeamAnalysis(stats, teamId, season, true);
+        } catch {
+          return { success: false, analysis: null, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, analysis: null, message: data.message };
+      }
+
+      const { analysis } = data;
+
+      return { success: true, analysis };
+    } catch (error: any) {
+      return { success: false, analysis: null, message: error.message };
+    }
+  };
+
+  const fixtureAnalysis = async (
+    stats: any,
+    referenceId: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    analysis: AnalysisOpenAi | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/analysis/fixture/${referenceId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+          body: JSON.stringify(stats),
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await fixtureAnalysis(stats, referenceId, true);
+        } catch {
+          return { success: false, analysis: null, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, analysis: null, message: data.message };
+      }
+
+      const { analysis } = data;
+      return { success: true, analysis };
+    } catch (error: any) {
+      return { success: false, analysis: null, message: error.message };
+    }
+  };
+
+  const playerAnalysis = async (
+    stats: any,
+    playerId: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    analysis: AnalysisOpenAi | null;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/analysis/player/${playerId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token,
+        },
+        body: JSON.stringify(stats),
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await playerAnalysis(stats, playerId, true);
+        } catch {
+          return { success: false, analysis: null, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, analysis: null, message: data.message };
+      }
+
+      const { analysis } = data;
+
+      return { success: true, analysis };
+    } catch (error: any) {
+      return { success: false, analysis: null, message: error.message };
+    }
+  };
+
+  const createOrderUser = async (
+    order: CreateOrderPayload,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/store/createOrder`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(order),
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await createOrderUser(order, true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const ordersHistory = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    purchases: Purchase[];
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/store/userOrders`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await ordersHistory(true);
+        } catch (error) {
+          return {
+            success: false,
+            purchases: [],
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          purchases: [],
+          message: data.message,
+        };
+      }
+
+      const { purchases } = data;
+
+      return { success: true, purchases };
+    } catch (error: any) {
+      return {
+        success: false,
+        purchases: [],
+        message: error.message,
+      };
+    }
+  };
+
+  const productsList = async (
+    nextPage: number,
+    lat: number,
+    lng: number,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    products: Product[];
+    hasNext: boolean;
+    page: number;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/store/products/${nextPage}?limit=10&lat=${lat}&lng=${lng}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await productsList(nextPage, lat, lng, true);
+        } catch (error) {
+          return {
+            success: false,
+            products: [],
+            hasNext: false,
+            page: 0,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          products: [],
+          hasNext: false,
+          page: 0,
+          message: data.message,
+        };
+      }
+
+      const { products, hasNext, page } = data;
+
+      return { success: true, products, hasNext, page };
+    } catch (error: any) {
+      return {
+        success: false,
+        products: [],
+        hasNext: false,
+        page: 0,
+        message: error.message,
+      };
+    }
+  };
+
+  const getUserPoints = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    points: number;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/user/getPoints`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getUserPoints(true);
+        } catch (error) {
+          return {
+            success: false,
+            points: 0,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          points: 0,
+          message: data.message,
+        };
+      }
+
+      const { points } = data;
+
+      return { success: true, points };
+    } catch (error: any) {
+      return {
+        success: false,
+        points: 0,
+        message: error.message,
+      };
+    }
+  };
+
+  const getLimitAdsPerDay = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    limit: number;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/user/getLimitAdsPerDay`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getLimitAdsPerDay(true);
+        } catch (error) {
+          return {
+            success: false,
+            limit: 0,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          limit: 0,
+          message: data.message,
+        };
+      }
+
+      const { limit } = data;
+
+      return { success: true, limit };
+    } catch (error: any) {
+      return {
+        success: false,
+        limit: 0,
+        message: error.message,
+      };
+    }
+  };
+
+  const descountLimitAdsPerDayAndAddPoint = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    limit: number;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(
+        `${apiUrl}/user/descountLimitAdsPerDayAndAddPoint`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await descountLimitAdsPerDayAndAddPoint(true);
+        } catch (error) {
+          return {
+            success: false,
+            limit: 0,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          limit: 0,
+          message: data.message,
+        };
+      }
+
+      const { limit } = data;
+
+      return { success: true, limit };
+    } catch (error: any) {
+      return {
+        success: false,
+        limit: 0,
+        message: error.message,
+      };
+    }
+  };
+
+  const invitationSyntheticMatch = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    let token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/syntheticMatch/invitation`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await invitationSyntheticMatch(true);
+        } catch (error) {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      return { success: true };
     } catch (error: any) {
       return {
         success: false,
@@ -5640,11 +6847,14 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         getPredictionOdds,
         createBet,
         getBetAndPredictionOddsByBetId,
+        getLiveBetId,
         getBetAndPredictionOddsByCode,
         joinBet,
         myBets,
         betSetResults,
         getSyntheticMatches,
+        createSyntheticMatch,
+        updateSyntheticMatch,
         getUser,
         getUsers,
         saveSyntheticMatches,
@@ -5659,6 +6869,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         searchCoaches,
         searchTeams,
         ratePlayer,
+        getRatePlayer,
         getMatchesTodayFromLeague,
         loadWorldTop10,
         getVideosWorldTop10,
@@ -5669,6 +6880,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         editSyntheticVideo,
         deleteSyntheticVideo,
         toggleFavoriteVideo,
+        registerVideoView,
         getUsersNews,
         deleteUsersNews,
         createUserNew,
@@ -5681,7 +6893,22 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         editOneByOne,
         saveOneByOne,
         sendComment,
-        likeShort
+        likeShort,
+        getShorts,
+        getShort,
+        createShort,
+        updateShort,
+        deleteShort,
+        seasonTeamAnalysis,
+        fixtureAnalysis,
+        playerAnalysis,
+        createOrderUser,
+        ordersHistory,
+        productsList,
+        getUserPoints,
+        getLimitAdsPerDay,
+        descountLimitAdsPerDayAndAddPoint,
+        invitationSyntheticMatch,
       }}
     >
       {children}

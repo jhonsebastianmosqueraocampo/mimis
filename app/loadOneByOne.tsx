@@ -1,52 +1,41 @@
 // app/LoadOneByOne.tsx
+import Loading from "@/components/Loading";
 import OneByOneForm from "@/components/OneByOneForm";
 import { useFetch } from "@/hooks/FetchContext";
-import { OneByOne } from "@/types";
+import { LeagueItem, OneByOneType, Section } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    FlatList,
-    Image,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-    ActivityIndicator,
-    Button,
-    Card,
-    Chip,
-    Text,
-    TextInput,
+  Button,
+  Card,
+  Chip,
+  Searchbar,
+  Text,
+  TextInput,
 } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
-
-// Chips de ligas/tornos (por ahora solo visual / filtro simple)
-const LEAGUE_CHIPS = [
-  "LaLiga",
-  "Premier League",
-  "Serie A",
-  "Bundesliga",
-  "Ligue 1",
-  "Liga Colombiana",
-  "Champions League",
-  "Europa League",
-  "Libertadores",
-  "Eliminatorias",
-];
 
 // ======================
 // Componente principal
 // ======================
 export default function LoadOneByOne() {
-  const { getOneByOne, deleteOneByOneItem } = useFetch();
+  const { getOneByOne, deleteOneByOneItem, getMatchesToday } = useFetch();
   const [search, setSearch] = useState("");
+  const [sections, setSections] = useState<Section[]>([]);
+  const [leagues, setLeagues] = useState<LeagueItem[]>([]);
+  const [searchLeague, setSearchLeague] = useState("");
   const [selectedChip, setSelectedChip] = useState<string | null>(null);
 
-  const [oneByOneList, setOneByOneList] = useState<OneByOne[]>([]);
+  const [oneByOneList, setOneByOneList] = useState<OneByOneType[]>([]);
 
-  const [oneByOne, setOneByOne] = useState<OneByOne | null>(null);
+  const [oneByOne, setOneByOne] = useState<OneByOneType | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,20 +62,23 @@ export default function LoadOneByOne() {
       }
     };
 
+    const loadLeaguesTeams = async () => {
+      const { success, leagues, sections } = await getMatchesToday({
+        status: "FINISHED",
+      });
+      if (success) {
+        setLeagues(leagues || []);
+        setSections(sections || []);
+      }
+    };
+
     load();
+    loadLeaguesTeams();
 
     return () => {
       isMounted = false;
     };
   }, []);
-
-  if (loading) {
-    return (
-      <PrivateLayout>
-        <ActivityIndicator style={{ marginTop: 40 }} size="large" />
-      </PrivateLayout>
-    );
-  }
 
   // Filtro de la lista principal
   const filteredList = useMemo(() => {
@@ -97,7 +89,7 @@ export default function LoadOneByOne() {
       result = result.filter(
         (item) =>
           item.teams.home.name.toLowerCase().includes(s) ||
-          item.teams.away.name.toLowerCase().includes(s)
+          item.teams.away.name.toLowerCase().includes(s),
       );
     }
 
@@ -106,7 +98,7 @@ export default function LoadOneByOne() {
       result = result.filter(
         (item) =>
           item.teams.home.name.toLowerCase().includes(sChip) ||
-          item.teams.away.name.toLowerCase().includes(sChip)
+          item.teams.away.name.toLowerCase().includes(sChip),
       );
     }
 
@@ -152,19 +144,22 @@ export default function LoadOneByOne() {
             setOneByOneList((prev) => prev.filter((i) => i.id !== id));
           },
         },
-      ]
+      ],
     );
   };
 
   // Guardar (crear o actualizar)
-  const handleSave = (saved: OneByOne) => {
+  const handleSave = (saved: OneByOneType) => {
     setOneByOneList((prev) => {
-      const exists = prev.some((i) => i.id === saved.id);
-      if (exists) {
+      if (editingId) {
+        // 🔁 SOLO actualizar
         return prev.map((i) => (i.id === saved.id ? saved : i));
       }
+
+      // ➕ SOLO agregar si es creación
       return [saved, ...prev];
     });
+
     setShowForm(false);
     setEditingId(null);
     setOneByOne(null);
@@ -176,11 +171,25 @@ export default function LoadOneByOne() {
     setOneByOne(null);
   };
 
+  const filteredLeagues = leagues.filter((league) =>
+    league.name.toLowerCase().includes(searchLeague.toLowerCase()),
+  );
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
+
   // Card de cada uno por uno en la grilla
-  const renderItem = ({ item }: { item: OneByOne }) => (
+  const renderItem = ({ item }: { item: OneByOneType }) => (
     <TouchableOpacity
       style={styles.gridItem}
-      onPress={() => handleEdit(item.id)}
+      onPress={() => handleEdit(item.id!)}
     >
       <Card style={{ flex: 1 }}>
         <Card.Content style={styles.gridCard}>
@@ -220,7 +229,7 @@ export default function LoadOneByOne() {
           <Button
             icon="delete"
             textColor="red"
-            onPress={() => handleDelete(item.id)}
+            onPress={() => handleDelete(item.id!)}
           >
             Borrar
           </Button>
@@ -238,6 +247,9 @@ export default function LoadOneByOne() {
           oneByOne={oneByOne}
           onCancel={handleCancelForm}
           onSave={handleSave}
+          leagues={leagues}
+          sections={sections}
+          existingOneByOnes={oneByOneList}
         />
       </PrivateLayout>
     );
@@ -263,25 +275,53 @@ export default function LoadOneByOne() {
           </Button>
         </View>
 
+        <Searchbar
+          placeholder="Buscar liga o torneo"
+          value={searchLeague}
+          onChangeText={setSearchLeague}
+          style={styles.searchBar}
+          inputStyle={{ fontSize: 14 }}
+        />
+
         {/* Chips de ligas/torneos */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.chipsScroll}
+          contentContainerStyle={styles.chipsContainer}
         >
-          {LEAGUE_CHIPS.map((chip) => (
-            <Chip
-              key={chip}
-              style={styles.chip}
-              mode={selectedChip === chip ? "flat" : "outlined"}
-              selected={selectedChip === chip}
-              onPress={() =>
-                setSelectedChip((prev) => (prev === chip ? null : chip))
-              }
-            >
-              {chip}
-            </Chip>
-          ))}
+          {filteredLeagues.length === 0 ? (
+            <Text style={styles.emptyText}>No se encontraron ligas</Text>
+          ) : (
+            filteredLeagues.map((league) => {
+              const selected = selectedChip === league.name;
+
+              return (
+                <Chip
+                  key={league.id}
+                  mode={selected ? "flat" : "outlined"}
+                  selected={selected}
+                  onPress={() =>
+                    setSelectedChip((prev) =>
+                      prev === league.name ? null : league.name,
+                    )
+                  }
+                  style={[styles.chip, selected && styles.chipSelected]}
+                  textStyle={styles.chipText}
+                >
+                  <View style={styles.chipContent}>
+                    <Image
+                      source={{ uri: league.logo }}
+                      style={styles.chipLogo}
+                      resizeMode="contain"
+                    />
+                    <Text numberOfLines={1} style={styles.chipText}>
+                      {league.name}
+                    </Text>
+                  </View>
+                </Chip>
+              );
+            })
+          )}
         </ScrollView>
 
         {/* Buscador */}
@@ -294,23 +334,24 @@ export default function LoadOneByOne() {
           left={<TextInput.Icon icon="magnify" />}
         />
 
-        {/* Grid de 2 columnas */}
-        <FlatList
-          data={filteredList}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text variant="bodyMedium">
-                Aún no has creado ningún uno por uno. Empieza pulsando “Crear
-                uno por uno”.
-              </Text>
-            </View>
-          }
-        />
+        <ScrollView contentContainerStyle={styles.listContent}>
+          <View style={styles.grid}>
+            {filteredList.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text variant="bodyMedium">
+                  Aún no has creado ningún uno por uno. Empieza pulsando “Crear
+                  uno por uno”.
+                </Text>
+              </View>
+            ) : (
+              filteredList.map((item, index) => (
+                <View key={index} style={styles.gridItem}>
+                  {renderItem({ item })}
+                </View>
+              ))
+            )}
+          </View>
+        </ScrollView>
       </View>
     </PrivateLayout>
   );
@@ -336,9 +377,6 @@ const styles = StyleSheet.create({
   chipsScroll: {
     marginBottom: 8,
   },
-  chip: {
-    marginRight: 8,
-  },
   searchInput: {
     marginBottom: 12,
   },
@@ -347,7 +385,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   gridItem: {
-    width: "48%",
+    width: "100%",
+    marginBottom: 16,
   },
   gridCard: {
     alignItems: "center",
@@ -387,5 +426,55 @@ const styles = StyleSheet.create({
   emptyContainer: {
     marginTop: 32,
     alignItems: "center",
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  searchBar: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    elevation: 1,
+  },
+  chipsContainer: {
+    paddingHorizontal: 16,
+    alignItems: "center",
+    minHeight: 44, // evita que crezca el ScrollView
+  },
+
+  chip: {
+    height: 36, // 🔑 altura fija
+    marginRight: 8,
+    justifyContent: "center",
+  },
+
+  chipSelected: {
+    backgroundColor: "#1DB954", // tu color
+  },
+
+  chipContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    maxWidth: 160, // evita chips eternos
+  },
+
+  chipLogo: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+
+  chipText: {
+    fontSize: 13,
+    lineHeight: 16,
+  },
+
+  emptyText: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    opacity: 0.6,
   },
 });
