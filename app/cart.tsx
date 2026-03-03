@@ -24,19 +24,6 @@ import {
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
-const baseUrl = "http://192.168.10.16:3001";
-
-const getImageUrl = (image?: string | null) => {
-  if (!image) return null;
-
-  const cleanPath = image.replace(/^\/+/, "");
-
-  // Encodea correctamente la ruta
-  const encodedPath = encodeURIComponent(cleanPath);
-
-  return `${baseUrl}/api/store/image/${encodedPath}`;
-};
-
 const isAddressValid = (a: AddressForm) => {
   // básico y claro (ajústalo)
   return (
@@ -251,7 +238,7 @@ export default function Cart() {
                 {item.image ? (
                   <Image
                     source={{
-                      uri: getImageUrl(item.image) ?? "",
+                      uri: item.image ?? "",
                     }}
                     style={styles.image}
                   />

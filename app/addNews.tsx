@@ -135,7 +135,7 @@ export default function AddNews() {
                 {/* Miniatura */}
                 <Image
                   source={{
-                    uri: `http://192.168.10.16:3001/api/userNews/image/${n.fotoPrincipal}`,
+                    uri: n.fotoPrincipal,
                   }}
                   style={{
                     width: 70,

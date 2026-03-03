@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
-  View
+  View,
 } from "react-native";
 import { Divider, Drawer, IconButton, List } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
@@ -66,6 +66,18 @@ const menuItems: MenuItem[] = [
   { label: "Estadísticas", icon: "chart-line", to: "stats" },
   { label: "Selecciones y Torneos", icon: "earth", to: "countries" },
 
+  {
+    label: "Quiz Diario",
+    icon: "brain",
+    to: "quizDaily",
+  },
+
+  {
+    label: "Datos Curiosos",
+    icon: "lightbulb-on-outline",
+    to: "funFacts",
+  },
+
   // =========================
   // ECONOMÍA
   // =========================
@@ -104,6 +116,22 @@ const menuItems: MenuItem[] = [
     to: "loadSyntheticResumeVideos",
     roles: ["administrador"],
   },
+
+  {
+    label: "Cargar Quiz Diario",
+    icon: "clipboard-plus-outline",
+    to: "loadQuiz",
+    roles: ["administrador"],
+  },
+
+  // NUEVO ADMIN
+  {
+    label: "Cargar Dato Curioso",
+    icon: "lightbulb-plus-outline",
+    to: "loadFunFact",
+    roles: ["administrador"],
+  },
+
   {
     label: "Agregar (1x1)",
     icon: "playlist-plus",

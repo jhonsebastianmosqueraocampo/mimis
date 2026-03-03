@@ -297,9 +297,7 @@ export default function WeeklyVideoFeed({
               key={currentShort.id}
               ref={videoRef}
               source={{
-                uri: `http://192.168.10.16:3001/api/weeklySyntheticTop/video/${encodeURIComponent(
-                  currentShort.video,
-                )}`,
+                uri: currentShort.video,
               }}
               style={styles.video}
               resizeMode={ResizeMode.COVER}

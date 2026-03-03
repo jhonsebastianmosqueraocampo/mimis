@@ -168,9 +168,7 @@ export default function WorldVideoFeed({
               key={currentShort.id}
               ref={videoRef}
               source={{
-                uri: `http://192.168.10.16:3001/api/weeklyWorldTop/video/${encodeURIComponent(
-                  currentShort.video,
-                )}`,
+                uri: currentShort.video,
               }}
               style={styles.video}
               resizeMode={ResizeMode.COVER}

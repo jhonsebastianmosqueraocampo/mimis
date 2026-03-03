@@ -39,9 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <View style={styles.imageContainer}>
         <Image
           source={{
-            uri: `http://192.168.10.16:3001/api/store/image/${encodeURIComponent(
-              image,
-            )}`,
+            uri: image,
           }}
           style={styles.image}
         />

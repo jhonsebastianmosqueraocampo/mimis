@@ -39,7 +39,7 @@ const getImageUri = (foto: string | ImagePicker.ImagePickerAsset): string => {
   }
 
   // Imagen del backend (solo filename)
-  return `http://192.168.10.16:3001/api/userNews/image/${foto}`;
+  return foto;
 };
 
 export default function NewsForm({
@@ -69,9 +69,7 @@ export default function NewsForm({
     if (existingNews) {
       setTitulo(existingNews.titulo);
       setEntidad(existingNews.entidad);
-      setFotoPrincipal(
-        `http://192.168.10.16:3001/api/userNews/image/${existingNews.fotoPrincipal}`,
-      );
+      setFotoPrincipal(existingNews.fotoPrincipal);
       setUrlFotoPrincipal(existingNews.urlFotoPrincipal);
       setDesarrolloInicialNoticia(existingNews.desarrolloInicialNoticia);
       setCarruselFotos(existingNews.carruselFotos);

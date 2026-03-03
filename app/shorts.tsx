@@ -157,25 +157,14 @@ export default function Shorts() {
         {/* Video o thumbnail */}
         {isFirst ? (
           <Video
-            source={{
-              uri: `http://192.168.10.16:3001/api/shorts/video/${encodeURIComponent(
-                item.video,
-              )}`,
-            }}
+            source={{ uri: item.video }}
             style={styles.video}
             shouldPlay={playPreview && !fullScreenItem}
             resizeMode={ResizeMode.COVER}
             isLooping
           />
         ) : (
-          <Image
-            source={{
-              uri: `http://192.168.10.16:3001/api/shorts/image/${encodeURIComponent(
-                item.thumbnail,
-              )}`,
-            }}
-            style={styles.thumbnail}
-          />
+          <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
         )}
 
         {/* Overlay contadores */}

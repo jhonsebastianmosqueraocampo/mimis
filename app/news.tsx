@@ -146,7 +146,7 @@ export default function News() {
               >
                 <Image
                   source={{
-                    uri: `http://192.168.10.16:3001/api/userNews/image/${item.fotoPrincipal}`,
+                    uri: item.fotoPrincipal,
                   }}
                   style={styles.cardImage}
                 />

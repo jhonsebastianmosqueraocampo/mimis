@@ -424,7 +424,7 @@ export default function LoadSyntheticVideos() {
                   <Card>
                     <Card.Cover
                       source={{
-                        uri: `http://192.168.10.16:3001/api/weeklySyntheticTop/image/${item.thumbail}`,
+                        uri: item.thumbail,
                       }}
                     />
                     <View

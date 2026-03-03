@@ -46,14 +46,8 @@ export default function ShortModal({
 
   useEffect(() => {
     if (editing) {
-      setVideo(
-        `http://192.168.10.16:3001/api/shorts/video/${encodeURIComponent(
-          editing.video,
-        )}`,
-      );
-      setThumbnail(
-        `http://192.168.10.16:3001/api/shorts/image/${editing.thumbnail}`,
-      );
+      setVideo(editing.video);
+      setThumbnail(editing.thumbnail);
       setDescripcion(editing.descripcion);
       setFecha(new Date(editing.fecha));
     } else {
@@ -127,6 +121,7 @@ export default function ShortModal({
                   <Image
                     source={{ uri: editing ? thumbnail : thumbnail.uri }}
                     style={styles.thumbImg}
+                    progressiveRenderingEnabled
                   />
                   <View style={styles.thumbOverlay}>
                     <Text style={styles.thumbOverlayText}>

@@ -46,7 +46,7 @@ export default function NewsDetail({ visible, news, onClose }: Props) {
               {/* 📸 Imagen principal */}
               <Image
                 source={{
-                  uri: `http://192.168.10.16:3001/api/userNews/image/${news.fotoPrincipal}`,
+                  uri: news.fotoPrincipal,
                 }}
                 style={styles.mainImage}
                 resizeMode="cover"
@@ -83,7 +83,7 @@ export default function NewsDetail({ visible, news, onClose }: Props) {
                   <View key={i} style={styles.carouselItem}>
                     <Image
                       source={{
-                        uri: `http://192.168.10.16:3001/api/userNews/image/${item.foto}`,
+                        uri: item.url ?? "",
                       }}
                       style={styles.carouselImage}
                     />

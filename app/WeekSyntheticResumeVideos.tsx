@@ -201,7 +201,7 @@ export default function WeekSyntheticResumeVideos() {
                 >
                   <Image
                     source={{
-                      uri: `http://192.168.10.16:3001/api/weeklySyntheticTop/image/${item.thumbail}`,
+                      uri: item.thumbail,
                     }}
                     style={{ width: "100%", height: 180 }}
                   />

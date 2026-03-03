@@ -366,7 +366,7 @@ export default function LoadWorldResumeVideos() {
                       source={{
                         uri: editThumbnail?.uri
                           ? editThumbnail.uri
-                          : `http://192.168.10.16:3001/api/weeklyWorldTop/image/${item.thumbail}`,
+                          : item.thumbail,
                       }}
                       style={styles.thumbnail}
                     />
@@ -423,9 +423,7 @@ export default function LoadWorldResumeVideos() {
                 {videoToEdit && (
                   <Video
                     source={{
-                      uri: editVideo?.uri
-                        ? editVideo.uri
-                        : `http://192.168.10.16:3001/api/weeklyWorldTop/video/${videoToEdit.video}`,
+                      uri: editVideo?.uri ? editVideo.uri : videoToEdit.video,
                     }}
                     style={styles.video}
                     useNativeControls
@@ -438,7 +436,7 @@ export default function LoadWorldResumeVideos() {
                     source={{
                       uri: editThumbnail?.uri
                         ? editThumbnail.uri
-                        : `http://192.168.10.16:3001/api/weeklyWorldTop/image/${videoToEdit.thumbail}`,
+                        : videoToEdit.thumbail,
                     }}
                     style={styles.thumbnail}
                   />

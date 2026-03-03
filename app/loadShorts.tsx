@@ -60,17 +60,28 @@ export default function LoadShorts() {
     try {
       const formData = new FormData();
       formData.append("descripcion", item.descripcion);
-      formData.append("video", {
-        uri: item.video.uri,
-        name: item.video.name || "video.mp4",
-        type: item.video.mimeType || "video/mp4",
-      } as any);
-      formData.append("thumbnail", {
-        uri: item.thumbnail.uri,
-        name: item.thumbnail.name || "thumb.jpg",
-        type: item.thumbnail.mimeType || "image/jpeg",
-      } as any);
-      // ✅ EDIT
+
+      // 📌 SOLO agregar video si es un archivo nuevo (no URL string)
+      if (typeof item.video !== "string") {
+        formData.append("video", {
+          uri: item.video.uri,
+          name: item.video.name || "video.mp4",
+          type: item.video.mimeType || "video/mp4",
+        } as any);
+      }
+
+      // 📌 SOLO agregar thumbnail si es nuevo
+      if (typeof item.thumbnail !== "string") {
+        formData.append("thumbnail", {
+          uri: item.thumbnail.uri,
+          name: item.thumbnail.name || "thumb.jpg",
+          type: item.thumbnail.mimeType || "image/jpeg",
+        } as any);
+      }
+
+      // ======================
+      // EDIT
+      // ======================
       if ("id" in item) {
         const { success, short, message } = await updateShort(
           item.id,
@@ -81,7 +92,6 @@ export default function LoadShorts() {
           throw new Error(message || "No fue posible editar el short.");
         }
 
-        // 🔥 Conserva fecha local si el back no la devuelve
         const merged: ShortItem = {
           ...short,
           fecha: item.fecha ?? short.fecha,
@@ -89,7 +99,10 @@ export default function LoadShorts() {
 
         setShorts((prev) => prev.map((s) => (s.id === item.id ? merged : s)));
       }
-      // ✅ CREATE
+
+      // ======================
+      // CREATE
+      // ======================
       else {
         const resp = await createShort(formData);
 
@@ -97,7 +110,6 @@ export default function LoadShorts() {
           throw new Error(resp.message || "No fue posible crear el short.");
         }
 
-        // Como el back no recibe fecha, usamos la del modal para UI
         const created: ShortItem = {
           ...resp.short,
           fecha: item.fecha,
@@ -175,7 +187,7 @@ export default function LoadShorts() {
               <View>
                 <Image
                   source={{
-                    uri: `http://192.168.10.16:3001/api/shorts/image/${item.thumbnail}`,
+                    uri: item.thumbnail,
                   }}
                   style={styles.thumbnail}
                 />

@@ -201,7 +201,11 @@ export default function MatchPost({
           <MatchPostVideos
             teamA={liveMatchFixture?.teams.home.name!}
             teamB={liveMatchFixture?.teams.away.name!}
-            query="resume"
+            query={`${liveMatchFixture?.teams.home.name!} vs ${liveMatchFixture?.teams.away.name!} resumen partido highlights ${new Date(
+              liveMatchFixture?.fixture.date!,
+            )
+              .getFullYear()
+              .toString()} -reaction -eafc -fifa -game`}
             season={new Date(liveMatchFixture?.fixture.date!)
               .getFullYear()
               .toString()}

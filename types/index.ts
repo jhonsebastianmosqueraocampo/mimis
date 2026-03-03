@@ -220,6 +220,10 @@ export type RootStackParamList = {
   cart: undefined;
   purchaseSummary: { products: ProductStore[] };
   purchaseHistory: undefined;
+  loadQuiz: undefined;
+  quizDaily: undefined;
+  loadFunFact: undefined;
+  funFacts: undefined;
 };
 
 export type paramsProduct = {
@@ -1791,3 +1795,59 @@ export type CreateOrderPayload = {
 
 export type Section = { title: string; data: LiveMatch[] };
 export type LeagueItem = { id: number; name: string; logo: string };
+
+export type QuizOption = {
+  label: string;
+  value?: string;
+};
+
+export type QuizQuestion = {
+  _id: string;
+  questionText: string;
+  videoUrl: string;
+  posterUrl?: string;
+  options: QuizOption[];
+};
+
+export type TodayQuizResponse =
+  | {
+      ok: true;
+      dateKey: string;
+      status: "no_quiz";
+      message: string;
+    }
+  | {
+      ok: true;
+      dateKey: string;
+      status: "in_progress" | "completed";
+      total: number;
+      answeredCount: number;
+      score: number;
+      nextIndex: number;
+      nextQuestion: QuizQuestion | null;
+    };
+
+export type AnswerResponse = {
+  ok: true;
+  isCorrect: boolean;
+  score: number;
+  answeredCount: number;
+  total: number;
+  status: "in_progress" | "completed";
+  nextIndex: number;
+  nextQuestion: QuizQuestion | null;
+};
+
+export type DayVideo = {
+  id: string;
+  videoUrl: string;
+  posterUrl?: string;
+  title?: string;
+};
+
+export type QuestionQuiz = {
+  videoUrl: any;
+  questionText: string;
+  options: string[];
+  correctIndex: number;
+};

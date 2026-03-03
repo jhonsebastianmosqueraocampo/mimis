@@ -209,9 +209,7 @@ export default function ProductDetail() {
 
           <Image
             source={{
-              uri: `http://192.168.10.16:3001/api/store/image/${encodeURIComponent(
-                image,
-              )}`,
+              uri: image,
             }}
             style={styles.image}
           />

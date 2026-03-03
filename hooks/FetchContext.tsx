@@ -1,5 +1,6 @@
 import {
   AnalysisOpenAi,
+  AnswerResponse,
   Bet,
   BetInfo,
   Coach,
@@ -9,6 +10,7 @@ import {
   CreateOrderPayload,
   CreateSyntheticMatchDTO,
   CupStanding,
+  DayVideo,
   Favorites,
   Fixture,
   GroupStanding,
@@ -26,6 +28,7 @@ import {
   PreMatchStats,
   Product,
   Purchase,
+  QuestionQuiz,
   SelectionBet,
   setBet,
   ShortItem,
@@ -36,6 +39,7 @@ import {
   TeamPlayerStatsByLeague,
   TeamStanding,
   TeamSummary,
+  TodayQuizResponse,
   UpdateSyntheticMatchDTO,
   User,
   UserPlayerRating,
@@ -860,6 +864,54 @@ type FetchContextType = {
     message?: string;
   }>;
   invitationSyntheticMatch: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  loadQuiz: (
+    dateKey: string,
+    questions: QuestionQuiz[],
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getTodayQuiz: (
+    dateKey?: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    quiz: TodayQuizResponse | null;
+    success: boolean;
+    message?: string;
+  }>;
+  answerQuiz: (
+    payload: { dateKey: string; questionId: string; selectedIndex: number },
+    isRetry?: boolean,
+  ) => Promise<{
+    quiz: AnswerResponse | null;
+    success: boolean;
+    message?: string;
+  }>;
+  getVideos: (
+    dateKey?: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    videos: DayVideo[];
+    success: boolean;
+    message?: string;
+  }>;
+  createFunFact: (
+    text?: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getFunFacts: (
+    page: number,
+    isRetry?: boolean,
+  ) => Promise<{
+    list: string[];
+    hasMore: boolean;
     success: boolean;
     message?: string;
   }>;
@@ -6799,6 +6851,296 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const loadQuiz = async (
+    dateKey: string,
+    questions: QuestionQuiz[],
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+    const formData = new FormData();
+
+    formData.append("dateKey", dateKey);
+    formData.append("isPublished", "true");
+
+    questions.forEach((q, index) => {
+      formData.append(`questions[${index}][questionText]`, q.questionText);
+
+      formData.append(
+        `questions[${index}][correctIndex]`,
+        String(q.correctIndex),
+      );
+
+      q.options.forEach((opt, i) => {
+        formData.append(`questions[${index}][options][${i}]`, opt);
+      });
+
+      if (q.videoUrl) {
+        formData.append(`videos`, {
+          uri: q.videoUrl.uri,
+          name: q.videoUrl.fileName || `video-${index}.mp4`,
+          type: q.videoUrl.mimeType || "video/mp4",
+        } as any);
+      }
+    });
+
+    try {
+      const response = await fetch(`${apiUrl}/quiz/admin/day`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+        },
+        body: formData,
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await loadQuiz(dateKey, questions, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  const getTodayQuiz = async (
+    dateKey?: string,
+    isRetry?: boolean,
+  ): Promise<{
+    quiz: TodayQuizResponse | null;
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const query = dateKey ? `?dateKey=${dateKey}` : "";
+
+      const response = await fetch(`${apiUrl}/quiz/today${query}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getTodayQuiz(dateKey, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión", quiz: null };
+        }
+      }
+
+      const data = await response.json();
+
+      // si tu backend usa {status:"success"}:
+      if (data.status !== "success") {
+        return { success: false, message: data.message, quiz: null };
+      }
+
+      // si tu backend devuelve quiz directo o dentro de data.quiz
+      return { success: true, quiz: data.quiz ?? data };
+    } catch (error: any) {
+      return { success: false, message: error.message, quiz: null };
+    }
+  };
+
+  const answerQuiz = async (
+    payload: { dateKey: string; questionId: string; selectedIndex: number },
+    isRetry?: boolean,
+  ): Promise<{
+    quiz: AnswerResponse | null;
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+    try {
+      const response = await fetch(`${apiUrl}/quiz/answer`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await answerQuiz(payload, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión", quiz: null };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message, quiz: null };
+      }
+
+      return { success: true, quiz: data.quiz ?? data };
+    } catch (error: any) {
+      return { success: false, message: error.message, quiz: null };
+    }
+  };
+
+  const getVideos = async (
+    dateKey?: string,
+    isRetry?: boolean,
+  ): Promise<{
+    videos: DayVideo[];
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const query = dateKey ? `?dateKey=${dateKey}` : "";
+
+      const response = await fetch(`${apiUrl}/quiz/videos${query}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getVideos(dateKey, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión", videos: [] };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message, videos: [] };
+      }
+
+      return { success: true, videos: data.videos ?? data ?? [] };
+    } catch (error: any) {
+      return { success: false, message: error.message, videos: [] };
+    }
+  };
+
+  const createFunFact = async (
+    text?: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/funFact/create`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await createFunFact(text, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  const getFunFacts = async (
+    page: number = 1,
+    isRetry?: boolean,
+  ): Promise<{
+    list: string[];
+    hasMore: boolean;
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/funFact/list?page=${page}`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getFunFacts(page, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            list: [],
+            hasMore: false,
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          list: [],
+          hasMore: false,
+        };
+      }
+
+      return {
+        success: true,
+        list: data.list ?? [],
+        hasMore: data.hasMore ?? false,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        list: [],
+        hasMore: false,
+      };
+    }
+  };
+
   return (
     <FetchContext.Provider
       value={{
@@ -6909,6 +7251,12 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         getLimitAdsPerDay,
         descountLimitAdsPerDayAndAddPoint,
         invitationSyntheticMatch,
+        getTodayQuiz,
+        answerQuiz,
+        getVideos,
+        loadQuiz,
+        createFunFact,
+        getFunFacts,
       }}
     >
       {children}
