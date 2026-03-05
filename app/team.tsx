@@ -34,7 +34,8 @@ export default function TeamScreen() {
   const [team, setTeam] = useState<Team>();
   const [isFavorite, setIsFavorite] = useState(false);
   const [news, setNews] = useState<swiperItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingTeam, setLoadingTeam] = useState(true);
+  const [loadingNews, setLoadingNews] = useState(false);
   const [error, setError] = useState("");
 
   const route = useRoute<TeamScreenRouteProp>();
@@ -56,12 +57,19 @@ export default function TeamScreen() {
   };
 
   const getInfoTeam = async () => {
-    const { success, team, isFavorite, message } = await getTeam(id);
-    if (success) {
-      setTeam(team);
-      setIsFavorite(isFavorite ?? false);
-    } else {
-      setError(message!);
+    setLoadingTeam(true);
+    setError("");
+
+    try {
+      const { success, team, isFavorite, message } = await getTeam(id);
+      if (success) {
+        setTeam(team);
+        setIsFavorite(isFavorite ?? false);
+      } else {
+        setError(message || "Error al cargar equipo");
+      }
+    } finally {
+      setLoadingTeam(false);
     }
   };
 
@@ -79,23 +87,26 @@ export default function TeamScreen() {
   const getNews = async () => {
     if (!team) return;
 
-    setLoading(true);
-    setNews([]);
+    setLoadingNews(true);
+    setError("");
+    setNews([]); // opcional: limpia para que no muestre noticias viejas
 
     try {
       const response = await getNewsTeam(team.name);
       if (response.success) {
-        setNews(response.news);
+        setNews(response.news || []);
+      } else {
+        setNews([]);
       }
     } finally {
-      setLoading(false);
+      setLoadingNews(false);
     }
   };
 
-  if (loading) {
+  if (loadingNews || loadingTeam) {
     return (
       <Loading
-        visible={loading}
+        visible={loadingNews || loadingTeam}
         title="Cargando"
         subtitle="Pronto tendrás la información"
       />

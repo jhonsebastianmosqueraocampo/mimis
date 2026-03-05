@@ -47,6 +47,8 @@ export default function LoadWorldResumeVideos() {
 
   // Estados para editar
   const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
+  const [leagueName, setLeagueName] = useState("");
+  const [editLeagueName, setEditLeagueName] = useState("");
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [videoToEdit, setVideoToEdit] = useState<WeeklyWorldTopVideo | null>(
     null,
@@ -124,8 +126,10 @@ export default function LoadWorldResumeVideos() {
 
   // 🚀 Subir nuevo video
   const handleSubmit = async () => {
-    if (!selectedDate || !video || !thumbnail) {
-      setMessage("⚠️ Debes seleccionar fecha, video y thumbnail");
+    if (!selectedDate || !video || !thumbnail || !leagueName.trim()) {
+      setMessage(
+        "⚠️ Debes seleccionar fecha, video, thumbnail y nombre de la liga",
+      );
       return;
     }
 
@@ -135,6 +139,7 @@ export default function LoadWorldResumeVideos() {
     try {
       const formData = new FormData();
       formData.append("week", formatDate(selectedDate));
+      formData.append("leagueName", leagueName);
       formData.append("video", {
         uri: video.uri,
         name: video.name || "video.mp4",
@@ -152,6 +157,7 @@ export default function LoadWorldResumeVideos() {
         setMessage("✅ Video subido correctamente");
         setVideo(null);
         setThumbnail(null);
+        setLeagueName("");
       } else {
         setMessage(message ?? "Error al cargar el video");
       }
@@ -165,6 +171,7 @@ export default function LoadWorldResumeVideos() {
   // ✏️ Abrir modal de edición
   const handleOpenEdit = (video: WeeklyWorldTopVideo) => {
     setVideoToEdit(video);
+    setEditLeagueName(video.leagueName || "");
     setEditModalVisible(true);
   };
 
@@ -187,7 +194,7 @@ export default function LoadWorldResumeVideos() {
 
       // Si se cambió la fecha, podrías incluirla también
       formData.append("week", videoToEdit.week);
-
+      formData.append("leagueName", editLeagueName.trim());
       if (editVideo) {
         formData.append("video", {
           uri: editVideo.uri,
@@ -285,6 +292,15 @@ export default function LoadWorldResumeVideos() {
               mode="date"
               onConfirm={handleConfirm}
               onCancel={() => setDatePickerVisible(false)}
+            />
+
+            <TextInput
+              label="Nombre de la liga"
+              value={leagueName}
+              onChangeText={setLeagueName}
+              mode="outlined"
+              style={{ marginBottom: 16 }}
+              placeholder="Ej: Premier League, LaLiga, Champions League..."
             />
 
             <Button
@@ -418,6 +434,14 @@ export default function LoadWorldResumeVideos() {
                     onPress={() => setEditModalVisible(false)}
                   />
                 </View>
+
+                <TextInput
+                  label="Nombre de la liga"
+                  value={editLeagueName}
+                  onChangeText={setEditLeagueName}
+                  mode="outlined"
+                  style={{ marginBottom: 16 }}
+                />
 
                 {/* 🎬 VIDEO */}
                 {videoToEdit && (

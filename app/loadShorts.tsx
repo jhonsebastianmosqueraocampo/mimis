@@ -1,14 +1,19 @@
 import Loading from "@/components/Loading";
 import ShortModal from "@/components/ShortModal";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import { LoadShortItem, ShortItem } from "@/types";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 import { Card, IconButton, Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
 export default function LoadShorts() {
   const { getShorts, createShort, updateShort, deleteShort } = useFetch();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<ShortItem | null>(null);
   const [shorts, setShorts] = useState<ShortItem[]>([]);
@@ -18,25 +23,24 @@ export default function LoadShorts() {
 
   useEffect(() => {
     let isMounted = true;
-    const getFavoriteList = async () => {
+
+    const load = async () => {
       setLoading(true);
+
       try {
-        const { success, shorts, message } = await getShorts();
+        const { success, shorts } = await getShorts();
+
         if (!isMounted) return;
 
         if (success) {
           setShorts(shorts);
-        } else {
-          setError(message!);
         }
-      } catch (err) {
-        if (isMounted) setError("Error al cargar los equipos favoritos");
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
-    getFavoriteList();
+    load();
 
     return () => {
       isMounted = false;
@@ -55,13 +59,12 @@ export default function LoadShorts() {
 
   const handleSaveShort = async (item: LoadShortItem | ShortItem) => {
     setLoading(true);
-    setError(null);
 
     try {
       const formData = new FormData();
+
       formData.append("descripcion", item.descripcion);
 
-      // 📌 SOLO agregar video si es un archivo nuevo (no URL string)
       if (typeof item.video !== "string") {
         formData.append("video", {
           uri: item.video.uri,
@@ -70,7 +73,6 @@ export default function LoadShorts() {
         } as any);
       }
 
-      // 📌 SOLO agregar thumbnail si es nuevo
       if (typeof item.thumbnail !== "string") {
         formData.append("thumbnail", {
           uri: item.thumbnail.uri,
@@ -79,65 +81,40 @@ export default function LoadShorts() {
         } as any);
       }
 
-      // ======================
-      // EDIT
-      // ======================
       if ("id" in item) {
-        const { success, short, message } = await updateShort(
-          item.id,
-          formData,
-        );
+        const { success, short } = await updateShort(item.id, formData);
 
-        if (!success || !short) {
-          throw new Error(message || "No fue posible editar el short.");
+        if (success && short) {
+          setShorts((prev) => prev.map((s) => (s.id === item.id ? short : s)));
         }
-
-        const merged: ShortItem = {
-          ...short,
-          fecha: item.fecha ?? short.fecha,
-        };
-
-        setShorts((prev) => prev.map((s) => (s.id === item.id ? merged : s)));
-      }
-
-      // ======================
-      // CREATE
-      // ======================
-      else {
+      } else {
         const resp = await createShort(formData);
 
-        if (!resp.success || !resp.short) {
-          throw new Error(resp.message || "No fue posible crear el short.");
+        if (resp.success && resp.short) {
+          const created: ShortItem = {
+            ...resp.short,
+            fecha: item.fecha,
+          } as ShortItem;
+          setShorts((prev) => [created, ...prev]);
         }
-
-        const created: ShortItem = {
-          ...resp.short,
-          fecha: item.fecha,
-        };
-
-        setShorts((prev) => [created, ...prev]);
       }
 
       setModalVisible(false);
       setEditingItem(null);
-    } catch (e: any) {
-      setError(e?.message || "Error guardando el short.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteShort = async (id: string) => {
-    setError(null);
-
-    // optimista (se ve rápido)
     const snapshot = shorts;
+
     setShorts((prev) => prev.filter((s) => s.id !== id));
 
-    const { success, message } = await deleteShort(id);
+    const { success } = await deleteShort(id);
+
     if (!success) {
-      setShorts(snapshot); // revertir
-      setError(message || "No fue posible eliminar el short.");
+      setShorts(snapshot);
     }
   };
 
@@ -158,58 +135,103 @@ export default function LoadShorts() {
   if (loading) {
     return (
       <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
+        visible
+        title="Cargando shorts"
+        subtitle="Preparando contenido"
       />
     );
   }
 
   return (
     <PrivateLayout>
-      <Text variant="headlineMedium" style={styles.header}>
+      <Text
+        style={[g.title, { textAlign: "center", marginBottom: spacing.md }]}
+      >
         Cargar Shorts
       </Text>
 
-      <View style={styles.grid}>
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          paddingHorizontal: spacing.md,
+        }}
+      >
         {dataWithAddButton.map((item) =>
           item.id === "add" ? (
             <TouchableOpacity
               key="add"
-              style={styles.addCard}
               onPress={openNew}
+              style={{
+                width: "48%",
+                height: 180,
+                borderWidth: 2,
+                borderColor: colors.primary,
+                borderStyle: "dashed",
+                borderRadius: radius.lg,
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: spacing.md,
+              }}
             >
-              <Text style={styles.addPlus}>＋</Text>
-              <Text style={styles.addText}>Agregar short</Text>
+              <Text style={{ fontSize: 42, color: colors.primary }}>＋</Text>
+              <Text style={{ marginTop: 6 }}>Agregar short</Text>
             </TouchableOpacity>
           ) : (
-            <Card key={item.id} style={styles.card}>
+            <Card
+              key={item.id}
+              style={[
+                g.card,
+                {
+                  width: "48%",
+                  marginBottom: spacing.md,
+                  borderRadius: radius.lg,
+                },
+              ]}
+            >
               <View>
                 <Image
-                  source={{
-                    uri: item.thumbnail,
+                  source={{ uri: item.thumbnail }}
+                  style={{
+                    width: "100%",
+                    height: 150,
                   }}
-                  style={styles.thumbnail}
                 />
-                <View style={styles.actions}>
+
+                {/* ACTIONS */}
+
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    flexDirection: "row",
+                  }}
+                >
                   <IconButton
                     icon="pencil"
-                    size={20}
+                    size={18}
                     onPress={() => openEdit(item)}
-                    style={styles.actionBtn}
+                    style={{
+                      backgroundColor: "rgba(0,0,0,0.6)",
+                      borderRadius: 20,
+                    }}
                   />
+
                   <IconButton
                     icon="delete"
-                    size={20}
+                    size={18}
                     iconColor="red"
                     onPress={() => handleDeleteShort(item.id)}
                   />
                 </View>
               </View>
 
-              <View style={styles.info}>
-                <Text style={styles.fecha}>{item.fecha}</Text>
-                <Text style={styles.desc} numberOfLines={2}>
+              <View style={{ padding: spacing.sm }}>
+                <Text style={{ fontSize: 12, opacity: 0.7 }}>{item.fecha}</Text>
+
+                <Text numberOfLines={2} style={{ marginTop: 3 }}>
                   {item.descripcion}
                 </Text>
               </View>
@@ -228,86 +250,3 @@ export default function LoadShorts() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    marginBottom: 16,
-    textAlign: "center",
-    fontWeight: "700",
-  },
-
-  row: {
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  addPlus: {
-    fontSize: 42,
-    fontWeight: "300",
-    color: "#777",
-  },
-  addText: {
-    marginTop: 8,
-    color: "#777",
-  },
-
-  thumbnail: {
-    width: "100%",
-    height: 150,
-  },
-
-  actions: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    flexDirection: "row",
-    gap: 4,
-  },
-
-  actionBtn: {
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 20,
-  },
-
-  info: {
-    padding: 8,
-  },
-  fecha: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  desc: {
-    fontSize: 13,
-    marginTop: 3,
-    fontWeight: "500",
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-
-  card: {
-    width: "48%",
-    marginBottom: 14,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-
-  addCard: {
-    width: "48%",
-    height: 180,
-    marginBottom: 14,
-    borderWidth: 2,
-    borderColor: "#bbb",
-    borderStyle: "dashed",
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

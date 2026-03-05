@@ -1,17 +1,20 @@
 import { useAuth } from "@/hooks/AuthContext";
-import { theme } from "@/theme";
 import { RootStackParamList } from "@/types";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import {
   ScrollView,
-  StyleSheet,
-  Text,
   TouchableWithoutFeedback,
   View,
+  ViewStyle,
 } from "react-native";
-import { Divider, Drawer, IconButton, List } from "react-native-paper";
+import { Divider, Drawer, IconButton, List, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 
 type MainDrawerProps = {
   active: string;
@@ -31,9 +34,6 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  // =========================
-  // PRINCIPAL
-  // =========================
   { label: "Inicio", icon: "home-outline", to: "index" },
   { label: "Shorts", icon: "play-circle-outline", to: "shorts" },
   { label: "Top 10 Ligas", icon: "trophy-outline", to: "worldTop10Screen" },
@@ -52,9 +52,6 @@ const menuItems: MenuItem[] = [
   { label: "Entrevistas", icon: "microphone-outline", to: "interviews" },
   { label: "Buscar", icon: "magnify", to: "search" },
 
-  // =========================
-  // INTERACCIÓN
-  // =========================
   { label: "Favoritos", icon: "heart-outline", to: "favorites" },
   { label: "Equipos Seguidos", icon: "shield-outline", to: "favoriteTeams" },
   {
@@ -66,37 +63,15 @@ const menuItems: MenuItem[] = [
   { label: "Estadísticas", icon: "chart-line", to: "stats" },
   { label: "Selecciones y Torneos", icon: "earth", to: "countries" },
 
-  {
-    label: "Quiz Diario",
-    icon: "brain",
-    to: "quizDaily",
-  },
+  { label: "Quiz Diario", icon: "brain", to: "quizDaily" },
+  { label: "Datos Curiosos", icon: "lightbulb-on-outline", to: "funFacts" },
 
-  {
-    label: "Datos Curiosos",
-    icon: "lightbulb-on-outline",
-    to: "funFacts",
-  },
-
-  // =========================
-  // ECONOMÍA
-  // =========================
   { label: "Crear Apuesta", icon: "dice-multiple-outline", to: "createBet" },
   { label: "Mis Apuestas", icon: "ticket-outline", to: "bets" },
 
-  // =========================
-  // ENTRENAMIENTO
-  // =========================
   { label: "Entrenamiento", icon: "dumbbell", to: "training" },
 
-  // =========================
-  // PERFIL
-  // =========================
   { label: "Mi Perfil", icon: "account-circle-outline", to: "profile" },
-
-  // =========================
-  // ADMIN / PERMISOS ESPECIALES
-  // =========================
 
   {
     label: "Subir Shorts",
@@ -116,15 +91,12 @@ const menuItems: MenuItem[] = [
     to: "loadSyntheticResumeVideos",
     roles: ["administrador"],
   },
-
   {
     label: "Cargar Quiz Diario",
     icon: "clipboard-plus-outline",
     to: "loadQuiz",
     roles: ["administrador"],
   },
-
-  // NUEVO ADMIN
   {
     label: "Cargar Dato Curioso",
     icon: "lightbulb-plus-outline",
@@ -133,17 +105,17 @@ const menuItems: MenuItem[] = [
   },
 
   {
-    label: "Agregar (1x1)",
-    icon: "playlist-plus",
-    to: "loadOneByOne",
-    roles: ["administrador"],
-  },
-  {
     label: "Agregar Noticia",
     icon: "newspaper-plus",
     to: "addNews",
     roles: ["administrador", "user"],
-    levels: ["intermedio", "aficionado", "leyenda"],
+  },
+
+  {
+    label: "Agregar (1x1)",
+    icon: "playlist-plus",
+    to: "loadOneByOne",
+    roles: ["administrador"],
   },
 ];
 
@@ -153,6 +125,7 @@ export default function MainDrawer({
   setOpenMainDrawer,
 }: MainDrawerProps) {
   const { user } = useAuth();
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -162,14 +135,11 @@ export default function MainDrawer({
   };
 
   const filteredMenu = menuItems.filter((item) => {
-    // Si no tiene restricción, mostrar
     if (!item.roles && !item.levels) return true;
 
-    // Validar role
     const roleAllowed =
       !item.roles || item.roles.includes((user?.role ?? "user") as Role);
 
-    // Validar level
     const levelAllowed =
       !item.levels || item.levels.includes((user?.level ?? "novato") as Level);
 
@@ -177,60 +147,102 @@ export default function MainDrawer({
   });
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.drawer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>MIMIS</Text>
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: 999,
+        flexDirection: "row",
+      }}
+    >
+      {/* Drawer */}
+      <View
+        style={[
+          sx({
+            w: "72%",
+            h: "100%",
+            bg: colors.card,
+          }) as ViewStyle,
+          {
+            borderTopRightRadius: radius.xl,
+            borderBottomRightRadius: radius.xl,
+          },
+        ]}
+      >
+        {/* Header */}
+        <View
+          style={[
+            sx({
+              row: true,
+              center: true,
+              py: 16,
+              px: 16,
+              bg: colors.primary,
+            }) as ViewStyle,
+          ]}
+        >
+          <Text
+            style={[
+              g.titleLarge,
+              {
+                color: "#FFF",
+                flex: 1,
+              },
+            ]}
+          >
+            MIMIS
+          </Text>
+
           <IconButton
             icon="close"
-            iconColor="#fff"
-            size={24}
+            iconColor="#FFF"
             onPress={() => setOpenMainDrawer(false)}
           />
         </View>
 
-        {/* ✅ Scroll que ocupa toda la pantalla */}
+        {/* Menu */}
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          style={sx({ flex: 1 })}
+          contentContainerStyle={sx({ px: 8, py: 12 })}
         >
-          {/* <TextInput
-            placeholder="Buscar..."
-            placeholderTextColor="#aaa"
-            style={[styles.input, { borderColor: theme.colors.outline }]}
-          /> */}
-
-          <Divider style={{ marginVertical: 12 }} />
+          <Divider style={sx({ mb: 12 })} />
 
           <Drawer.Section>
             {filteredMenu.map((item, index) => {
               const isActive = active === item.to;
+
               return (
                 <List.Item
                   key={index}
                   title={item.label}
-                  left={() => (
-                    <List.Icon
-                      icon={item.icon}
-                      color={
-                        isActive ? "#FFF" : theme.colors.backgroundElements
-                      }
-                    />
-                  )}
                   onPress={() => {
-                    setActive(item.to);
                     handleRoute(item.to);
                     setOpenMainDrawer(false);
                   }}
-                  style={{
-                    backgroundColor: isActive
-                      ? theme.colors.backgroundElements
-                      : "transparent",
-                    borderRadius: 7,
-                    paddingHorizontal: 10,
-                  }}
-                  titleStyle={{ color: isActive ? "#FFF" : theme.colors.text }}
+                  left={() => (
+                    <List.Icon
+                      icon={item.icon}
+                      color={isActive ? "#FFF" : colors.textSecondary}
+                    />
+                  )}
+                  style={[
+                    sx({
+                      r: 8,
+                      px: 6,
+                    }) as ViewStyle,
+                    isActive && {
+                      backgroundColor: colors.primary,
+                    },
+                  ]}
+                  titleStyle={[
+                    {
+                      color: isActive ? "#FFF" : colors.textPrimary,
+                    },
+                  ]}
                 />
               );
             })}
@@ -238,72 +250,15 @@ export default function MainDrawer({
         </ScrollView>
       </View>
 
+      {/* Backdrop */}
       <TouchableWithoutFeedback onPress={() => setOpenMainDrawer(false)}>
-        <View style={styles.backdrop} />
+        <View
+          style={sx({
+            flex: 1,
+            bg: "rgba(0,0,0,0.5)",
+          })}
+        />
       </TouchableWithoutFeedback>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%", // ✅ ocupa todo el alto
-    width: "100%",
-    zIndex: 999,
-    flexDirection: "row",
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  drawer: {
-    width: "70%",
-    backgroundColor: theme.colors.backgroundElements,
-    paddingTop: 29,
-    height: "100%", // ✅ el drawer ocupa toda la pantalla
-    elevation: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  scrollContent: {
-    flexGrow: 1, // ✅ asegura que el scroll ocupe 100% si el contenido es corto
-    paddingHorizontal: 10,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 20,
-    color: "#fff",
-    fontWeight: "bold",
-    textAlign: "center",
-    flex: 1,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    color: "#000",
-    backgroundColor: "#fff",
-  },
-});

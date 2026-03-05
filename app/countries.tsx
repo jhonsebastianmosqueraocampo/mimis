@@ -11,15 +11,19 @@ import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
-  StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card, Chip, Divider } from "react-native-paper";
+import { Card, Chip, Divider, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
+
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 
 export default function Countries() {
   const {
@@ -28,94 +32,93 @@ export default function Countries() {
     getNationalTournaments,
     getNationalMatchesToday,
   } = useFetch();
+
   const [activeTab, setActiveTab] = useState<"paises" | "torneos" | "vivo">(
     "paises",
   );
-  const [search, setSearch] = useState<string>("");
+
+  const [search, setSearch] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+
   const [countries, setCountries] = useState<Country[]>([]);
   const [tournaments, setTournaments] = useState<NationalLeague[]>([]);
   const [allMatches, setAllMatches] = useState<LiveMatch[]>([]);
+
   const [loading, setLoading] = useState(false);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let mounted = true;
+
     const loadCountries = async () => {
       setLoading(true);
-      try {
-        const { success, data, message } = await getCountries();
-        if (!mounted) return;
-        if (success) {
-          setCountries(data);
-          setSelectedCountry(data[0].name);
-        }
-      } catch (err) {
-        console.error("❌ Error cargando favoritos:", err);
+
+      const { success, data } = await getCountries();
+
+      if (!mounted) return;
+
+      if (success) {
+        setCountries(data);
+        setSelectedCountry(data[0]?.name);
       }
+
       setLoading(false);
     };
 
     const loadLeaguesCountry = async () => {
       setLoading(true);
-      try {
-        const { success, leaguesCountry, message } = await getLeaguesCountry(
-          selectedCountry!,
-        );
-        if (!mounted) return;
-        if (success) {
-          setTournaments(leaguesCountry);
-        }
-      } catch (err) {
-        console.error("❌ Error cargando favoritos:", err);
-      }
+
+      const { success, leaguesCountry } = await getLeaguesCountry(
+        selectedCountry!,
+      );
+
+      if (!mounted) return;
+
+      if (success) setTournaments(leaguesCountry);
+
       setLoading(false);
     };
 
     const loadTournaments = async () => {
       setLoading(true);
-      try {
-        const { success, leaguesCountry, message } =
-          await getNationalTournaments();
-        if (!mounted) return;
-        if (success) {
-          setTournaments(leaguesCountry);
-        }
-      } catch (err) {
-        console.error("❌ Error cargando favoritos:", err);
-      }
+
+      const { success, leaguesCountry } = await getNationalTournaments();
+
+      if (!mounted) return;
+
+      if (success) setTournaments(leaguesCountry);
+
       setLoading(false);
     };
 
     const loadLiveMatches = async () => {
       setLoading(true);
-      try {
-        const { success, matches, message } = await getNationalMatchesToday();
-        if (!mounted) return;
-        if (success) {
-          setAllMatches(matches);
-        }
-      } catch (err) {
-        console.error("❌ Error cargando favoritos:", err);
-      }
+
+      const { success, matches } = await getNationalMatchesToday();
+
+      if (!mounted) return;
+
+      if (success) setAllMatches(matches);
+
       setLoading(false);
     };
 
-    if (activeTab === "paises" && !selectedCountry && countries.length === 0) {
+    if (activeTab === "paises" && !selectedCountry && countries.length === 0)
       loadCountries();
-    }
+
     if (activeTab === "paises" && selectedCountry) {
       setTournaments([]);
       loadLeaguesCountry();
     }
+
     if (activeTab === "torneos") {
       setTournaments([]);
       loadTournaments();
     }
-    if (activeTab === "vivo") {
-      loadLiveMatches();
-    }
+
+    if (activeTab === "vivo") loadLiveMatches();
 
     return () => {
       mounted = false;
@@ -126,24 +129,20 @@ export default function Countries() {
     return (
       <Loading
         visible={loading}
-        title="Cargando paises"
+        title="Cargando países"
         subtitle="Pronto tendrás la información"
       />
     );
   }
 
-  const filteredCountries =
-    countries.length > 0
-      ? countries.filter((c) =>
-          (c?.name ?? "").toLowerCase().includes(search.toLowerCase()),
-        )
-      : [];
-  const filteredTournaments =
-    tournaments.length > 0
-      ? tournaments.filter((t) =>
-          (t?.name ?? "").toLowerCase().includes(search.toLowerCase()),
-        )
-      : [];
+  const filteredCountries = countries.filter((c) =>
+    (c?.name ?? "").toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const filteredTournaments = tournaments.filter((t) =>
+    (t?.name ?? "").toLowerCase().includes(search.toLowerCase()),
+  );
+
   const filteredLive =
     allMatches?.filter((m) =>
       `${m?.teams?.home?.name ?? ""} ${m?.teams?.away?.name ?? ""}`
@@ -159,201 +158,238 @@ export default function Countries() {
     navigation.navigate("match", { id });
   };
 
-  /** 🌍 Países + torneos del país */
-  const renderCountries = () => {
-    const firstRow =
-      filteredCountries && filteredCountries.filter((_, i) => i % 2 === 0);
-    const secondRow =
-      filteredCountries && filteredCountries.filter((_, i) => i % 2 !== 0);
+  /* =========================
+     BUSCADOR
+  ========================== */
 
-    // Generador de grid 2 columnas
-    const renderTournamentGrid = (tournaments: NationalLeague[]) => {
-      const rows = [];
-      for (let i = 0; i < tournaments.length; i += 2) {
-        rows.push(tournaments.slice(i, i + 2));
-      }
-      return (
-        <View style={{ marginTop: 16 }}>
-          {rows.map((row, index) => (
-            <View key={index} style={styles.tournamentRow}>
-              {row.map((item, index) => (
-                <Card
-                  key={index}
-                  style={styles.tournamentGridCard}
-                  onPress={() => handleTournament(item.leagueId.toString())}
+  const SearchBox = (placeholder: string) => (
+    <TextInput
+      placeholder={placeholder}
+      placeholderTextColor={colors.textSecondary}
+      value={search}
+      onChangeText={setSearch}
+      style={[
+        {
+          backgroundColor: colors.card,
+          borderRadius: radius.md,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          color: colors.textPrimary,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
+      ]}
+    />
+  );
+
+  /* =========================
+     PAÍSES
+  ========================== */
+
+  const renderCountries = () => (
+    <>
+      {SearchBox("Buscar país...")}
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={[sx({ row: true, mt: 12 }) as any]}>
+          {filteredCountries.map((country) => {
+            const selected = selectedCountry === country.name;
+
+            return (
+              <TouchableOpacity
+                key={country.name}
+                onPress={() => setSelectedCountry(country.name)}
+                style={[
+                  {
+                    padding: 10,
+                    borderRadius: radius.md,
+                    backgroundColor: colors.card,
+                    borderWidth: 1,
+                    borderColor: selected ? colors.primary : colors.border,
+                    marginRight: 10,
+                  },
+                  shadows.sm,
+                ]}
+              >
+                <Text
+                  style={[
+                    g.body,
+                    {
+                      color: selected ? colors.primary : colors.textPrimary,
+                    },
+                  ]}
                 >
-                  <Image
-                    source={{ uri: item.logo }}
-                    style={styles.tournamentGridLogo}
-                  />
-                  <Text style={styles.tournamentGridName} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.tournamentGridConf}>
-                    {item.country?.name || "—"}
-                  </Text>
-                </Card>
-              ))}
-              {row.length < 2 && (
-                <View style={[styles.tournamentGridCard, { opacity: 0 }]} />
-              )}
-            </View>
-          ))}
+                  {country.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      );
-    };
+      </ScrollView>
 
-    return (
-      <>
-        <TextInput
-          placeholder="Buscar país..."
-          placeholderTextColor="#999"
-          value={search}
-          onChangeText={setSearch}
-          style={styles.search}
-        />
+      {selectedCountry && (
+        <>
+          <Text style={[g.subtitle, { marginTop: 20, marginBottom: 10 }]}>
+            Torneos de {selectedCountry}
+          </Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.countryRows}>
-            {[firstRow, secondRow].map((row, i) => (
-              <View key={i} style={styles.countryRow}>
-                {row &&
-                  row.map((country) => {
-                    const isSelected = selectedCountry === country.name;
-                    return (
-                      <TouchableOpacity
-                        key={country.name}
-                        style={[
-                          styles.countryCard,
-                          isSelected && styles.countryCardSelected,
-                        ]}
-                        onPress={() => setSelectedCountry(country.name)}
-                        activeOpacity={0.8}
-                      >
-                        <Text
-                          style={[
-                            styles.countryName,
-                            isSelected && { color: "#1DB954" },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {country.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
+          {renderTournamentGrid(tournaments)}
+        </>
+      )}
+    </>
+  );
 
-        {selectedCountry && (
-          <>
-            <Text style={styles.subtitle}>Torneos de {selectedCountry}</Text>
-            {renderTournamentGrid(tournaments)}
-          </>
-        )}
-      </>
-    );
-  };
+  /* =========================
+     GRID TORNEOS
+  ========================== */
 
-  const renderTournaments = () => {
+  const renderTournamentGrid = (data: NationalLeague[]) => {
     const rows = [];
-    for (let i = 0; i < filteredTournaments.length; i += 2) {
-      rows.push(filteredTournaments.slice(i, i + 2));
+
+    for (let i = 0; i < data.length; i += 2) {
+      rows.push(data.slice(i, i + 2));
     }
+
     return (
-      <>
-        <TextInput
-          placeholder="Buscar torneo..."
-          placeholderTextColor="#999"
-          value={search}
-          onChangeText={setSearch}
-          style={styles.search}
-        />
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {rows.map((row, index) => (
-            <View key={index} style={styles.tournamentRow}>
-              {row.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.tournamentGridCard}
-                  onPress={() => handleTournament(item.leagueId.toString())}
-                  activeOpacity={0.8}
-                >
-                  <Image
-                    source={{ uri: item.logo }}
-                    style={styles.tournamentGridLogo}
-                  />
-                  <Text style={styles.tournamentGridName} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.tournamentGridConf}>
-                    {item.country?.name || "—"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              {row.length < 2 && (
-                <View style={[styles.tournamentGridCard, { opacity: 0 }]} />
-              )}
-            </View>
-          ))}
-        </ScrollView>
-      </>
+      <View>
+        {rows.map((row, i) => (
+          <View key={i} style={[sx({ row: true, mb: 12 }) as any]}>
+            {row.map((item) => (
+              <Card
+                key={item.leagueId}
+                style={[
+                  {
+                    flex: 1,
+                    marginHorizontal: 4,
+                    paddingVertical: 16,
+                    alignItems: "center",
+                    borderRadius: radius.lg,
+                    backgroundColor: colors.card,
+                  },
+                  shadows.md,
+                ]}
+                onPress={() => handleTournament(item.leagueId.toString())}
+              >
+                <Image
+                  source={{ uri: item.logo }}
+                  style={{ width: 60, height: 60, marginBottom: 8 }}
+                />
+
+                <Text style={[g.body, { textAlign: "center" }]}>
+                  {item.name}
+                </Text>
+
+                <Text style={[g.caption, { color: colors.textSecondary }]}>
+                  {item.country?.name || "—"}
+                </Text>
+              </Card>
+            ))}
+
+            {row.length < 2 && <View style={{ flex: 1 }} />}
+          </View>
+        ))}
+      </View>
     );
   };
 
-  /** ⚽ Partidos en vivo */
+  /* =========================
+     TORNEOS
+  ========================== */
+
+  const renderTournaments = () => (
+    <>
+      {SearchBox("Buscar torneo...")}
+      <ScrollView style={{ marginTop: 12 }}>
+        {renderTournamentGrid(filteredTournaments)}
+      </ScrollView>
+    </>
+  );
+
+  /* =========================
+     PARTIDOS EN VIVO
+  ========================== */
+
   const renderLiveMatches = () => (
     <>
-      <TextInput
-        placeholder="Buscar selección..."
-        placeholderTextColor="#999"
-        value={search}
-        onChangeText={setSearch}
-        style={styles.search}
-      />
+      {SearchBox("Buscar selección...")}
 
       {filteredLive.length === 0 ? (
-        <View style={styles.noMatchesContainer}>
-          <Text style={styles.noMatchesText}>
-            ⚽ No hay partidos de selecciones nacionales en vivo ni programados
-            para hoy.
+        <View style={[sx({ center: true, mt: 40 }) as any]}>
+          <Text style={[g.body, { textAlign: "center" }]}>
+            ⚽ No hay partidos de selecciones nacionales hoy
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ gap: 12 }}>
+        <ScrollView style={{ marginTop: 12 }}>
           {filteredLive.map((m) => (
             <Card
               key={m.fixtureId}
-              style={styles.liveCard}
+              style={[
+                {
+                  padding: 12,
+                  marginBottom: 12,
+                  borderRadius: radius.md,
+                },
+                shadows.sm,
+              ]}
               onPress={() => handleMatch(m.fixtureId.toString())}
             >
-              <View style={styles.liveHeader}>
+              <View style={[sx({ row: true, center: true }) as any]}>
                 <Image
                   source={{ uri: m.league.logo }}
-                  style={styles.leagueLogoSmall}
+                  style={{ width: 18, height: 18, marginRight: 6 }}
                 />
-                <Text style={styles.liveLeague}>{m.league.name}</Text>
+
+                <Text style={g.caption}>{m.league.name}</Text>
               </View>
-              <Divider style={{ marginVertical: 4 }} />
-              <View style={styles.liveTeams}>
+
+              <Divider style={{ marginVertical: 6 }} />
+
+              <View
+                style={[
+                  sx({ row: true, center: true }) as any,
+                  { justifyContent: "space-between" },
+                ]}
+              >
                 <Image
                   source={{ uri: m.teams.home.logo }}
-                  style={styles.liveTeamLogo}
+                  style={{ width: 32, height: 32 }}
                 />
-                <Text style={styles.liveScore}>
+
+                <Text style={g.subtitle}>
                   {m.goals.home} - {m.goals.away}
                 </Text>
+
                 <Image
                   source={{ uri: m.teams.away.logo }}
-                  style={styles.liveTeamLogo}
+                  style={{ width: 32, height: 32 }}
                 />
               </View>
-              <Text style={styles.liveElapsed}>
+
+              <Text
+                style={[
+                  g.caption,
+                  {
+                    textAlign: "center",
+                    marginTop: 4,
+                    color: colors.primary,
+                  },
+                ]}
+              >
                 {m.status?.elapsed ? `${m.status.elapsed}'` : "Por iniciar"}
               </Text>
-              <Text style={styles.liveVenue}>{m.fixture.venue.name}</Text>
+
+              <Text
+                style={[
+                  g.caption,
+                  {
+                    textAlign: "center",
+                    color: colors.textSecondary,
+                  },
+                ]}
+              >
+                {m.fixture.venue.name}
+              </Text>
             </Card>
           ))}
         </ScrollView>
@@ -361,29 +397,45 @@ export default function Countries() {
     </>
   );
 
+  /* =========================
+     UI
+  ========================== */
+
   return (
     <PrivateLayout>
-      <ScrollView style={styles.container}>
-        <Text style={styles.title}>🌍 Selecciones Nacionales</Text>
-        <View style={styles.chipsRow}>
+      <ScrollView style={sx({ p: 16 }) as any}>
+        <Text style={[g.title, { marginBottom: 12 }]}>
+          🌍 Selecciones Nacionales
+        </Text>
+
+        <View style={[sx({ row: true, mb: 12 }) as any]}>
           {[
             { key: "paises", label: "Países" },
             { key: "torneos", label: "Torneos" },
             { key: "vivo", label: "Partidos en Vivo" },
-          ].map((tab) => (
-            <Chip
-              key={tab.key}
-              mode={activeTab === tab.key ? "flat" : "outlined"}
-              style={[
-                styles.chip,
-                activeTab === tab.key && styles.chipSelected,
-              ]}
-              textStyle={{ color: activeTab === tab.key ? "#FFF" : "#000" }}
-              onPress={() => setActiveTab(tab.key as typeof activeTab)}
-            >
-              {tab.label}
-            </Chip>
-          ))}
+          ].map((tab) => {
+            const selected = activeTab === tab.key;
+
+            return (
+              <Chip
+                key={tab.key}
+                mode={selected ? "flat" : "outlined"}
+                style={[
+                  {
+                    marginRight: 8,
+                    borderColor: colors.primary,
+                    backgroundColor: selected ? colors.primary : "transparent",
+                  },
+                ]}
+                textStyle={{
+                  color: selected ? colors.textOnPrimary : colors.textPrimary,
+                }}
+                onPress={() => setActiveTab(tab.key as typeof activeTab)}
+              >
+                {tab.label}
+              </Chip>
+            );
+          })}
         </View>
 
         {activeTab === "paises" && renderCountries()}
@@ -393,111 +445,3 @@ export default function Countries() {
     </PrivateLayout>
   );
 }
-
-/** 🎨 Styles */
-const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#111",
-    fontFamily: "goli",
-    marginBottom: 12,
-  },
-  chipsRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  chip: { borderColor: "#1DB954" },
-  chipSelected: { backgroundColor: "#1DB954" },
-  search: {
-    backgroundColor: "#f1f1f1",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 12,
-    color: "#000",
-  },
-  /** 🌍 Países */
-  countryRows: { flexDirection: "column", gap: 12, paddingBottom: 10 },
-  countryRow: { flexDirection: "row", gap: 10 },
-  countryCard: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    shadowColor: "#444242ff",
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  countryCardSelected: { borderWidth: 2, borderColor: "#1DB954" },
-  flag: { width: 55, height: 35, borderRadius: 6, marginBottom: 4 },
-  countryName: { fontSize: 12, color: "#111", fontWeight: "600" },
-  /** 🏆 Torneos grid */
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#222",
-    marginBottom: 10,
-    marginTop: 10,
-  },
-  tournamentRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  tournamentGridCard: {
-    flex: 1,
-    marginHorizontal: 4,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  tournamentGridLogo: { width: 60, height: 60, marginBottom: 8 },
-  tournamentGridName: {
-    fontWeight: "bold",
-    fontSize: 13,
-    textAlign: "center",
-    color: "#111",
-    marginBottom: 4,
-  },
-  tournamentGridConf: { fontSize: 11, color: "#777", textAlign: "center" },
-  /** ⚽ Partidos en vivo */
-  liveCard: { padding: 12, borderRadius: 12 },
-  liveHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  liveLeague: { fontSize: 12, fontWeight: "500", color: "#333" },
-  leagueLogoSmall: { width: 18, height: 18 },
-  liveTeams: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
-  liveTeamLogo: { width: 32, height: 32, borderRadius: 4 },
-  liveScore: { fontWeight: "bold", fontSize: 16 },
-  liveElapsed: {
-    fontSize: 12,
-    color: "#1DB954",
-    textAlign: "center",
-    marginTop: 4,
-  },
-  liveVenue: { fontSize: 11, textAlign: "center", color: "#666" },
-  noMatchesContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  noMatchesText: {
-    fontSize: 14,
-    color: "#555",
-    textAlign: "center",
-    lineHeight: 20,
-    maxWidth: 280,
-  },
-});

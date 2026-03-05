@@ -1,11 +1,15 @@
 import Loading from "@/components/Loading";
 import { betTypes } from "@/data/betTypes";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 import { BetInfo, RootStackParamList, SelectionBet } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View, ViewStyle } from "react-native";
+import { ScrollView, View, ViewStyle } from "react-native";
 import {
   Avatar,
   Button,
@@ -122,21 +126,24 @@ export default function JoinBetScreen() {
             <Chip
               selected={selectedBet === "LOCAL"}
               onPress={() => setSelectedBet("LOCAL")}
-              style={{ margin: 4 }}
+              style={sx({ m: 4 }) as any}
+              selectedColor={colors.primary}
             >
               {fixture.teams.home.name}
             </Chip>
             <Chip
               selected={selectedBet === "DRAW"}
               onPress={() => setSelectedBet("DRAW")}
-              style={{ margin: 4 }}
+              style={sx({ m: 4 }) as any}
+              selectedColor={colors.primary}
             >
               Empate
             </Chip>
             <Chip
               selected={selectedBet === "AWAY"}
               onPress={() => setSelectedBet("AWAY")}
-              style={{ margin: 4 }}
+              style={sx({ m: 4 }) as any}
+              selectedColor={colors.primary}
             >
               {fixture.teams.away.name}
             </Chip>
@@ -179,14 +186,15 @@ export default function JoinBetScreen() {
               <Chip
                 selected={ouSide === "OVER"}
                 onPress={() => setOuSide("OVER")}
-                style={{ margin: 4 }}
+                style={sx({ m: 4 }) as any}
+                selectedColor={colors.primary}
               >
                 Más (Over)
               </Chip>
               <Chip
                 selected={ouSide === "UNDER"}
                 onPress={() => setOuSide("UNDER")}
-                style={{ margin: 4 }}
+                style={sx({ m: 4 }) as any}
               >
                 Menos (Under)
               </Chip>
@@ -197,7 +205,7 @@ export default function JoinBetScreen() {
                   key={l}
                   selected={ouLine === l}
                   onPress={() => setOuLine(l)}
-                  style={{ margin: 4 }}
+                  selectedColor={colors.primary}
                 >
                   {l.toFixed(1)}
                 </Chip>
@@ -241,7 +249,6 @@ export default function JoinBetScreen() {
     switch (betType) {
       case "RESULT_1X2":
         if (!selectedBet) {
-          console.log("⚠️ Selecciona Local/Empate/Visitante");
           return;
         }
 
@@ -255,7 +262,6 @@ export default function JoinBetScreen() {
         const a = toNumber(exactScore.away);
 
         if (Number.isNaN(h) || Number.isNaN(a)) {
-          console.log("⚠️ Marcador inválido");
           return;
         }
 
@@ -268,7 +274,6 @@ export default function JoinBetScreen() {
 
       case "OVER_UNDER":
         if (!ouSide || ouLine === undefined) {
-          console.log("⚠️ Selecciona lado y línea");
           return;
         }
 
@@ -313,7 +318,15 @@ export default function JoinBetScreen() {
   if (error) {
     return (
       <PrivateLayout>
-        <Card style={{ margin: 16, padding: 20 }}>
+        <Card
+          style={[
+            sx({
+              m: 16,
+              p: 20,
+            }) as any,
+            { borderRadius: radius.lg },
+          ]}
+        >
           <Card.Title title="Error" />
           <Card.Content>
             <Text>{error}</Text>
@@ -334,9 +347,30 @@ export default function JoinBetScreen() {
 
   return (
     <PrivateLayout>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
+      <ScrollView
+        style={
+          sx({
+            flex: 1,
+            bg: colors.background,
+          }) as any
+        }
+        contentContainerStyle={
+          sx({
+            p: 16,
+          }) as any
+        }
+      >
         {!joined ? (
-          <Card style={{ padding: 20, marginBottom: 16 }}>
+          <Card
+            style={[
+              sx({
+                mb: 16,
+                p: 20,
+                bg: colors.card,
+              }) as any,
+              { borderRadius: radius.lg },
+            ]}
+          >
             <Card.Title
               title="Unirse a la mesa"
               subtitle="Ingresa el código de acceso"
@@ -351,8 +385,8 @@ export default function JoinBetScreen() {
               {error && <HelperText type="error">Código incorrecto</HelperText>}
               <Button
                 mode="contained"
-                buttonColor="#1DB954"
-                style={{ marginTop: 16 }}
+                buttonColor={colors.primary}
+                style={sx({ mt: 16 }) as any}
                 onPress={handleValidateCode}
               >
                 Unirse
@@ -363,7 +397,7 @@ export default function JoinBetScreen() {
           <>
             {/* Fixture */}
             <Card
-              style={{ marginBottom: 16 }}
+              style={[sx({ mb: 16 }) as any, { borderRadius: radius.lg }]}
               onPress={() => handleFixture(fixture.fixtureId)}
             >
               <Card.Title
@@ -385,7 +419,14 @@ export default function JoinBetScreen() {
                     />
                     <Text>{fixture.teams.home.name}</Text>
                   </View>
-                  <Text style={{ fontSize: 22, fontWeight: "bold" }}>
+                  <Text
+                    style={[
+                      g.titleLarge,
+                      {
+                        fontWeight: "800",
+                      },
+                    ]}
+                  >
                     {fixture.goals.home} - {fixture.goals.away}
                   </Text>
                   <View style={{ alignItems: "center" }}>
@@ -396,7 +437,7 @@ export default function JoinBetScreen() {
                     <Text>{fixture.teams.away.name}</Text>
                   </View>
                 </View>
-                <Text style={{ marginTop: 8, textAlign: "center" }}>
+                <Text style={[sx({ mt: 8, center: true }) as any]}>
                   Min {fixture.status.elapsed} ({fixture.status.short})
                 </Text>
               </Card.Content>
@@ -429,11 +470,7 @@ export default function JoinBetScreen() {
                         >
                           {filteredBets.map((bet: any) => (
                             <View key={bet.id} style={{ marginBottom: 12 }}>
-                              <Text
-                                style={{ fontWeight: "bold", marginBottom: 6 }}
-                              >
-                                {bet.name}
-                              </Text>
+                              <Text style={[g.subtitle]}>{bet.name}</Text>
                               <View
                                 style={{
                                   flexDirection: "row",
@@ -472,34 +509,36 @@ export default function JoinBetScreen() {
             </Card>
 
             {/* Predictions */}
-            <Card style={{ marginBottom: 16 }}>
+            <Card style={[sx({ mb: 16 }) as any, { borderRadius: radius.lg }]}>
               <Card.Title title="Predicciones" />
               <Card.Content>
                 {pred ? (
                   <>
                     {pred.winner?.name && (
-                      <Text>Favorito: {pred.winner.name}</Text>
+                      <Text style={g.body}>Favorito: {pred.winner.name}</Text>
                     )}
                     {pred.goals?.advice && (
-                      <Text>Consejo: {pred.goals.advice}</Text>
+                      <Text style={g.body}>Consejo: {pred.goals.advice}</Text>
                     )}
                     {pred.win_or_draw !== undefined && (
-                      <Text>
+                      <Text style={g.body}>
                         ¿Empate posible?: {pred.win_or_draw ? "Sí" : "No"}
                       </Text>
                     )}
                     {pred.under_over && (
-                      <Text>Under/Over sugerido: {pred.under_over}</Text>
+                      <Text style={g.body}>
+                        Under/Over sugerido: {pred.under_over}
+                      </Text>
                     )}
                     {pred.percent && (
-                      <Text>
+                      <Text style={g.body}>
                         Probabilidades → Local: {pred.percent.home}% | Empate:{" "}
                         {pred.percent.draw}% | Visitante: {pred.percent.away}%
                       </Text>
                     )}
                   </>
                 ) : (
-                  <Text>Sin predicción disponible</Text>
+                  <Text style={g.body}>Sin predicción disponible</Text>
                 )}
               </Card.Content>
             </Card>
@@ -514,17 +553,21 @@ export default function JoinBetScreen() {
                     .map((match: any, i: number) => (
                       <View
                         key={i}
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginBottom: 6,
-                        }}
+                        style={[
+                          sx({
+                            row: true,
+                            mb: 6,
+                          }) as any,
+                          {
+                            justifyContent: "space-between",
+                          },
+                        ]}
                       >
                         <Text>
                           {match.teams.home.name} {match.goals.home} -{" "}
                           {match.goals.away} {match.teams.away.name}
                         </Text>
-                        <Text style={{ color: "gray" }}>
+                        <Text style={[{ color: colors.textSecondary }]}>
                           {new Date(match.fixture.date).toLocaleDateString()}
                         </Text>
                       </View>
@@ -550,7 +593,15 @@ export default function JoinBetScreen() {
                           marginBottom: 4,
                         }}
                       >
-                        <Text style={{ flex: 1, textTransform: "capitalize" }}>
+                        <Text
+                          style={[
+                            g.body,
+                            {
+                              flex: 1,
+                              textTransform: "capitalize",
+                            },
+                          ]}
+                        >
                           {key}
                         </Text>
                         <Text style={{ flex: 1, textAlign: "center" }}>
@@ -588,7 +639,13 @@ export default function JoinBetScreen() {
             </Card>
 
             {/* Selección */}
-            <Card style={{ marginBottom: 16 }}>
+            <Card
+              style={[
+                {
+                  marginBottom: 16,
+                },
+              ]}
+            >
               <Card.Title title="Elige tu apuesta" />
               <Card.Content>
                 {(() => {
@@ -607,15 +664,50 @@ export default function JoinBetScreen() {
               </Card.Content>
             </Card>
 
-            <View style={styles.oddsBadge}>
-              <Text style={styles.oddsLabel}>Cuota de la apuesta</Text>
-              <Text style={styles.oddsValue}>{bet.stake}</Text>
+            <View
+              style={[
+                sx({
+                  center: true,
+                  py: 10,
+                  px: 18,
+                }) as any,
+                {
+                  borderRadius: radius.xl,
+                  backgroundColor: colors.card,
+                  alignSelf: "center",
+                  elevation: 3,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  g.small,
+                  {
+                    color: colors.secondary,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                  },
+                ]}
+              >
+                Cuota de la apuesta
+              </Text>
+              <Text
+                style={[
+                  g.titleLarge,
+                  {
+                    color: colors.primary,
+                    fontWeight: "800",
+                  },
+                ]}
+              >
+                {bet.stake}
+              </Text>
             </View>
 
             <Button
               mode="contained"
-              buttonColor="#1DB954"
-              style={{ marginVertical: 20 }}
+              buttonColor={colors.primary}
+              style={sx({ mt: 20, mb: 20 }) as any}
               onPress={handleBet}
             >
               Apostar
@@ -626,27 +718,3 @@ export default function JoinBetScreen() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  oddsBadge: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 70,
-  },
-
-  oddsLabel: {
-    fontSize: 10,
-    color: "#aaa",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-
-  oddsValue: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1DB954",
-  },
-});

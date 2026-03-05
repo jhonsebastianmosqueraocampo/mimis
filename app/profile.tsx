@@ -2,6 +2,11 @@ import Loading from "@/components/Loading";
 import NotificationSetting from "@/components/NotificationSettings";
 import ScrollSection from "@/components/ScrollSection";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import { RootStackParamList, swiperItem, SyntheticMatch, User } from "@/types";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
@@ -302,7 +307,7 @@ export default function Profile() {
               source={{
                 uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   safeUser?.nickName || "Usuario",
-                )}&background=1DB954&color=fff`,
+                )}&background=${colors.primary.slice(1)}&color=${colors.textOnPrimary.slice(1)}`,
               }}
             />
 
@@ -331,7 +336,7 @@ export default function Profile() {
 
               <Text
                 variant="titleMedium"
-                style={{ color: "#1DB954", marginTop: 4 }}
+                style={{ color: colors.primary, marginTop: 4 }}
               >
                 {safeUser?.points ?? 0} pts disponibles
               </Text>
@@ -372,7 +377,10 @@ export default function Profile() {
                 key={i}
                 title={b}
                 left={() => (
-                  <List.Icon icon="check-circle-outline" color="#1DB954" />
+                  <List.Icon
+                    icon="check-circle-outline"
+                    color={colors.primary}
+                  />
                 )}
               />
             ))}
@@ -381,7 +389,7 @@ export default function Profile() {
 
         {nextLevelXP && (
           <>
-            <ProgressBar progress={progress} color="#1DB954" />
+            <ProgressBar progress={progress} color={colors.primary} />
             <Text style={{ fontSize: 12, marginTop: 4 }}>
               {xp} / {nextLevelXP} XP para el siguiente nivel
             </Text>
@@ -391,22 +399,24 @@ export default function Profile() {
         {/* --- STATS --- */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={[styles.statIcon, { color: "#1DB954" }]}>🏆</Text>
+            <Text style={[styles.statIcon, { color: colors.primary }]}>🏆</Text>
             <Text style={styles.statValue}>{user?.betsWon}</Text>
             <Text style={styles.statLabel}>Apuestas ganadas</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={[styles.statIcon, { color: "#42A5F5" }]}>📊</Text>
+            <Text style={[styles.statIcon, { color: colors.secondary }]}>
+              📊
+            </Text>
             <Text style={styles.statValue}>{winRate}%</Text>
             <Text style={styles.statLabel}>Winrate</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={[styles.statIcon, { color: "#E53935" }]}>❌</Text>
+            <Text style={[styles.statIcon, { color: colors.error }]}>❌</Text>
             <Text style={styles.statValue}>{user?.betsLost}</Text>
             <Text style={styles.statLabel}>Apuestas perdidas</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={[styles.statIcon, { color: "#FFB300" }]}>💳</Text>
+            <Text style={[styles.statIcon, { color: colors.warning }]}>💳</Text>
             <Text style={styles.statValue}>{user?.redeemed}</Text>
             <Text style={styles.statLabel}>Puntos redimidos</Text>
           </View>
@@ -444,15 +454,37 @@ export default function Profile() {
               <Chip
                 selected={matchFilter === "scheduled"}
                 onPress={() => setMatchFilter("scheduled")}
+                style={{
+                  backgroundColor:
+                    matchFilter === "scheduled"
+                      ? colors.primary
+                      : colors.border,
+                }}
+                textStyle={{
+                  color:
+                    matchFilter === "scheduled"
+                      ? colors.textOnPrimary
+                      : colors.textPrimary,
+                }}
               >
-                📅 Próximos
+                Próximos
               </Chip>
 
               <Chip
                 selected={matchFilter === "finished"}
                 onPress={() => setMatchFilter("finished")}
+                style={{
+                  backgroundColor:
+                    matchFilter === "finished" ? colors.primary : colors.border,
+                }}
+                textStyle={{
+                  color:
+                    matchFilter === "finished"
+                      ? colors.textOnPrimary
+                      : colors.textPrimary,
+                }}
               >
-                ✅ Finalizados
+                Finalizados
               </Chip>
             </ScrollView>
 
@@ -481,7 +513,12 @@ export default function Profile() {
               ))
             )}
 
-            <Button mode="text" onPress={() => setShowModal(true)}>
+            <Button
+              mode="text"
+              onPress={() => setShowModal(true)}
+              style={{ backgroundColor: colors.primary, marginTop: 10 }}
+              textColor={colors.textOnPrimary}
+            >
               Ver todos
             </Button>
           </Card.Content>
@@ -679,95 +716,138 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  headerCard: { marginBottom: 16 },
-  headerContent: { flexDirection: "row", alignItems: "center" },
+  container: {
+    flex: 1,
+    padding: spacing.lg,
+    backgroundColor: colors.background,
+  },
+
+  headerCard: {
+    marginBottom: spacing.lg,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+  },
+
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 16,
+    marginVertical: spacing.lg,
   },
-  statCard: { flex: 1, marginHorizontal: 4, alignItems: "center" },
-  statIcon: { fontSize: 20 },
+
+  statCard: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
+    alignItems: "center",
+  },
+
+  statIcon: {
+    fontSize: 20,
+  },
+
   statValue: {
     textAlign: "center",
-    color: "#1DB954",
+    color: colors.primary,
     fontWeight: "bold",
     fontSize: 18,
-    marginVertical: 4,
+    marginVertical: spacing.xs,
   },
-  section: { marginBottom: 16 },
+
+  section: {
+    marginBottom: spacing.lg,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#333",
+    ...g.subtitle,
+    marginBottom: spacing.sm,
+    color: colors.textPrimary,
   },
-  matchText: { marginVertical: 4, fontSize: 14 },
+
+  matchText: {
+    marginVertical: spacing.xs,
+    ...g.body,
+  },
+
   modal: {
-    backgroundColor: "white",
-    padding: 20,
-    margin: 16,
-    borderRadius: 12,
+    backgroundColor: colors.card,
+    padding: spacing.lg,
+    margin: spacing.lg,
+    borderRadius: radius.lg,
   },
+
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
+    ...g.title,
+    marginBottom: spacing.md,
     textAlign: "center",
   },
+
   actionBtn: {
-    marginVertical: 6,
-    backgroundColor: "#1DB954",
+    marginVertical: spacing.xs,
+    backgroundColor: colors.primary,
   },
-  infoText: { marginVertical: 8, fontSize: 15 },
+
+  infoText: {
+    marginVertical: spacing.sm,
+    ...g.body,
+  },
+
   statBox: {
     flex: 1,
-    marginHorizontal: 6,
-    backgroundColor: "#F9F9F9",
-    borderRadius: 12,
-    paddingVertical: 14,
+    marginHorizontal: spacing.sm,
+    backgroundColor: colors.surfaceVariant,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
+
   statLabel: {
-    fontSize: 12,
-    color: "#666",
+    ...g.small,
     marginTop: 2,
     textAlign: "center",
   },
+
   chipsRow: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
 
   chip: {
-    backgroundColor: "#f4f4f4",
+    backgroundColor: colors.surfaceVariant,
   },
 
   matchRow: {
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
 
   matchTeams: {
-    fontSize: 14,
+    ...g.body,
     fontWeight: "600",
   },
 
   matchMeta: {
-    fontSize: 12,
-    color: "#666",
+    ...g.small,
   },
 
   emptyText: {
     textAlign: "center",
-    color: "#999",
-    marginVertical: 12,
+    color: colors.textSecondary,
+    marginVertical: spacing.md,
   },
 });

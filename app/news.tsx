@@ -2,58 +2,48 @@ import Loading from "@/components/Loading";
 import NewsDetail from "@/components/NewsDetail";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import { NewsItem } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { TextInput } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import PrivateLayout from "./privateLayout";
 
-const GREEN = "#2ecc71";
-
 export default function News() {
   const { getGeneralUsersNews } = useFetch();
+
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    const loadNews = async () => {
-      setLoading(true);
-      try {
-        const { success, userNews, message } = await getGeneralUsersNews();
-        if (!isMounted) return;
 
-        if (success) {
-          setNews(userNews);
-        } else {
-          setError(message!);
-        }
-      } catch (err) {
-        if (isMounted) setError("Error al cargar videos");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+    const load = async () => {
+      setLoading(true);
+
+      const { success, userNews } = await getGeneralUsersNews();
+
+      if (!isMounted) return;
+
+      if (success) setNews(userNews);
+
+      setLoading(false);
     };
 
-    loadNews();
+    load();
+
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Filtrado inteligente
   const filteredNews = useMemo(() => {
     return news.filter((n) => {
       const matchText =
@@ -70,107 +60,137 @@ export default function News() {
   if (loading) {
     return (
       <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
+        visible
+        title="Cargando noticias"
+        subtitle="Buscando información"
       />
-    );
-  }
-
-  if (error) {
-    return (
-      <PrivateLayout>
-        <Text style={{ color: "red", margin: 20 }}>{error}</Text>
-      </PrivateLayout>
     );
   }
 
   return (
     <PrivateLayout>
-      <View style={styles.container}>
-        {/* 🟢 ENCABEZADO */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>📰 Noticias del Fútbol</Text>
-          <Text style={styles.headerSubtitle}>
+      <View style={{ flex: 1, padding: spacing.md }}>
+        {/* HEADER */}
+
+        <View style={{ marginBottom: spacing.md }}>
+          <Text style={[g.title, { color: colors.primary }]}>
+            📰 Noticias del Fútbol
+          </Text>
+
+          <Text style={{ marginTop: 4, opacity: 0.7 }}>
             Últimas novedades de jugadores, equipos y entrenadores
           </Text>
         </View>
 
-        {/* 🔍 BUSCADOR */}
-        <View style={styles.searchBox}>
-          <Icon name="magnify" size={22} color="#555" />
+        {/* BUSCADOR */}
+
+        <View
+          style={[
+            g.card,
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: spacing.sm,
+              marginBottom: spacing.sm,
+            },
+          ]}
+        >
+          <Icon name="magnify" size={22} color={colors.textSecondary} />
 
           <TextInput
             mode="flat"
-            placeholder="Buscar por entidad, jugador o usuario..."
+            placeholder="Buscar jugador, equipo o usuario..."
             value={search}
             onChangeText={setSearch}
-            style={styles.searchInput}
-            textColor="#000"
-            placeholderTextColor="#777"
+            style={{ flex: 1, backgroundColor: "transparent" }}
             underlineColor="transparent"
             activeUnderlineColor="transparent"
           />
         </View>
 
-        {/* 📅 FILTRO POR FECHA */}
+        {/* FILTRO FECHA */}
+
         <TextInput
           mode="outlined"
           placeholder="Filtrar por fecha (YYYY-MM-DD)"
           value={dateFilter}
           onChangeText={setDateFilter}
-          style={styles.dateInput}
-          textColor="#000"
-          placeholderTextColor="#777"
-          outlineColor="#ccc"
-          activeOutlineColor="#2ecc71"
+          outlineColor={colors.border}
+          activeOutlineColor={colors.primary}
+          style={{ marginBottom: spacing.md }}
         />
 
-        <View style={{ marginVertical: 12 }}>
+        <View style={{ marginBottom: spacing.md }}>
           <AdBanner />
         </View>
 
-        {/* 📰 GRID DE NOTICIAS */}
-        <ScrollView contentContainerStyle={styles.grid}>
+        {/* GRID */}
+
+        <ScrollView
+          contentContainerStyle={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            paddingBottom: spacing.xl,
+          }}
+        >
           {filteredNews.map((item, index) => (
             <React.Fragment key={item.id}>
               {index > 0 && index % 6 === 0 && (
-                <View style={{ marginVertical: 12 }}>
+                <View style={{ marginVertical: spacing.md }}>
                   <AdBanner />
                 </View>
               )}
+
               <TouchableOpacity
-                key={item.id}
-                style={styles.card}
                 onPress={() => setSelectedNews(item)}
+                style={{ width: "48%", marginBottom: spacing.md }}
               >
-                <Image
-                  source={{
-                    uri: item.fotoPrincipal,
-                  }}
-                  style={styles.cardImage}
-                />
+                <View
+                  style={[
+                    g.card,
+                    {
+                      borderRadius: radius.lg,
+                      overflow: "hidden",
+                    },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: item.fotoPrincipal }}
+                    style={{
+                      width: "100%",
+                      height: 130,
+                    }}
+                  />
 
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle} numberOfLines={2}>
-                    {item.titulo}
-                  </Text>
+                  <View style={{ padding: spacing.sm }}>
+                    <Text numberOfLines={2} style={{ fontWeight: "700" }}>
+                      {item.titulo}
+                    </Text>
 
-                  <Text style={styles.cardMeta}>
-                    {item.entidad} • {item.user.name}
-                  </Text>
+                    <Text style={{ fontSize: 12, opacity: 0.7 }}>
+                      {item.entidad} • {item.user.name}
+                    </Text>
 
-                  <Text style={styles.cardDate}>{item.fecha}</Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: colors.primary,
+                        marginTop: 3,
+                      }}
+                    >
+                      {item.fecha}
+                    </Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             </React.Fragment>
           ))}
         </ScrollView>
 
-        {/* 📄 MODAL DE NOTICIA COMPLETA */}
         {selectedNews && (
           <NewsDetail
-            visible={!!selectedNews}
+            visible
             news={selectedNews}
             onClose={() => setSelectedNews(null)}
           />
@@ -179,78 +199,3 @@ export default function News() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { padding: 16, flex: 1 },
-
-  header: {
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: GREEN,
-  },
-  headerSubtitle: {
-    color: "#555",
-    fontSize: 14,
-    marginTop: 4,
-  },
-
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-  },
-
-  searchInput: {
-    flex: 1,
-    backgroundColor: "transparent",
-    fontSize: 14,
-  },
-
-  dateInput: {
-    backgroundColor: "#fff",
-    marginBottom: 15,
-  },
-
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    paddingBottom: 50,
-  },
-
-  card: {
-    width: "48%",
-    backgroundColor: "white",
-    borderRadius: 14,
-    marginBottom: 16,
-    overflow: "hidden",
-    elevation: 3,
-  },
-  cardImage: {
-    width: "100%",
-    height: 130,
-  },
-  cardContent: {
-    padding: 10,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 6,
-  },
-  cardMeta: {
-    fontSize: 12,
-    color: "#666",
-  },
-  cardDate: {
-    fontSize: 11,
-    color: GREEN,
-    marginTop: 4,
-  },
-});

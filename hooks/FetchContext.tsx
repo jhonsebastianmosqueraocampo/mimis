@@ -13,6 +13,7 @@ import {
   DayVideo,
   Favorites,
   Fixture,
+  FunFact,
   GroupStanding,
   LeagueB,
   Lineup,
@@ -28,7 +29,6 @@ import {
   PreMatchStats,
   Product,
   Purchase,
-  QuestionQuiz,
   SelectionBet,
   setBet,
   ShortItem,
@@ -58,7 +58,7 @@ import React, {
 } from "react";
 
 // const apiUrl = Constants.expoConfig?.extra?.API_URL;
-const apiUrl = "http://192.168.10.18:3001/api";
+const apiUrl = "http://192.168.10.10:3001/api";
 
 type FetchContextType = {
   getCountries: (isRetry?: boolean) => Promise<{
@@ -868,8 +868,7 @@ type FetchContextType = {
     message?: string;
   }>;
   loadQuiz: (
-    dateKey: string,
-    questions: QuestionQuiz[],
+    formData: FormData,
     isRetry?: boolean,
   ) => Promise<{
     success: boolean;
@@ -888,6 +887,22 @@ type FetchContextType = {
     isRetry?: boolean,
   ) => Promise<{
     quiz: AnswerResponse | null;
+    success: boolean;
+    message?: string;
+  }>;
+  validateQuizReward: (
+    dateKey: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    alreadyClaimed: boolean;
+    success: boolean;
+    message?: string;
+  }>;
+  claimQuizReward: (
+    dateKey: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    alreadyClaimed: boolean;
     success: boolean;
     message?: string;
   }>;
@@ -910,7 +925,7 @@ type FetchContextType = {
     page: number,
     isRetry?: boolean,
   ) => Promise<{
-    list: string[];
+    list: FunFact[];
     hasMore: boolean;
     success: boolean;
     message?: string;
@@ -6852,39 +6867,13 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loadQuiz = async (
-    dateKey: string,
-    questions: QuestionQuiz[],
+    formData: FormData,
     isRetry?: boolean,
   ): Promise<{
     success: boolean;
     message?: string;
   }> => {
     const token = (await AsyncStorage.getItem("accessToken")) || "";
-    const formData = new FormData();
-
-    formData.append("dateKey", dateKey);
-    formData.append("isPublished", "true");
-
-    questions.forEach((q, index) => {
-      formData.append(`questions[${index}][questionText]`, q.questionText);
-
-      formData.append(
-        `questions[${index}][correctIndex]`,
-        String(q.correctIndex),
-      );
-
-      q.options.forEach((opt, i) => {
-        formData.append(`questions[${index}][options][${i}]`, opt);
-      });
-
-      if (q.videoUrl) {
-        formData.append(`videos`, {
-          uri: q.videoUrl.uri,
-          name: q.videoUrl.fileName || `video-${index}.mp4`,
-          type: q.videoUrl.mimeType || "video/mp4",
-        } as any);
-      }
-    });
 
     try {
       const response = await fetch(`${apiUrl}/quiz/admin/day`, {
@@ -6898,7 +6887,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await loadQuiz(dateKey, questions, true);
+          return await loadQuiz(formData, true);
         } catch {
           return { success: false, message: "Iniciar sesión" };
         }
@@ -6989,14 +6978,112 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await response.json();
-
-      if (data.status !== "success") {
+      if (data.statusBack !== "success") {
         return { success: false, message: data.message, quiz: null };
       }
 
       return { success: true, quiz: data.quiz ?? data };
     } catch (error: any) {
       return { success: false, message: error.message, quiz: null };
+    }
+  };
+
+  const validateQuizReward = async (
+    dateKey: string,
+    isRetry?: boolean,
+  ): Promise<{
+    alreadyClaimed: boolean;
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/quiz/validate-reward?dateKey=${dateKey}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        await refreshToken();
+        return await validateQuizReward(dateKey, true);
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          alreadyClaimed: false,
+        };
+      }
+
+      return {
+        success: true,
+        alreadyClaimed: data.alreadyClaimed,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        alreadyClaimed: false,
+      };
+    }
+  };
+
+  const claimQuizReward = async (
+    dateKey: string,
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    alreadyClaimed: boolean;
+    message?: string;
+    pointsEarned?: number;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/quiz/claim-reward`, {
+        method: "POST",
+        headers: {
+          authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ dateKey }),
+      });
+
+      if (response.status === 403 && !isRetry) {
+        await refreshToken();
+        return await claimQuizReward(dateKey, true);
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          alreadyClaimed: false,
+        };
+      }
+
+      return {
+        success: true,
+        alreadyClaimed: data.alreadyClaimed,
+        pointsEarned: data.pointsEarned,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        alreadyClaimed: false,
+      };
     }
   };
 
@@ -7086,7 +7173,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     page: number = 1,
     isRetry?: boolean,
   ): Promise<{
-    list: string[];
+    list: FunFact[];
     hasMore: boolean;
     success: boolean;
     message?: string;
@@ -7128,7 +7215,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
 
       return {
         success: true,
-        list: data.list ?? [],
+        list: data.facts ?? [],
         hasMore: data.hasMore ?? false,
       };
     } catch (error: any) {
@@ -7253,6 +7340,8 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         invitationSyntheticMatch,
         getTodayQuiz,
         answerQuiz,
+        validateQuizReward,
+        claimQuizReward,
         getVideos,
         loadQuiz,
         createFunFact,

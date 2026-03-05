@@ -6,6 +6,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Chip } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import { Fixture, RootStackParamList } from "../types";
+import Loading from "./Loading";
 import NextMatchBanner from "./NextMatchBanner";
 import PastMatchesList from "./PastMatchesList";
 import UpcomingMatchesList from "./UpcomingMatchesList";
@@ -25,14 +26,30 @@ export default function MatchesTeamInfo({ teamId }: MatchesTeamInfoProps) {
   const [previousMatches, setPreviousMatches] = useState<Fixture[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<Fixture[]>([]);
   const [selectedItem, setSelectedItem] = useState(items[0]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
-    getNextMatch();
-    getPreviousMatches();
-    getUpcomingMatches();
+    let isMounted = true;
+
+    const loadAll = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        await Promise.all([getNextMatch(), getPrevAndUpcoming()]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadAll();
+
+    return () => {
+      isMounted = false;
+    };
   }, [teamId]);
 
   const getNextMatch = async () => {
@@ -40,21 +57,31 @@ export default function MatchesTeamInfo({ teamId }: MatchesTeamInfoProps) {
     success ? setNextMatch(fixture) : setError(message!);
   };
 
-  const getPreviousMatches = async () => {
-    const { success, pastFixtures, message } =
+  const getPrevAndUpcoming = async () => {
+    const { success, pastFixtures, upcomingFixtures, message } =
       await getPreviousAndPostTeamMatches(teamId);
-    success ? setPreviousMatches(pastFixtures) : setError(message!);
-  };
 
-  const getUpcomingMatches = async () => {
-    const { success, upcomingFixtures, message } =
-      await getPreviousAndPostTeamMatches(teamId);
-    success ? setUpcomingMatches(upcomingFixtures) : setError(message!);
+    if (success) {
+      setPreviousMatches(pastFixtures || []);
+      setUpcomingMatches(upcomingFixtures || []);
+    } else {
+      setError(message!);
+    }
   };
 
   const actionMatch = (id: string) => {
     navigation.navigate("match", { id });
   };
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <ScrollView>

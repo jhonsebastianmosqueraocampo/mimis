@@ -3,15 +3,18 @@ import NewsForm from "@/components/NewsForm";
 import { useFetch } from "@/hooks/FetchContext";
 import { NewsItem } from "@/types";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import PrivateLayout from "./privateLayout";
 
-const GREEN = "#2ecc71";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
+import { colors } from "@/theme/colors";
 
 export default function AddNews() {
   const { getUsersNews, deleteUsersNews } = useFetch();
+
   const [news, setNews] = useState<NewsItem[]>([]);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [openForm, setOpenForm] = useState(false);
@@ -20,10 +23,13 @@ export default function AddNews() {
 
   useEffect(() => {
     let isMounted = true;
+
     const loadNews = async () => {
       setLoading(true);
+
       try {
         const { success, userNews, message } = await getUsersNews();
+
         if (!isMounted) return;
 
         if (success) {
@@ -31,14 +37,15 @@ export default function AddNews() {
         } else {
           setError(message!);
         }
-      } catch (err) {
-        if (isMounted) setError("Error al cargar videos");
+      } catch {
+        if (isMounted) setError("Error al cargar noticias");
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
     loadNews();
+
     return () => {
       isMounted = false;
     };
@@ -47,13 +54,14 @@ export default function AddNews() {
   const handleDelete = async (id: string) => {
     try {
       const { success, userNews, message } = await deleteUsersNews(id);
+
       if (success) {
         setNews(userNews);
       } else {
         setError(message!);
       }
-    } catch (error) {
-      setError("Hubo un error eliminando la tarea. Inténtelo de nuevo");
+    } catch {
+      setError("Hubo un error eliminando la noticia");
     }
   };
 
@@ -80,63 +88,44 @@ export default function AddNews() {
   if (error) {
     return (
       <PrivateLayout>
-        <Text style={{ color: "red", margin: 20 }}>{error}</Text>
+        <Text style={[g.body, { color: colors.error, marginVertical: 20 } as any]}>
+          {error}
+        </Text>
       </PrivateLayout>
     );
   }
 
   return (
     <PrivateLayout>
-      <View style={{ padding: 16 }}>
+      <View style={g.screen}>
+
         {/* Encabezado */}
-        <Text
-          variant="headlineMedium"
-          style={{
-            marginBottom: 20,
-            fontWeight: "700",
-            textAlign: "center",
-            color: GREEN,
-          }}
-        >
+        <Text style={[g.titleLarge, sx({ mb: 20, center: true, color: colors.primary }) as any]}>
           📰 Noticias creadas
         </Text>
 
         {/* Botón agregar */}
         <Button
           mode="contained"
-          onPress={handleCreate}
           icon="plus"
-          style={{
-            marginBottom: 20,
-            backgroundColor: GREEN,
-            borderRadius: 10,
-            paddingVertical: 6,
-          }}
-          labelStyle={{ fontSize: 16, fontWeight: "600" }}
+          onPress={handleCreate}
+          style={[g.button, sx({ mb: 20 })] as any}
+          labelStyle={g.buttonText}
         >
-          Agregar Noticia
+          Agregar noticia
         </Button>
 
         {/* Listado */}
         <ScrollView showsVerticalScrollIndicator={false}>
+
           {news.map((n) => (
-            <Card
-              key={n.id}
-              mode="elevated"
-              style={{
-                marginBottom: 16,
-                borderRadius: 15,
-                padding: 12,
-                backgroundColor: "#fff",
-                elevation: 3,
-              }}
-            >
-              <View style={{ flexDirection: "row" }}>
-                {/* Miniatura */}
+            <Card key={n.id} style={[g.card, sx({ mb: 16 })] as any}>
+
+              <View style={g.row}>
+
+                {/* Imagen */}
                 <Image
-                  source={{
-                    uri: n.fotoPrincipal,
-                  }}
+                  source={{ uri: n.fotoPrincipal }}
                   style={{
                     width: 70,
                     height: 70,
@@ -147,44 +136,46 @@ export default function AddNews() {
 
                 {/* Info */}
                 <View style={{ flex: 1, justifyContent: "center" }}>
-                  <Text
-                    variant="titleMedium"
-                    style={{ fontWeight: "bold", marginBottom: 4 }}
-                  >
+
+                  <Text style={g.subtitle}>
                     {n.titulo}
                   </Text>
-                  <Text
-                    style={{
-                      color: "#888",
-                      fontSize: 13,
-                    }}
-                  >
+
+                  <Text style={[g.small, sx({ mt: 4 })] as any}>
                     Entidad: {n.entidad}
                   </Text>
+
                 </View>
 
                 {/* Acciones */}
-                <View
-                  style={{
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 14,
-                  }}
-                >
+                <View style={[sx({ center: true }) as any, { gap: 14 }]}>
+
                   <TouchableOpacity onPress={() => handleEdit(n)}>
-                    <Icon name="pencil" size={26} color={GREEN} />
+                    <Icon
+                      name="pencil"
+                      size={24}
+                      color={colors.primary}
+                    />
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => handleDelete(n.id!)}>
-                    <Icon name="trash-can-outline" size={26} color="#ff4d4d" />
+                    <Icon
+                      name="trash-can-outline"
+                      size={24}
+                      color={colors.error}
+                    />
                   </TouchableOpacity>
+
                 </View>
+
               </View>
+
             </Card>
           ))}
+
         </ScrollView>
 
-        {/* Modal Form */}
+        {/* Modal */}
         {openForm && (
           <NewsForm
             visible={openForm}
@@ -193,6 +184,7 @@ export default function AddNews() {
             setNews={setNews}
           />
         )}
+
       </View>
     </PrivateLayout>
   );

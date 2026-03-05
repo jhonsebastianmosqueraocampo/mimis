@@ -1531,6 +1531,7 @@ export type WeeklyGoalVideo = {
 export type WeeklyWorldTopVideo = {
   id: string;
   week: string;
+  leagueName: string;
   thumbail: string;
   video: string;
 };
@@ -1850,4 +1851,9 @@ export type QuestionQuiz = {
   questionText: string;
   options: string[];
   correctIndex: number;
+};
+
+export type FunFact = {
+  text: string;
+  createdAt: string;
 };

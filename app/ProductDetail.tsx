@@ -1,9 +1,12 @@
 import { useStore } from "@/hooks/storeContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
 import { RootStackParamList } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 import { Button, Divider, IconButton, Menu, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
@@ -18,7 +21,6 @@ export default function ProductDetail() {
 
   const { addToStore } = useStore();
 
-  /* -------------------- VARIANTE (COLOR) -------------------- */
   const [selectedColor, setSelectedColor] = useState(
     product.variants?.[0]?.color ?? "",
   );
@@ -31,8 +33,6 @@ export default function ProductDetail() {
     );
   }, [product.variants, selectedColor]);
 
-  /* -------------------- TALLAS "UNIFICADAS" -------------------- */
-  // Para cada talla, escogemos el cfg con stock y menor precio (puedes cambiar la regla).
   const sizeOptions = useMemo(() => {
     const cfgs = (variant?.storeConfigs ?? []).filter(
       (c) => (c.stock ?? 0) > 0,
@@ -45,9 +45,10 @@ export default function ProductDetail() {
         map.set(c.size, c);
         continue;
       }
-      // regla: elegir el más barato; si empatan, el de más stock
+
       const prevPrice = Number(prev.price ?? 0);
       const currPrice = Number(c.price ?? 0);
+
       if (currPrice < prevPrice) map.set(c.size, c);
       else if (currPrice === prevPrice && (c.stock ?? 0) > (prev.stock ?? 0))
         map.set(c.size, c);
@@ -62,19 +63,17 @@ export default function ProductDetail() {
     sizeOptions?.[0]?.size ?? "",
   );
 
-  // Cuando cambia el color (variant), recalcula talla por defecto válida
   useEffect(() => {
     const first = sizeOptions?.[0]?.size ?? "";
     setSelectedSize(first);
     setQuantity(1);
     setImageIndex(0);
-  }, [selectedColor]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedColor]);
 
   const cfgSelected = useMemo(() => {
     return sizeOptions.find((s) => s.size === selectedSize);
   }, [sizeOptions, selectedSize]);
 
-  /* -------------------- IMÁGENES -------------------- */
   const [imageIndex, setImageIndex] = useState(0);
   const images = variant?.images ?? [];
   const image = images[imageIndex];
@@ -96,26 +95,23 @@ export default function ProductDetail() {
     }
   };
 
-  /* -------------------- CANTIDAD -------------------- */
   const maxStock = cfgSelected?.stock ?? 0;
   const [quantity, setQuantity] = useState(1);
 
-  // si cambia maxStock o selectedSize, asegurar cantidad válida
   useEffect(() => {
     if (quantity > maxStock && maxStock > 0) setQuantity(maxStock);
     if (maxStock === 0) setQuantity(1);
-  }, [maxStock]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [maxStock]);
 
   const increment = () => setQuantity((q) => Math.min(q + 1, maxStock || 1));
   const decrement = () => setQuantity((q) => Math.max(q - 1, 1));
 
-  /* -------------------- AGREGAR AL CARRITO -------------------- */
   const handleAddToCart = () => {
-    if (!cfgSelected) return; // no hay talla válida
+    if (!cfgSelected) return;
+
     const storeId = String(cfgSelected.storeId);
     const price = Number(cfgSelected.price ?? 0);
 
-    // id único estable
     const cartId = `${product.id}-${selectedColor}-${selectedSize}-${storeId}`;
 
     addToStore({
@@ -126,8 +122,6 @@ export default function ProductDetail() {
       image: image,
       category: product.category,
       color: selectedColor,
-      // si tu model ya trae colorHex, pásalo aquí (si no, omítelo)
-      //colorHex: variant.colorHex,
       size: selectedSize,
       price,
       quantity,
@@ -141,77 +135,104 @@ export default function ProductDetail() {
 
   return (
     <PrivateLayout>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* ================= COLORES + TALLA ================= */}
-        <View style={styles.variantRow}>
-          <View style={styles.colors}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingBottom: spacing.xl,
+        }}
+      >
+        {/* VARIANTES */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: spacing.lg,
+          }}
+        >
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {product.variants.map((v) => {
               const isSelected = v.color === selectedColor;
 
               return (
                 <View
                   key={v.color}
-                  style={[
-                    styles.colorCircle,
-                    {
-                      backgroundColor: (v.color || "#ccc") as string,
-                      borderColor: isSelected ? "#1DB954" : "#ddd",
-                      borderWidth: isSelected ? 2 : 1,
-                    },
-                  ]}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    marginRight: spacing.sm,
+                    backgroundColor: (v.color || "#ccc") as string,
+                    borderColor: isSelected ? colors.primary : "#ddd",
+                    borderWidth: isSelected ? 2 : 1,
+                  }}
                   onTouchEnd={() => setSelectedColor(v.color)}
                 />
               );
             })}
           </View>
 
-          <View style={styles.sizeSelector}>
-            <Menu
-              visible={sizeMenuVisible}
-              onDismiss={() => setSizeMenuVisible(false)}
-              anchor={
-                <Button
-                  mode="outlined"
-                  onPress={() => setSizeMenuVisible(true)}
-                  style={styles.selectButton}
-                  contentStyle={{ justifyContent: "space-between" }}
-                  icon="chevron-down"
-                >
-                  {selectedSize || "Seleccionar"}
-                </Button>
-              }
-            >
-              {sizeOptions.map((s) => (
-                <Menu.Item
-                  key={`${s.size}-${String(s.storeId)}`}
-                  onPress={() => {
-                    setSelectedSize(s.size);
-                    setQuantity(1);
-                    setSizeMenuVisible(false);
-                  }}
-                  title={`${s.size}   •   ${Number(s.price).toLocaleString()} pts`}
-                />
-              ))}
-            </Menu>
-          </View>
+          <Menu
+            visible={sizeMenuVisible}
+            onDismiss={() => setSizeMenuVisible(false)}
+            anchor={
+              <Button
+                mode="outlined"
+                onPress={() => setSizeMenuVisible(true)}
+                style={{ borderRadius: radius.md }}
+                icon="chevron-down"
+              >
+                {selectedSize || "Seleccionar"}
+              </Button>
+            }
+          >
+            {sizeOptions.map((s) => (
+              <Menu.Item
+                key={`${s.size}-${String(s.storeId)}`}
+                onPress={() => {
+                  setSelectedSize(s.size);
+                  setQuantity(1);
+                  setSizeMenuVisible(false);
+                }}
+                title={`${s.size} • ${Number(s.price).toLocaleString()} pts`}
+              />
+            ))}
+          </Menu>
         </View>
 
-        {/* ================= IMAGEN ================= */}
-        <View style={styles.imageWrapper}>
+        {/* IMAGEN */}
+        <View
+          style={{
+            position: "relative",
+            alignItems: "center",
+            marginBottom: spacing.xl,
+            backgroundColor: colors.surfaceVariant,
+            borderRadius: radius.lg,
+            padding: spacing.md,
+          }}
+        >
           {totalImages > 1 && imageIndex > 0 && (
             <IconButton
               icon="chevron-left"
               size={28}
               onPress={goPrev}
-              style={styles.arrowLeft}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: "45%",
+                zIndex: 2,
+              }}
             />
           )}
 
           <Image
-            source={{
-              uri: image,
+            source={{ uri: image }}
+            style={{
+              width: "100%",
+              height: 280,
+              borderRadius: radius.lg,
+              resizeMode: "contain",
+              backgroundColor: colors.surfaceVariant,
             }}
-            style={styles.image}
           />
 
           {totalImages > 1 && imageIndex < totalImages - 1 && (
@@ -219,26 +240,59 @@ export default function ProductDetail() {
               icon="chevron-right"
               size={28}
               onPress={goNext}
-              style={styles.arrowRight}
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "45%",
+                zIndex: 2,
+              }}
             />
           )}
         </View>
 
-        {/* ================= INFO ================= */}
-        <Text variant="headlineSmall" style={styles.title}>
+        {/* INFO */}
+        <Text
+          variant="headlineSmall"
+          style={{ fontWeight: "700", marginBottom: spacing.xs }}
+        >
           {product.name}
         </Text>
-        <Text style={styles.price}>
+
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: "700",
+            color: colors.primary,
+            marginTop: spacing.xs,
+          }}
+        >
           {Number(cfgSelected?.price ?? 0).toLocaleString()} pts
         </Text>
-        <Text style={styles.category}>{product.category}</Text>
-        <Text style={styles.description}>{product.description}</Text>
 
-        <Divider style={{ marginVertical: 20 }} />
+        <Text style={{ color: colors.textSecondary, marginBottom: spacing.sm }}>
+          {product.category}
+        </Text>
 
-        {/* ================= PANEL PEDIDO ================= */}
+        <Text style={{ lineHeight: 20, color: colors.text }}>
+          {product.description}
+        </Text>
+
+        <Divider style={{ marginVertical: spacing.xl }} />
+
+        {/* CANTIDAD */}
         <Text variant="titleMedium">Cantidad</Text>
-        <View style={styles.qtyRow}>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: spacing.md,
+            backgroundColor: colors.surfaceVariant,
+            borderRadius: radius.md,
+            paddingHorizontal: spacing.sm,
+          }}
+        >
           <IconButton
             icon="minus"
             onPress={decrement}
@@ -252,9 +306,13 @@ export default function ProductDetail() {
           />
         </View>
 
-        {/* (Opcional) Info rápida */}
         {cfgSelected && (
-          <Text style={{ opacity: 0.7, marginTop: 6 }}>
+          <Text
+            style={{
+              opacity: 0.7,
+              marginTop: spacing.sm,
+            }}
+          >
             Stock disponible: {maxStock} · Precio:{" "}
             {Number(cfgSelected.price ?? 0).toLocaleString()} pts
           </Text>
@@ -264,9 +322,12 @@ export default function ProductDetail() {
           mode="contained"
           onPress={handleAddToCart}
           disabled={disableAdd}
-          buttonColor="#1DB954"
-          style={{ marginTop: 24, borderRadius: 12 }}
-          contentStyle={{ paddingVertical: 6 }}
+          buttonColor={colors.primary}
+          style={{
+            marginTop: spacing.xl,
+            borderRadius: radius.lg,
+          }}
+          contentStyle={{ paddingVertical: spacing.xs }}
         >
           Agregar al carrito
         </Button>
@@ -274,77 +335,3 @@ export default function ProductDetail() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 40 },
-  variantRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  colors: { flexDirection: "row", flexWrap: "wrap" },
-  sizeSelector: { flexDirection: "row", flexWrap: "wrap" },
-  imageWrapper: {
-    position: "relative",
-    alignItems: "center",
-    marginBottom: 24,
-    backgroundColor: "#f7f7f7",
-    borderRadius: 16,
-    padding: 12,
-  },
-  image: {
-    width: "100%",
-    height: 280,
-    borderRadius: 16,
-    resizeMode: "contain",
-    backgroundColor: "#f7f7f7",
-  },
-  arrowLeft: { position: "absolute", left: 0, top: "45%", zIndex: 2 },
-  arrowRight: { position: "absolute", right: 0, top: "45%", zIndex: 2 },
-  title: { fontWeight: "700", marginBottom: 4 },
-  category: { color: "#666", marginBottom: 10 },
-  description: { lineHeight: 20, color: "#444" },
-  qtyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    backgroundColor: "#f7f7f7",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-  },
-  colorCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginRight: 10,
-  },
-  sizeChip: {
-    marginRight: 8,
-    marginBottom: 8,
-    borderRadius: 8,
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1DB954",
-    marginTop: 4,
-  },
-
-  selectLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 6,
-    opacity: 0.6,
-  },
-
-  selectButton: {
-    borderRadius: 10,
-  },
-
-  stockIndicator: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: "500",
-  },
-});

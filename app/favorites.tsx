@@ -3,7 +3,7 @@ import { useFetch } from "@/hooks/FetchContext";
 import * as Notifications from "expo-notifications";
 import { useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
 import { Button, Card, Divider, Modal, Portal, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import Icon from "react-native-vector-icons/MaterialIcons";
@@ -25,26 +25,44 @@ import {
   Subscription,
 } from "expo-notifications";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true, // Para mostrar alerta en iOS/Android
-    shouldShowBanner: true, // Mostrar banner en iOS (nuevo)
-    shouldShowList: true, // Aparece en el centro de notificaciones
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 
-export default function favorites() {
+export default function Favorites() {
   const { registerNotificationToken, saveFavorites, getFavorites } = useFetch();
   const { addNotification } = useInside();
+
   const notificationListener = useRef<Subscription | null>(null);
   const responseListener = useRef<Subscription | null>(null);
+
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const [equipos, setEquipos] = useState<swiperItem[]>([]);
+  const [jugadores, setJugadores] = useState<swiperItem[]>([]);
+  const [ligas, setLigas] = useState<swiperItem[]>([]);
+  const [entrenadores, setEntrenadores] = useState<swiperItem[]>([]);
+
+  const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [favoritosEditados, setFavoritosEditados] = useState({
+    jugadores: [] as swiperItem[],
+    equipos: [] as swiperItem[],
+    ligas: [] as swiperItem[],
+    entrenadores: [] as swiperItem[],
+  });
+
+  /* =============================
+     PUSH NOTIFICATIONS
+  ============================= */
 
   const startNotification = async () => {
     await registerPushToken(registerNotificationToken);
 
-    // Listener cuando app está en foreground
     notificationListener.current =
       Notifications.addNotificationReceivedListener(
         (notification: Notification) => {
@@ -60,78 +78,52 @@ export default function favorites() {
         },
       );
 
-    // Listener cuando usuario toca la notificación
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener(
         (response: NotificationResponse) => {
           console.log("👉 Notificación tocada:", response);
         },
       );
-
-    return () => {
-      if (notificationListener.current)
-        Notifications.removeNotificationSubscription(
-          notificationListener.current,
-        );
-      if (responseListener.current)
-        Notifications.removeNotificationSubscription(responseListener.current);
-    };
   };
 
   useEffect(() => {
     Notifications.setNotificationChannelAsync("default", {
       name: "default",
       importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
     });
+
     startNotification();
   }, []);
 
-  const [equipos, setEquipos] = useState<swiperItem[]>([]);
-  const [jugadores, setJugadores] = useState<swiperItem[]>([]);
-  const [ligas, setLigas] = useState<swiperItem[]>([]);
-  const [entrenadores, setEntrenadores] = useState<swiperItem[]>([]);
-  const [visible, setVisible] = useState(false);
-  const [favoritosEditados, setFavoritosEditados] = useState({
-    jugadores: [...jugadores],
-    equipos: [...equipos],
-    ligas: [...ligas],
-    entrenadores: [...entrenadores],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  /* =============================
+     CARGAR FAVORITOS
+  ============================= */
 
   useEffect(() => {
-    let isMounted = true;
-    const getFavoriteList = async () => {
-      setLoading(true);
-      try {
-        const { success, teams, players, coaches, leagues, message } =
-          await getFavorites();
-        if (!isMounted) return;
+    let mounted = true;
 
-        if (success) {
-          setEquipos(teams);
-          setJugadores(players);
-          setLigas(leagues);
-          setEntrenadores(coaches);
-        } else {
-          setError(message!);
-        }
-      } catch (err) {
-        if (isMounted) setError("Error al cargar trayectoria del jugador");
-      } finally {
-        if (isMounted) setLoading(false);
+    const loadFavorites = async () => {
+      setLoading(true);
+
+      const { success, teams, players, coaches, leagues } =
+        await getFavorites();
+
+      if (!mounted) return;
+
+      if (success) {
+        setEquipos(teams);
+        setJugadores(players);
+        setLigas(leagues);
+        setEntrenadores(coaches);
       }
+
+      setLoading(false);
     };
 
-    getFavoriteList();
+    loadFavorites();
 
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 
@@ -145,32 +137,15 @@ export default function favorites() {
     );
   }
 
-  const getFavoriteList = async () => {
-    const data = await getFavorites();
-    if (data.success) {
-      const { teams, players, coaches, leagues } = data;
-      setEquipos(teams);
-      setJugadores(players);
-      setLigas(leagues);
-      setEntrenadores(coaches);
-    }
-  };
+  /* =============================
+     ACCIONES
+  ============================= */
 
-  const actionTeams = (id: string) => {
-    navigation.navigate("team", { id });
-  };
-
-  const actionTournaments = (id: string) => {
+  const actionTeams = (id: string) => navigation.navigate("team", { id });
+  const actionPlayers = (id: string) => navigation.navigate("player", { id });
+  const actionCoaches = (id: string) => navigation.navigate("coach", { id });
+  const actionLeagues = (id: string) =>
     navigation.navigate("tournament", { id });
-  };
-
-  const actionPlayeres = (id: string) => {
-    navigation.navigate("player", { id });
-  };
-
-  const actionCoaches = (id: string) => {
-    navigation.navigate("coach", { id });
-  };
 
   const showModal = () => {
     setFavoritosEditados({
@@ -179,52 +154,30 @@ export default function favorites() {
       ligas: [...ligas],
       entrenadores: [...entrenadores],
     });
+
     setVisible(true);
   };
 
-  const hideModal = () => {
-    setVisible(false);
-    setFavoritosEditados({
-      jugadores: [...jugadores],
-      equipos: [...equipos],
-      ligas: [...ligas],
-      entrenadores: [...entrenadores],
-    });
-  };
-
-  const removeItem = (
-    key: keyof typeof favoritosEditados,
-    id: swiperItem["id"],
-  ) => {
+  const removeItem = (key: keyof typeof favoritosEditados, id: string) => {
     setFavoritosEditados((prev) => ({
       ...prev,
-      [key]: prev[key].filter((item: any) => item.id !== id),
+      [key]: prev[key].filter((item) => item.id !== id),
     }));
   };
 
   const handleGuardar = async () => {
-    const favoritos = getFavoritosFromEditados(favoritosEditados);
+    const favoritos: Favorites = {
+      equipos: favoritosEditados.equipos.map((e) => e.title),
+      ligas: favoritosEditados.ligas.map((e) => e.title),
+      jugadores: favoritosEditados.jugadores.map((e) => e.title),
+      entrenadores: favoritosEditados.entrenadores.map((e) => e.title),
+    };
 
-    const response = await saveFavorites(favoritos);
+    const res = await saveFavorites(favoritos);
 
-    if (response.success) {
-      await getFavoriteList();
+    if (res.success) {
       setVisible(false);
-    } else {
     }
-  };
-
-  const getFavoritosFromEditados = (
-    editados: typeof favoritosEditados,
-  ): Favorites => ({
-    equipos: editados.equipos.map((e) => e.title),
-    entrenadores: editados.entrenadores.map((e) => e.title),
-    ligas: editados.ligas.map((e) => e.title),
-    jugadores: editados.jugadores.map((e) => e.title),
-  });
-
-  const handleCancelar = () => {
-    hideModal();
   };
 
   const handleAdd = () => {
@@ -234,21 +187,26 @@ export default function favorites() {
 
   return (
     <PrivateLayout>
-      <Icon
-        onPress={handleAdd}
-        name="add"
-        size={30}
-        color="#1DB954"
-        style={{ position: "absolute", top: 3, right: 50 }}
-      />
-      <Icon
-        onPress={showModal}
-        name="settings"
-        size={30}
-        color="#1DB954"
-        style={{ position: "absolute", top: 3, right: 5 }}
-      />
-      {equipos && equipos.length > 0 && (
+      {/* ICONOS SUPERIORES */}
+      <View
+        style={[
+          sx({ row: true }) as any,
+          { position: "absolute", right: 10, top: 5 },
+        ]}
+      >
+        <Icon name="add" size={28} color={colors.primary} onPress={handleAdd} />
+
+        <Icon
+          name="settings"
+          size={28}
+          color={colors.primary}
+          style={{ marginLeft: 16 }}
+          onPress={showModal}
+        />
+      </View>
+
+      {/* SECCIONES */}
+      {equipos.length > 0 && (
         <ScrollSection
           title="Mis Equipos seguidos"
           list={equipos}
@@ -256,17 +214,21 @@ export default function favorites() {
           action={actionTeams}
         />
       )}
+
       <Divider />
-      {jugadores && jugadores.length > 0 && (
+
+      {jugadores.length > 0 && (
         <ScrollSection
           title="Mis Jugadores seguidos"
           list={jugadores}
           shape="circle"
-          action={actionPlayeres}
+          action={actionPlayers}
         />
       )}
+
       <Divider />
-      {entrenadores && entrenadores.length > 0 && (
+
+      {entrenadores.length > 0 && (
         <ScrollSection
           title="Mis Entrenadores seguidos"
           list={entrenadores}
@@ -274,158 +236,104 @@ export default function favorites() {
           action={actionCoaches}
         />
       )}
+
       <Divider />
-      {ligas && ligas.length > 0 && (
+
+      {ligas.length > 0 && (
         <ScrollSection
           title="Ligas seguidas"
           list={ligas}
           shape="circle"
-          action={actionTournaments}
+          action={actionLeagues}
         />
       )}
-      <Divider />
-      {equipos && equipos.length > 0 && (
-        <ScrollSection
-          title="Equipos más buscados"
-          list={equipos}
-          shape="circle"
-          action={actionTeams}
-        />
-      )}
-      <Divider />
-      {jugadores && jugadores.length > 0 && (
-        <ScrollSection
-          title="Jugadores más buscados"
-          list={jugadores}
-          shape="circle"
-          action={actionPlayeres}
-        />
-      )}
-      <Divider />
-      {jugadores && jugadores.length > 0 && (
-        <ScrollSection
-          title="Jugadores con mejores estadísticas"
-          list={jugadores}
-          shape="circle"
-          action={actionPlayeres}
-        />
-      )}
+
+      {/* =============================
+         MODAL CONFIGURACIÓN
+      ============================= */}
+
       <Portal>
         <Modal
           visible={visible}
-          onDismiss={hideModal}
-          contentContainerStyle={styles.modalContainer}
+          onDismiss={() => setVisible(false)}
+          contentContainerStyle={{
+            backgroundColor: colors.card,
+            margin: 20,
+            borderRadius: radius.lg,
+            padding: 16,
+          }}
         >
-          <Card style={styles.card}>
+          <Card style={[shadows.sm]}>
             <Card.Content>
-              <Text style={styles.title}>Configura tus favoritos</Text>
+              <Text
+                style={[g.subtitle, { textAlign: "center", marginBottom: 12 }]}
+              >
+                Configura tus favoritos
+              </Text>
 
-              <ScrollView style={styles.scrollContent}>
-                <Text style={styles.item}>- Equipos favoritos</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.horizontalList}
-                >
-                  {favoritosEditados.equipos.map((equipo, index) => (
-                    <View key={index} style={styles.playerCard}>
-                      <Text style={styles.playerName}>{equipo.title}</Text>
-                      <TouchableOpacity
-                        onPress={() => removeItem("equipos", equipo.id)}
-                        style={styles.removeBtn}
-                      >
-                        <Icon name="close" size={16} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </ScrollView>
+              <ScrollView style={{ maxHeight: 400 }}>
+                {Object.entries(favoritosEditados).map(([key, list]) => (
+                  <View key={key} style={{ marginBottom: 16 }}>
+                    <Text style={[g.body, { marginBottom: 6 }]}>
+                      {key.toUpperCase()}
+                    </Text>
 
-                <Text style={styles.item}>- Ligas favoritas</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.horizontalList}
-                >
-                  {favoritosEditados.ligas.map((liga, index) => (
-                    <View key={index} style={styles.playerCard}>
-                      <Text style={styles.playerName}>{liga.title}</Text>
-                      <TouchableOpacity
-                        onPress={() => removeItem("ligas", liga.id)}
-                        style={styles.removeBtn}
-                      >
-                        <Icon name="close" size={16} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </ScrollView>
-                <Text style={styles.item}>- Jugadores favoritos</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.horizontalList}
-                >
-                  {favoritosEditados.jugadores.map((jugador, index) => (
-                    <View key={index} style={styles.playerCard}>
-                      <Text style={styles.playerName}>{jugador.title}</Text>
-                      <TouchableOpacity
-                        onPress={() => removeItem("jugadores", jugador.id)}
-                        style={styles.removeBtn}
-                      >
-                        <Icon name="close" size={16} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </ScrollView>
-                <Text style={styles.item}>- Entrenadores favoritos</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.horizontalList}
-                >
-                  {favoritosEditados.entrenadores.map((entrenador, index) => (
-                    <View key={index} style={styles.playerCard}>
-                      <Text style={styles.playerName}>{entrenador.title}</Text>
-                      <TouchableOpacity
-                        onPress={() =>
-                          removeItem("entrenadores", entrenador.id)
-                        }
-                        style={styles.removeBtn}
-                      >
-                        <Icon name="close" size={16} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </ScrollView>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      {list.map((item, index) => (
+                        <View
+                          key={index}
+                          style={[
+                            sx({ row: true, center: true }) as any,
+                            {
+                              backgroundColor: colors.background,
+                              borderRadius: radius.md,
+                              padding: 8,
+                              marginRight: 8,
+                            },
+                          ]}
+                        >
+                          <Text style={g.caption}>{item.title}</Text>
+
+                          <TouchableOpacity
+                            onPress={() => removeItem(key as any, item.id)}
+                          >
+                            <Icon name="close" size={16} color={colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  </View>
+                ))}
               </ScrollView>
 
-              {/* Botones al final */}
-              <View style={{ gap: 12 }}>
-                <View style={styles.singleButtonRow}>
-                  <Button
-                    mode="outlined"
-                    onPress={handleAdd}
-                    style={styles.button}
-                  >
-                    Agregar Favoritos
-                  </Button>
-                </View>
+              {/* BOTONES */}
+              <Button
+                mode="outlined"
+                onPress={handleAdd}
+                style={{ marginBottom: 10 }}
+              >
+                Agregar favoritos
+              </Button>
 
-                <View style={styles.doubleButtonRow}>
-                  <Button
-                    mode="contained"
-                    onPress={handleGuardar}
-                    style={[styles.button, { flex: 1 }]}
-                  >
-                    Guardar
-                  </Button>
-                  <Button
-                    mode="outlined"
-                    onPress={handleCancelar}
-                    style={[styles.button, { flex: 1 }]}
-                  >
-                    Cancelar
-                  </Button>
-                </View>
+              <View style={[sx({ row: true }) as any]}>
+                <Button
+                  mode="contained"
+                  onPress={handleGuardar}
+                  style={{ flex: 1, marginRight: 8 }}
+                >
+                  Guardar
+                </Button>
+
+                <Button
+                  mode="outlined"
+                  onPress={() => setVisible(false)}
+                  style={{ flex: 1 }}
+                >
+                  Cancelar
+                </Button>
               </View>
             </Card.Content>
           </Card>
@@ -434,76 +342,3 @@ export default function favorites() {
     </PrivateLayout>
   );
 }
-const styles = StyleSheet.create({
-  modalContainer: {
-    margin: 20,
-    borderRadius: 12,
-    backgroundColor: "#fff",
-    maxHeight: "90%", // limita el alto para permitir scroll
-  },
-  card: {
-    borderRadius: 12,
-    elevation: 4,
-    paddingVertical: 10,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  scrollContent: {
-    maxHeight: 400,
-  },
-  item: {
-    fontSize: 16,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  horizontalList: {
-    marginBottom: 16,
-  },
-  playerCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#eee",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 10,
-    minWidth: 120,
-  },
-  playerName: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  removeBtn: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: "red",
-    borderRadius: 10,
-    padding: 2,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 16,
-  },
-  button: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  singleButtonRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-
-  doubleButtonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12, // si usas React Native >= 0.71 o un polyfill
-  },
-});

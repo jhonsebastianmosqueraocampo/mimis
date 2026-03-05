@@ -5,12 +5,16 @@ import VerticalScroll from "@/components/VerticalScroll";
 import { useFetch } from "@/hooks/FetchContext";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Chip, Text } from "react-native-paper";
 import AvatarCard from "../components/AvatarCard";
 import type { CoachStats, RootStackParamList, swiperItem } from "../types";
 import PrivateLayout from "./privateLayout";
+
+import { colors } from "@/theme/colors";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 
 const items = [
   { id: "1", name: "Información Personal" },
@@ -22,11 +26,14 @@ type PlayerScreenRouteProp = RouteProp<RootStackParamList, "coach">;
 
 export default function Coach() {
   const { getCoachInfo, getCoachNews } = useFetch();
+
   const [coach, setCoach] = useState<CoachStats>();
   const [coachNew, setCoachNews] = useState<swiperItem[]>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [selectedItem, setSelectedItem] = useState(items[0]);
+
   const route = useRoute<PlayerScreenRouteProp>();
   const { id } = route.params;
 
@@ -35,8 +42,10 @@ export default function Coach() {
 
     const getCoach = async () => {
       setLoading(true);
+
       try {
         const season = 0;
+
         const { success, coach, message } = await getCoachInfo(id, season);
 
         if (!isMounted) return;
@@ -47,7 +56,7 @@ export default function Coach() {
           setError(message!);
         }
       } catch (err) {
-        if (isMounted) setError("Error al cargar trayectoria del jugador");
+        if (isMounted) setError("Error al cargar información del entrenador");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -55,6 +64,7 @@ export default function Coach() {
 
     const coachNews = async () => {
       setLoading(true);
+
       try {
         const { success, news, message } = await getCoachNews(id);
 
@@ -66,7 +76,7 @@ export default function Coach() {
           setError(message!);
         }
       } catch (err) {
-        if (isMounted) setError("Error al cargar trayectoria del jugador");
+        if (isMounted) setError("Error al cargar noticias del entrenador");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -99,72 +109,125 @@ export default function Coach() {
       {coach && (
         <>
           <AvatarCard
-            name={coach?.name!}
-            imageUrl={coach?.photo!}
+            name={coach.name!}
+            imageUrl={coach.photo!}
             typographyProps={{ variant: "titleLarge" }}
           />
 
-          <View style={styles.headerRow}>
+          {/* Club actual */}
+          <View
+            style={[
+              sx({
+                row: true,
+                center: true,
+                px: 12,
+                mt: 6,
+              }) as any,
+              { gap: 8 },
+            ]}
+          >
             <Image
               source={{ uri: coach?.history[0].team?.logo ?? "" }}
-              style={styles.teamImage}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+              }}
             />
-            <Chip style={styles.clubChip}>{coach?.history[0].team?.name}</Chip>
+
+            <Chip
+              style={[
+                {
+                  borderColor: colors.primary,
+                  borderWidth: 1,
+                  backgroundColor: "transparent",
+                },
+              ]}
+              textStyle={{ color: colors.textPrimary }}
+            >
+              {coach?.history[0].team?.name}
+            </Chip>
           </View>
 
-          <View style={styles.tabBar}>
+          {/* Tabs */}
+          <View style={sx({ mt: 12, mb: 12 }) as any}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipContainer}
+              contentContainerStyle={sx({ row: true }) as any}
             >
-              {items.map((item, index) => (
-                <Chip
-                  key={item.id}
-                  onPress={() => setSelectedItem(item)}
-                  selected={selectedItem.id === item.id}
-                  style={[
-                    styles.chip,
-                    index === 0 && styles.firstChip,
-                    index === items.length - 1 && styles.lastChip,
-                    selectedItem.id === item.id && styles.chipSelected,
-                  ]}
-                  textStyle={{
-                    color: selectedItem.id === item.id ? "#fff" : "#000",
-                  }}
-                >
-                  {item.name.toUpperCase()}
-                </Chip>
-              ))}
+              {items.map((item, index) => {
+                const selected = selectedItem.id === item.id;
+
+                return (
+                  <Chip
+                    key={item.id}
+                    onPress={() => setSelectedItem(item)}
+                    selected={selected}
+                    style={[
+                      sx({
+                        mr: 8,
+                      }) as any,
+                      {
+                        borderColor: colors.primary,
+                        borderWidth: 1,
+                        backgroundColor: selected
+                          ? colors.primary
+                          : "transparent",
+                        marginLeft: index === 0 ? 12 : 0,
+                        marginRight: index === items.length - 1 ? 12 : 8,
+                      },
+                    ]}
+                    textStyle={{
+                      color: selected
+                        ? colors.textOnPrimary
+                        : colors.textPrimary,
+                      fontFamily: g.subtitle.fontFamily,
+                    }}
+                  >
+                    {item.name.toUpperCase()}
+                  </Chip>
+                );
+              })}
             </ScrollView>
           </View>
 
-          <View style={styles.container}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
+          {/* Content */}
+          <View style={sx({ p: 16 }) as any}>
+            <Text
+              style={[
+                g.subtitle,
+                {
+                  marginBottom: 12,
+                  color: colors.textPrimary,
+                },
+              ]}
+            >
               {selectedItem.name.toUpperCase()}
             </Text>
 
+            {/* Información */}
             {selectedItem.name.toLowerCase() === "información personal" && (
               <CoachProfileCard
-                name={coach?.name!}
-                age={coach?.age!}
-                country={coach?.nationality!}
-                currentClub={coach?.history[0].team?.name}
-                avatarUrl={coach?.photo!}
+                name={coach.name!}
+                age={coach.age!}
+                country={coach.nationality!}
+                currentClub={coach.history[0].team?.name}
+                avatarUrl={coach.photo!}
               />
             )}
 
-            <ScrollView>
-              {selectedItem.name.toLowerCase() === "noticias" && (
+            {/* Noticias */}
+            {selectedItem.name.toLowerCase() === "noticias" && (
+              <ScrollView>
                 <VerticalScroll
                   listItems={coachNew!}
                   actionGeneralList={actionGeneralListNews}
                 />
-              )}
-            </ScrollView>
+              </ScrollView>
+            )}
 
-            {/*{selectedItem.name.toLowerCase() === "videos" && <></>} */}
-
+            {/* Trayectoria */}
             {selectedItem.name.toLowerCase() === "trayectoria" && (
               <CoachHistory history={coach.history} />
             )}
@@ -174,56 +237,3 @@ export default function Coach() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  avatar: {
-    paddingVertical: 2,
-  },
-  container: {
-    padding: 16,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-    gap: 8,
-    paddingHorizontal: 8,
-  },
-  teamImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  clubChip: {
-    backgroundColor: "transparent",
-    borderColor: "#1DB954",
-  },
-  chipContainer: {
-    flexDirection: "row",
-  },
-  tabBar: {
-    marginVertical: 12,
-  },
-  chip: {
-    marginRight: 8,
-    borderColor: "#1DB954",
-    borderWidth: 1,
-    backgroundColor: "transparent",
-  },
-  firstChip: {
-    marginLeft: 12,
-  },
-
-  lastChip: {
-    marginRight: 12,
-  },
-  chipSelected: {
-    backgroundColor: "#1DB954",
-  },
-  sectionTitle: {
-    marginBottom: 12,
-    color: "#333",
-    fontWeight: "600",
-  },
-});

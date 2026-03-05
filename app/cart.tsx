@@ -10,7 +10,7 @@ import {
 } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 import {
   ActivityIndicator,
   Button,
@@ -19,13 +19,16 @@ import {
   IconButton,
   Snackbar,
   Text,
-  useTheme,
 } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
+
 const isAddressValid = (a: AddressForm) => {
-  // básico y claro (ajústalo)
   return (
     a.recipientName.trim().length >= 2 &&
     a.phone.trim().length >= 7 &&
@@ -51,14 +54,13 @@ const formatAddress = (a: AddressForm) => {
 
 export default function Cart() {
   const { createOrderUser, getUserPoints } = useFetch();
-  const theme = useTheme();
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const { productsStore, updateProduct, deleteProduct, calculateTotal } =
     useStore();
 
-  /* 🔹 Compra */
   const [addressForm, setAddressForm] = useState<AddressForm | null>(null);
   const [addressModal, setAddressModal] = useState(false);
 
@@ -69,17 +71,19 @@ export default function Cart() {
 
   useEffect(() => {
     let mounted = true;
+
     const loadUserPoints = async () => {
       setLoading(true);
+
       try {
-        const { success, points, message } = await getUserPoints();
+        const { success, points } = await getUserPoints();
         if (!mounted) return;
-        if (success) {
-          setUserPoints(points);
-        }
+
+        if (success) setUserPoints(points);
       } catch (err) {
-        console.error("❌ Error cargando favoritos:", err);
+        console.error("Error cargando puntos", err);
       }
+
       setLoading(false);
     };
 
@@ -91,9 +95,9 @@ export default function Cart() {
   }, []);
 
   const subtotal = useMemo(() => calculateTotal(), [productsStore]);
+
   const remainingPoints = userPoints - subtotal;
 
-  // 🔸 Validaciones de UI: no permitir qty > stock
   const clampQty = (item: ProductStore, nextQty: number) => {
     const max = typeof item.stock === "number" ? item.stock : Infinity;
     return Math.max(1, Math.min(nextQty, max));
@@ -102,12 +106,14 @@ export default function Cart() {
   const handleIncrease = (item: ProductStore) => {
     const nextQty = clampQty(item, item.quantity + 1);
     if (nextQty === item.quantity) return;
+
     updateProduct({ ...item, quantity: nextQty });
   };
 
   const handleDecrease = (item: ProductStore) => {
     const nextQty = clampQty(item, item.quantity - 1);
     if (nextQty === item.quantity) return;
+
     updateProduct({ ...item, quantity: nextQty });
   };
 
@@ -120,23 +126,24 @@ export default function Cart() {
     if (productsStore.length === 0) return false;
     if (remainingPoints < 0) return false;
 
-    // si alguno supera stock o stock=0 => no comprar
     for (const it of productsStore) {
       if (typeof it.stock === "number") {
         if (it.stock <= 0) return false;
         if (it.quantity > it.stock) return false;
       }
+
       if (!it.storeId || !it.productId || !it.size || !it.color) return false;
       if (!Number.isFinite(it.price) || it.price <= 0) return false;
       if (!Number.isFinite(it.quantity) || it.quantity <= 0) return false;
       if (!addressForm || !isAddressValid(addressForm)) return false;
     }
-    return true;
-  }, [productsStore, remainingPoints]);
 
-  // 🔸 Agrupar items por storeId => orders[]
+    return true;
+  }, [productsStore, remainingPoints, addressForm]);
+
   const buildOrdersPayload = (): CreateOrderPayload => {
     const byStore = new Map<string, ProductStore[]>();
+
     for (const it of productsStore) {
       const key = String(it.storeId);
       byStore.set(key, [...(byStore.get(key) ?? []), it]);
@@ -148,7 +155,6 @@ export default function Cart() {
         productId: it.productId,
         name: it.name,
         color: it.color,
-        colorHex: (it as any).colorHex, // opcional
         size: it.size,
         price: it.price,
         quantity: it.quantity,
@@ -174,12 +180,10 @@ export default function Cart() {
         throw new Error(message || "No fue posible crear la orden.");
       }
 
-      // Navega al resumen (usa lo que tengas en tu pantalla)
       navigation.navigate("purchaseSummary", {
         products: productsStore,
       } as any);
 
-      // Limpia carrito y descuenta puntos (mock)
       setUserPoints((p) => p - subtotal);
       productsStore.forEach((p) => deleteProduct(p.id));
 
@@ -201,16 +205,22 @@ export default function Cart() {
     );
   }
 
-  /* ================= EMPTY STATE ================= */
   if (productsStore.length === 0) {
     return (
       <PrivateLayout>
-        <View style={styles.empty}>
-          <Text variant="titleLarge">🛒 Tu carrito está vacío</Text>
-          <Text style={{ marginVertical: 10 }}>
+        <View style={sx({ flex: 1, center: true, p: 20 })}>
+          <Text style={g.title}>🛒 Tu carrito está vacío</Text>
+
+          <Text style={[g.body, sx({ mt: 10 }) as any]}>
             Explora la tienda y canjea tus puntos
           </Text>
-          <Button mode="contained" onPress={() => navigation.navigate("store")}>
+
+          <Button
+            mode="contained"
+            buttonColor={colors.primary}
+            style={sx({ mt: 16 }) as any}
+            onPress={() => navigation.navigate("store")}
+          >
             Ir a la tienda
           </Button>
         </View>
@@ -220,80 +230,92 @@ export default function Cart() {
 
   return (
     <PrivateLayout>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text variant="titleLarge" style={{ marginBottom: 16 }}>
+      <ScrollView
+        style={sx({ flex: 1, bg: colors.background })}
+        contentContainerStyle={sx({ p: 16, pb: 40 })}
+      >
+        <Text style={[g.title, sx({ mb: 16 }) as any]}>
           🛒 Mi carrito ({productsStore.length})
         </Text>
-        {/* ================= LISTA DE PRODUCTOS ================= */}
+
         {productsStore.map((item) => {
           const outOfStock =
             typeof item.stock === "number" ? item.stock <= 0 : false;
+
           const overStock =
             typeof item.stock === "number" ? item.quantity > item.stock : false;
 
           return (
-            <Card key={item.id} style={styles.itemCard}>
-              <View style={styles.itemRow}>
-                {/* Imagen REAL */}
+            <Card
+              key={item.id}
+              style={[sx({ mb: 12 }) as any, { borderRadius: radius.lg }]}
+            >
+              <View style={sx({ row: true, p: 10 })}>
                 {item.image ? (
                   <Image
-                    source={{
-                      uri: item.image ?? "",
+                    source={{ uri: item.image }}
+                    style={{
+                      width: 90,
+                      height: 90,
+                      borderRadius: radius.md,
+                      marginRight: 12,
                     }}
-                    style={styles.image}
                   />
                 ) : (
-                  <View style={[styles.image, styles.imageFallback]} />
+                  <View
+                    style={{
+                      width: 90,
+                      height: 90,
+                      borderRadius: radius.md,
+                      marginRight: 12,
+                      backgroundColor: colors.border,
+                    }}
+                  />
                 )}
 
-                {/* Info */}
-                <View style={styles.info}>
-                  <Text variant="titleMedium">{item.name}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={g.subtitle}>{item.name}</Text>
 
-                  <Text style={{ opacity: 0.8 }}>
+                  <Text style={[g.small, { opacity: 0.8 }]}>
                     {item.color} · {item.size}
                   </Text>
 
-                  <Text style={{ marginTop: 4 }}>
-                    Precio:{" "}
+                  <Text style={[g.body, sx({ mt: 4 }) as any]}>
+                    Precio{" "}
                     <Text style={{ fontWeight: "700" }}>
                       {item.price.toLocaleString()} pts
                     </Text>
                   </Text>
 
-                  {/* Alertas stock */}
                   {(outOfStock || overStock) && (
-                    <Text style={{ color: theme.colors.error, marginTop: 6 }}>
+                    <Text
+                      style={[g.small, { color: colors.error, marginTop: 6 }]}
+                    >
                       {outOfStock
                         ? "Sin stock."
-                        : `Stock disponible: ${item.stock}. Ajusta cantidad.`}
+                        : `Stock disponible: ${item.stock}`}
                     </Text>
                   )}
 
-                  {/* Cantidad */}
-                  <View style={styles.qtyRow}>
+                  <View style={sx({ row: true, center: true, mt: 6 })}>
                     <IconButton
                       icon="minus"
                       size={18}
                       onPress={() => handleDecrease(item)}
-                      disabled={buying}
                     />
-                    <Text variant="titleMedium">{item.quantity}</Text>
+
+                    <Text style={g.subtitle}>{item.quantity}</Text>
+
                     <IconButton
                       icon="plus"
                       size={18}
                       onPress={() => handleIncrease(item)}
-                      disabled={
-                        buying ||
-                        (typeof item.stock === "number" &&
-                          item.quantity >= item.stock)
-                      }
                     />
+
                     <IconButton
                       icon="delete"
-                      iconColor={theme.colors.error}
+                      iconColor={colors.error}
                       onPress={() => deleteProduct(item.id)}
-                      disabled={buying}
                     />
                   </View>
                 </View>
@@ -301,34 +323,40 @@ export default function Cart() {
             </Card>
           );
         })}
-        {/* // DIRECCION */}
-        <Card style={{ marginTop: 14, padding: 12 }}>
-          <Text variant="titleMedium">📍 Dirección de entrega</Text>
+
+        <Card
+          style={[sx({ mt: 14, p: 12 }) as any, { borderRadius: radius.lg }]}
+        >
+          <Text style={g.subtitle}>📍 Dirección de entrega</Text>
 
           {addressForm ? (
-            <View>
-              <Text style={{ marginTop: 6, opacity: 0.8 }}>
+            <>
+              <Text style={[g.body, sx({ mt: 6 }) as any]}>
                 {addressString}
               </Text>
+
               <Button mode="text" onPress={() => setAddressModal(true)}>
                 Editar dirección
               </Button>
-            </View>
+            </>
           ) : (
-            <View>
-              <Text style={{ marginTop: 6, opacity: 0.7 }}>
+            <>
+              <Text style={[g.body, sx({ mt: 6 }) as any]}>
                 Agrega una dirección clara para evitar confusiones.
               </Text>
+
               <Button
                 mode="contained"
+                buttonColor={colors.primary}
+                style={sx({ mt: 10 }) as any}
                 onPress={() => setAddressModal(true)}
-                style={{ marginTop: 10 }}
               >
                 Agregar dirección
               </Button>
-            </View>
+            </>
           )}
         </Card>
+
         <AddressModal
           visible={addressModal}
           initial={addressForm ?? undefined}
@@ -339,39 +367,59 @@ export default function Cart() {
             setToast("Dirección guardada ✅");
           }}
         />
-        {/* ================= ENTREGA ================= */}
-        <Card style={styles.delivery}>
-          <Text variant="titleMedium">🚚 Entrega estimada</Text>
-          <Text>Entre 7 y 10 días hábiles</Text>
+
+        <Card
+          style={[
+            sx({ mt: 16, p: 12 }) as any,
+            {
+              borderRadius: radius.lg,
+              backgroundColor: colors.card,
+            },
+          ]}
+        >
+          <Text style={g.subtitle}>🚚 Entrega estimada</Text>
+          <Text style={g.body}>Entre 7 y 10 días hábiles</Text>
         </Card>
-        {/* ================= RESUMEN ================= */}
-        <Card style={styles.summary}>
-          <Text>Subtotal: {subtotal.toLocaleString()} pts</Text>
-          <Text>Puntos disponibles: {userPoints.toLocaleString()} pts</Text>
+
+        <Card
+          style={[sx({ mt: 16, p: 12 }) as any, { borderRadius: radius.lg }]}
+        >
+          <Text style={g.body}>Subtotal: {subtotal.toLocaleString()} pts</Text>
+
+          <Text style={g.body}>
+            Puntos disponibles: {userPoints.toLocaleString()} pts
+          </Text>
+
           <Divider style={{ marginVertical: 8 }} />
+
           <Text
-            style={{
-              fontWeight: "700",
-              color: remainingPoints >= 0 ? "#1DB954" : theme.colors.error,
-            }}
+            style={[
+              g.subtitle,
+              {
+                color: remainingPoints >= 0 ? colors.success : colors.error,
+              },
+            ]}
           >
             Saldo restante: {remainingPoints.toLocaleString()} pts
           </Text>
         </Card>
-        {/* ================= CTA ================= */}
+
         <Button
           mode="contained"
-          onPress={handlePurchase}
+          buttonColor={colors.primary}
           disabled={!canBuy || buying}
-          style={{ marginTop: 16 }}
+          style={sx({ mt: 16 }) as any}
           contentStyle={{ height: 48 }}
+          onPress={handlePurchase}
         >
           {buying ? "Procesando..." : "Realizar compra"}
         </Button>
+
         {buying && (
-          <View style={{ marginTop: 12, alignItems: "center" }}>
+          <View style={sx({ mt: 12, center: true })}>
             <ActivityIndicator />
-            <Text style={{ marginTop: 6, opacity: 0.7 }}>
+
+            <Text style={[g.small, sx({ mt: 6 }) as any]}>
               Validando stock y creando órdenes...
             </Text>
           </View>
@@ -388,50 +436,3 @@ export default function Cart() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  itemCard: {
-    marginBottom: 12,
-    padding: 10,
-  },
-  itemRow: {
-    flexDirection: "row",
-  },
-  image: {
-    width: 90,
-    height: 90,
-    borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: "#fff",
-  },
-  imageFallback: {
-    backgroundColor: "#eee",
-  },
-  info: {
-    flex: 1,
-  },
-  qtyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-  },
-  delivery: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: "#f5f5f5",
-  },
-  summary: {
-    marginTop: 16,
-    padding: 12,
-  },
-  empty: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-});

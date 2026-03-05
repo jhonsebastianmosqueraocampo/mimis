@@ -9,13 +9,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+
+import { colors } from "@/theme/colors";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 
 interface AuthLayoutProps {
   form: ReactNode;
@@ -41,31 +44,114 @@ export default function AuthLayout({
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[
+            sx({
+              flex: 1,
+              p: 20,
+              bg: colors.background,
+              center: true,
+            }) as any,
+          ]}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.innerContainer}>
+          <View
+            style={[
+              sx({
+                w: "100%",
+                center: true,
+              }) as any,
+              {
+                maxWidth: 360,
+              },
+            ]}
+          >
+            {/* Logo */}
             <Logo size="sm" />
 
-            <View style={{ marginTop: 24 }}>{form}</View>
+            {/* Form */}
+            <View style={sx({ mt: 28, w: "100%" }) as any}>{form}</View>
 
-            <Text style={styles.footerText}>
+            {/* Footer text */}
+            <Text
+              style={[
+                g.body,
+                sx({
+                  mt: 24,
+                  center: true,
+                  color: colors.textSecondary,
+                }) as any,
+              ]}
+            >
               {footerText}{" "}
               <TouchableOpacity
                 onPress={() => navigation.navigate(footerLinkHref)}
               >
-                <Text style={styles.linkText}>{footerLinkText}</Text>
+                <Text
+                  style={[
+                    g.subtitle,
+                    {
+                      textDecorationLine: "underline",
+                      color: colors.primary,
+                    },
+                  ]}
+                >
+                  {footerLinkText}
+                </Text>
               </TouchableOpacity>
             </Text>
 
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>o</Text>
-              <View style={styles.dividerLine} />
+            {/* Divider */}
+            <View
+              style={[
+                sx({
+                  row: true,
+                  items: "center",
+                  mt: 24,
+                  mb: 16,
+                  w: "100%",
+                }) as any,
+              ]}
+            >
+              <View
+                style={[
+                  sx({
+                    flex: 1,
+                  }) as any,
+                  {
+                    height: 1,
+                    backgroundColor: colors.border,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[
+                  g.small,
+                  sx({
+                    mx: 10,
+                    color: colors.textSecondary,
+                  }) as any,
+                ]}
+              >
+                o
+              </Text>
+
+              <View
+                style={[
+                  sx({
+                    flex: 1,
+                  }) as any,
+                  {
+                    height: 1,
+                    backgroundColor: colors.border,
+                  },
+                ]}
+              />
             </View>
 
+            {/* Social login */}
             <SocialLoginButtons />
           </View>
         </ScrollView>
@@ -73,45 +159,3 @@ export default function AuthLayout({
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: "#ffffff",
-    padding: 16,
-    justifyContent: "center",
-    minHeight: 100,
-  },
-  innerContainer: {
-    width: "100%",
-    maxWidth: 360,
-    alignSelf: "center",
-  },
-  footerText: {
-    marginTop: 24,
-    textAlign: "center",
-    fontSize: 14,
-    color: "#1DB954",
-    fontFamily: "goli",
-  },
-  linkText: {
-    textDecorationLine: "underline",
-    color: "#1DB954",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#ccc",
-  },
-  dividerText: {
-    marginHorizontal: 8,
-    fontFamily: "liter",
-    fontSize: 14,
-    color: "#333",
-  },
-});

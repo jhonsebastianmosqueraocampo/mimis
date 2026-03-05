@@ -1,7 +1,7 @@
 import { useFetch } from "@/hooks/FetchContext";
 import React, { useState } from "react";
-import { View } from "react-native";
 import { Button, Card, Text, TextInput } from "react-native-paper";
+import PrivateLayout from "./privateLayout";
 
 export default function LoadFunFact() {
   const { createFunFact } = useFetch();
@@ -21,7 +21,7 @@ export default function LoadFunFact() {
   };
 
   return (
-    <View style={{ padding: 16 }}>
+    <PrivateLayout>
       <Card style={{ padding: 16 }}>
         <Text variant="titleLarge">Nuevo Dato Curioso</Text>
 
@@ -44,6 +44,6 @@ export default function LoadFunFact() {
           Guardar
         </Button>
       </Card>
-    </View>
+    </PrivateLayout>
   );
 }

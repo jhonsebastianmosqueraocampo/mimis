@@ -25,6 +25,7 @@ import FriendlyMatches from "./FriendlyMatches";
 import GroupPhaseView from "./GroupPhaseView";
 import { KnockoutBracket } from "./KnockoutBracket";
 import LeagueTable from "./LeagueTable";
+import Loading from "./Loading";
 
 const itemsTournament = [
   { id: 1, item: "Fase de Grupos" },
@@ -84,6 +85,7 @@ export default function SeasonResults({
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [allMatches, setAllMatches] = useState<LiveMatch[]>([]);
   const [selectedSeason, setSelectedSeason] = useState(0);
+  const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
   const seasons = Array.from({ length: 11 }, (_, i) => currentYear - i);
 
@@ -103,7 +105,7 @@ export default function SeasonResults({
   useEffect(() => {
     const league = selectedComp?.league;
     if (!league) return;
-
+    setLoading(true);
     const isFriendlyByName = league.name.toLowerCase().includes("friendlies");
 
     switch (league.leagueType) {
@@ -121,6 +123,7 @@ export default function SeasonResults({
         getFriendlies();
         break;
       default:
+        setLoading(false);
         break;
     }
   }, [selectedCompetition, selectedSeason]);
@@ -148,11 +151,17 @@ export default function SeasonResults({
 
   const getLeagues = async () => {
     if (teamId) {
-      const { success, competitions, message } = await getLeaguesByTeam(
-        teamId,
-        selectedSeason.toString(),
-      );
-      success ? setCompetitions(competitions) : setError(message!);
+      try {
+        const { success, competitions, message } = await getLeaguesByTeam(
+          teamId,
+          selectedSeason.toString(),
+        );
+        success ? setCompetitions(competitions) : setError(message!);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
     }
   };
 
@@ -170,6 +179,7 @@ export default function SeasonResults({
       setStandings(parsedPhases[0]?.standings ?? []);
       setAllMatches(matches);
     }
+    setLoading(false);
   };
 
   const getCupStandings = async () => {
@@ -189,6 +199,7 @@ export default function SeasonResults({
     } else {
       setError(message!);
     }
+    setLoading(false);
   };
 
   const getFriendlies = async () => {
@@ -203,6 +214,7 @@ export default function SeasonResults({
         setError(message!);
       }
     }
+    setLoading(false);
   };
 
   // 🕒 Inicia polling (solo si es LEAGUE)
@@ -247,6 +259,16 @@ export default function SeasonResults({
       sub.remove();
     };
   }, [startPolling, stopPolling]);
+
+  if (loading) {
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>

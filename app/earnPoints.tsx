@@ -3,31 +3,42 @@ import { useFetch } from "@/hooks/FetchContext";
 import { RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Button, Card } from "react-native-paper";
+import { View } from "react-native";
+import { Button, Card, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
+
 export default function EarnPoints() {
   const { getUserPoints } = useFetch();
+
   const [loading, setLoading] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
+
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     let mounted = true;
+
     const loadUserPoints = async () => {
       setLoading(true);
+
       try {
-        const { success, points, message } = await getUserPoints();
+        const { success, points } = await getUserPoints();
+
         if (!mounted) return;
-        if (success) {
-          setUserPoints(points);
-        }
-      } catch (err) {
-        console.error("❌ Error cargando favoritos:", err);
+
+        if (success) setUserPoints(points);
+      } catch {
+        return;
       }
+
       setLoading(false);
     };
 
@@ -38,10 +49,6 @@ export default function EarnPoints() {
     };
   }, []);
 
-  const handleStart = () => {
-    console.log("Iniciar actividades para ganar puntos");
-  };
-
   const handleRedeem = () => {
     navigation.navigate("store");
   };
@@ -50,7 +57,7 @@ export default function EarnPoints() {
     return (
       <Loading
         visible={loading}
-        title="Cargando paises"
+        title="Cargando puntos"
         subtitle="Pronto tendrás la información"
       />
     );
@@ -58,25 +65,65 @@ export default function EarnPoints() {
 
   return (
     <PrivateLayout>
-      <View style={styles.container}>
-        <Text style={styles.title}>Gana puntos</Text>
-        <Text style={styles.subtitle}></Text>
+      <View style={sx({ p: 20 }) as any}>
+        <Text style={[g.title, { marginBottom: 8 }]}>Gana puntos</Text>
 
-        <Card style={styles.card}>
-          <Text style={styles.pointsLabel}>Tus puntos actuales</Text>
-          <Text style={styles.pointsValue}>{userPoints}</Text>
+        <Text style={[g.small, { marginBottom: 20 }]}>
+          Participa en actividades dentro de la app para ganar puntos y
+          redimirlos por productos.
+        </Text>
+
+        {/* CARD PUNTOS */}
+        <Card
+          style={[
+            shadows.md,
+            {
+              borderRadius: radius.lg,
+              paddingVertical: 24,
+              alignItems: "center",
+              marginBottom: 30,
+              backgroundColor: colors.card,
+            },
+          ]}
+        >
+          <Text style={g.caption}>Tus puntos actuales</Text>
+
+          <Text
+            style={[
+              g.title,
+              {
+                fontSize: 42,
+                marginTop: 6,
+                color: colors.primary,
+              },
+            ]}
+          >
+            {userPoints}
+          </Text>
         </Card>
 
-        <View style={styles.redeemSection}>
-          <Text style={styles.redeemText}>
+        {/* INFO */}
+        <View style={[sx({ center: true }) as any]}>
+          <Text
+            style={[
+              g.small,
+              {
+                textAlign: "center",
+                marginBottom: 12,
+              },
+            ]}
+          >
             💡 Puedes redimir tus puntos por productos en la tienda de la app
           </Text>
 
           <Button
             mode="outlined"
             onPress={handleRedeem}
-            style={styles.buttonSecondary}
-            labelStyle={{ fontSize: 16 }}
+            style={{
+              borderColor: colors.primary,
+              borderRadius: radius.md,
+            }}
+            labelStyle={g.body}
           >
             Redimir puntos
           </Button>
@@ -85,61 +132,3 @@ export default function EarnPoints() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "flex-start",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#111",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    paddingVertical: 20,
-    alignItems: "center",
-    marginBottom: 24,
-    elevation: 3,
-  },
-  pointsLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  pointsValue: {
-    fontSize: 40,
-    fontWeight: "bold",
-    color: "#1DB954",
-  },
-  buttonPrimary: {
-    backgroundColor: "#1DB954",
-    marginBottom: 24,
-    borderRadius: 8,
-    paddingVertical: 4,
-  },
-  redeemSection: {
-    alignItems: "center",
-  },
-  redeemText: {
-    fontSize: 13,
-    color: "#444",
-    textAlign: "center",
-    marginBottom: 10,
-    lineHeight: 18,
-  },
-  buttonSecondary: {
-    borderColor: "#1DB954",
-    borderRadius: 8,
-  },
-});

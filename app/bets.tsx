@@ -1,6 +1,10 @@
 import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 import { Bet, RootStackParamList } from "@/types";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
@@ -26,7 +30,7 @@ export default function Bets() {
           setBets(bets);
         }
       } catch (err) {
-        console.log("❌ Error cargando apuestas", err);
+        return;
       } finally {
         if (mounted) setLoading(false);
       }
@@ -59,22 +63,44 @@ export default function Bets() {
 
   return (
     <PrivateLayout>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
+      <ScrollView
+        style={
+          sx({
+            flex: 1,
+            bg: colors.background,
+          }) as any
+        }
+        contentContainerStyle={
+          sx({
+            p: 16,
+          }) as any
+        }
+      >
         {/* BOTÓN UNIRME */}
         <Button
           mode="contained"
-          style={{ marginBottom: 16, borderRadius: 8 }}
+          buttonColor={colors.primary}
+          style={[sx({ mb: 16 }) as any, { borderRadius: radius.md }]}
+          labelStyle={g.subtitle}
           onPress={() => navigation.navigate("betInvite")}
         >
           Unirme a la apuesta
         </Button>
 
-        <View style={{ marginBottom: 16 }}>
+        <View style={sx({ mb: 16 }) as any}>
           <AdBanner />
         </View>
 
         {/* ACTIVAS */}
-        <Card style={{ marginBottom: 16 }}>
+        <Card
+          style={[
+            sx({ mb: 16 }) as any,
+            {
+              borderRadius: radius.lg,
+              backgroundColor: colors.card,
+            },
+          ]}
+        >
           <Card.Title title="Apuestas activas" />
           <Card.Content>
             {activeBets.length === 0 ? (
@@ -93,8 +119,13 @@ export default function Bets() {
                       match?.teams?.away?.name ?? "-"
                     }`}
                     description={`Tipo: ${bet.betType} | Cuota: x${bet.stake}`}
+                    titleStyle={g.subtitle}
+                    descriptionStyle={[
+                      g.small,
+                      { color: colors.textSecondary },
+                    ]}
                     right={() => (
-                      <Text>
+                      <Text style={[g.small, { color: colors.textSecondary }]}>
                         {match?.status?.short ?? "-"}{" "}
                         {match?.status?.elapsed
                           ? `- ${match.status.elapsed}'`
@@ -109,7 +140,15 @@ export default function Bets() {
         </Card>
 
         {/* FINALIZADAS */}
-        <Card>
+        <Card
+          style={[
+            sx({ mb: 16 }) as any,
+            {
+              borderRadius: radius.lg,
+              backgroundColor: colors.card,
+            },
+          ]}
+        >
           <Card.Title title="Apuestas finalizadas" />
           <Card.Content>
             {finishedBets.length === 0 ? (
@@ -134,11 +173,14 @@ export default function Bets() {
                       match?.teams?.away?.name ?? "-"
                     }`}
                     description={`Tipo: ${bet.betType} | Cuota: x${bet.stake}`}
+                    titleStyle={g.subtitle}
+                    descriptionStyle={[
+                      g.small,
+                      { color: colors.textSecondary },
+                    ]}
                   >
                     <View style={{ padding: 8 }}>
-                      <Text style={{ fontWeight: "bold" }}>
-                        Resultado final:
-                      </Text>
+                      <Text style={g.subtitle}>Resultado final:</Text>
 
                       <List.Section>
                         {(bet.users ?? []).map((u, idx) => (
@@ -154,10 +196,13 @@ export default function Bets() {
 
                                 {u?.result === "WIN" && (
                                   <Text
-                                    style={{
-                                      fontWeight: "bold",
-                                      color: "#1DB954",
-                                    }}
+                                    style={[
+                                      g.body,
+                                      {
+                                        fontWeight: "700",
+                                        color: colors.success,
+                                      },
+                                    ]}
                                   >
                                     Ganó: {prizePerWinner.toLocaleString()} pts
                                   </Text>
@@ -165,7 +210,7 @@ export default function Bets() {
                               </View>
                             )}
                             left={() => (
-                              <Text style={{ marginRight: 10 }}>
+                              <Text style={[g.body, sx({ mr: 10 }) as any]}>
                                 {u?.result === "WIN"
                                   ? "🏆"
                                   : u?.result === "LOSE"

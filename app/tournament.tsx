@@ -44,16 +44,17 @@ export default function TournamentScreen() {
   const { id } = route.params;
   const [selectedItem, setSelectedItem] = useState(items[0]);
   const [infoLeague, setInfoLeague] = useState<LeagueB>();
-  const [leagueNews, setLeagueNews] = useState<swiperItem[]>();
-
+  const [leagueNews, setLeagueNews] = useState<swiperItem[]>([]);
   const [equipos, setEquipos] = useState<swiperItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingLeague, setLoadingLeague] = useState(true);
+  const [loadingFavs, setLoadingFavs] = useState(true);
+  const [loadingNews, setLoadingNews] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     const getFavoriteList = async () => {
-      setLoading(true);
+      setLoadingFavs(true);
       try {
         const { success, teams, message } = await getFavorites();
         if (!isMounted) return;
@@ -66,7 +67,7 @@ export default function TournamentScreen() {
       } catch (err) {
         if (isMounted) setError("Error al cargar los equipos favoritos");
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setLoadingFavs(false);
       }
     };
 
@@ -81,7 +82,7 @@ export default function TournamentScreen() {
     let isMounted = true;
 
     const getInfoLeague = async () => {
-      setLoading(true);
+      setLoadingLeague(true);
       try {
         const { success, league, message } = await getLeague(id);
 
@@ -95,12 +96,12 @@ export default function TournamentScreen() {
       } catch (err) {
         if (isMounted) setError("Error al cargar trayectoria del jugador");
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setLoadingLeague(false);
       }
     };
 
     const leagueNews = async () => {
-      setLoading(true);
+      setLoadingNews(true);
       try {
         const { success, news, message } = await getLeagueNews(id);
 
@@ -114,7 +115,7 @@ export default function TournamentScreen() {
       } catch (err) {
         if (isMounted) setError("Error al cargar trayectoria del jugador");
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setLoadingNews(false);
       }
     };
 
@@ -136,10 +137,10 @@ export default function TournamentScreen() {
     setSelectedItem(items[0]);
   }, [id]);
 
-  if (loading) {
+  if (loadingLeague || loadingFavs || loadingNews) {
     return (
       <Loading
-        visible={loading}
+        visible={loadingLeague || loadingFavs || loadingNews}
         title="Cargando"
         subtitle="Pronto tendrás la información"
       />

@@ -1,5 +1,9 @@
 import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import { Bet, LiveMatch, RootStackParamList, setBet, UserBet } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
@@ -28,8 +32,9 @@ export default function LiveBetScreen() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* =========================
-     CARGA INICIAL
+     LOAD
   ========================= */
+
   useEffect(() => {
     let mounted = true;
 
@@ -45,9 +50,9 @@ export default function LiveBetScreen() {
 
         setBetInfo(bet);
 
-        // Intentamos cargar liveMatch (puede ser null si no ha empezado)
         try {
           const { live } = await getLiveMatch(bet?.fixtureId!);
+
           if (!mounted) return;
 
           setLiveMatch(live ?? null);
@@ -58,8 +63,6 @@ export default function LiveBetScreen() {
         } catch {
           setLiveMatch(null);
         }
-      } catch (e) {
-        console.error("❌ Error inicial:", e);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -75,6 +78,7 @@ export default function LiveBetScreen() {
   /* =========================
      POLLING
   ========================= */
+
   useEffect(() => {
     if (!betInfo?.fixtureId || finished) return;
 
@@ -101,12 +105,11 @@ export default function LiveBetScreen() {
 
           if (pollRef.current) clearInterval(pollRef.current);
         }
-      } catch (e) {
-        console.error("❌ Polling error:", e);
-      }
+      } catch {}
     };
 
     tick();
+
     pollRef.current = setInterval(tick, 30000);
 
     return () => {
@@ -118,8 +121,9 @@ export default function LiveBetScreen() {
   const fixture = liveMatch;
 
   /* =========================
-     EVALUACIÓN SEGURA
+     EVALUATION
   ========================= */
+
   const evaluateUserBet = (
     u: UserBet,
     f: LiveMatch,
@@ -152,6 +156,7 @@ export default function LiveBetScreen() {
           return "PENDING";
 
         const total = home + away;
+
         const condition =
           u.selection.side === "OVER"
             ? total > u.selection.line
@@ -165,9 +170,6 @@ export default function LiveBetScreen() {
     }
   };
 
-  /* =========================
-     CÁLCULOS PROTEGIDOS
-  ========================= */
   const totalPot = useMemo(() => {
     if (!bet?.users?.length) return 0;
     return Number(bet.stake ?? 0) * bet.users.length;
@@ -175,6 +177,7 @@ export default function LiveBetScreen() {
 
   const winnersCount = useMemo(() => {
     if (!bet || !fixture) return 0;
+
     return bet.users.filter((u) => evaluateUserBet(u, fixture) === "WIN")
       .length;
   }, [bet, fixture]);
@@ -185,12 +188,13 @@ export default function LiveBetScreen() {
   /* =========================
      LOADING
   ========================= */
+
   if (loading) {
     return (
       <Loading
         visible
-        title="Cargando"
-        subtitle="Estamos preparando la apuesta"
+        title="Cargando apuesta"
+        subtitle="Preparando el partido"
       />
     );
   }
@@ -198,59 +202,66 @@ export default function LiveBetScreen() {
   if (!bet) return null;
 
   /* =========================
-     CASO: PARTIDO NO INICIADO
+     PARTIDO NO INICIADO
   ========================= */
+
   if (!fixture) {
     return (
       <PrivateLayout>
-        <ScrollView style={{ flex: 1, padding: 16 }}>
-          <Card style={{ borderRadius: 18, marginBottom: 16 }}>
-            <Card.Content style={{ alignItems: "center" }}>
-              <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-                🕒 El partido aún no comienza
+        <ScrollView style={{ padding: spacing.md }}>
+          <Card
+            style={[
+              g.card,
+              { borderRadius: radius.xl, marginBottom: spacing.md },
+            ]}
+          >
+            <Card.Content style={[g.center]}>
+              <Text style={[g.title]}>🕒 Partido aún no inicia</Text>
+
+              <Text style={{ marginTop: spacing.sm, textAlign: "center" }}>
+                Cuando el partido empiece verás el marcador en vivo.
               </Text>
+
+              <Text style={{ marginTop: spacing.md }}>🎯 {bet.betType}</Text>
 
               <Text
-                style={{ marginTop: 6, color: "#666", textAlign: "center" }}
+                style={{
+                  marginTop: spacing.sm,
+                  color: colors.primary,
+                  fontWeight: "700",
+                }}
               >
-                La apuesta está lista. Cuando el partido inicie, aquí verás el
-                marcador en vivo.
-              </Text>
-
-              <Text style={{ marginTop: 14 }}>🎯 {bet.betType}</Text>
-
-              <Text style={{ marginTop: 6, fontWeight: "bold" }}>
-                💰 Stake: {Number(bet.stake ?? 0).toLocaleString()} pts
+                💰 Stake {Number(bet.stake ?? 0).toLocaleString()} pts
               </Text>
             </Card.Content>
           </Card>
 
-          <Card style={{ borderRadius: 18 }}>
-            <Card.Title title="Usuarios inscritos" />
+          <Card style={[g.card]}>
+            <Card.Title title="Jugadores en la apuesta" />
+
             <Card.Content>
               {(bet.users ?? []).map((u, idx) => (
                 <Card
                   key={idx}
-                  style={{
-                    marginBottom: 10,
-                    borderRadius: 14,
-                    elevation: 2,
-                  }}
+                  style={[
+                    g.card,
+                    { marginBottom: spacing.sm, borderRadius: radius.lg },
+                  ]}
                 >
                   <Card.Content>
                     <Text style={{ fontWeight: "600" }}>
                       {u?.name ?? "Usuario"}
                     </Text>
 
-                    <Text style={{ marginTop: 4, color: "#666" }}>
+                    <Text style={{ marginTop: 4 }}>
                       🎯 {formatSelection(u?.selection)}
                     </Text>
 
                     <Text
                       style={{
                         marginTop: 6,
-                        fontWeight: "bold",
                         color: "#FFA000",
+                        fontWeight: "600",
                       }}
                     >
                       ⏳ En espera
@@ -266,44 +277,47 @@ export default function LiveBetScreen() {
   }
 
   /* =========================
-     PARTIDO EN VIVO / FINALIZADO
+     PARTIDO EN VIVO
   ========================= */
+
   return (
     <PrivateLayout>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
-        <Card style={{ borderRadius: 18, marginBottom: 16 }}>
+      <ScrollView style={{ padding: spacing.md }}>
+        <Card style={[g.card, { marginBottom: spacing.md }]}>
           <Card.Content>
-            <Text style={{ textAlign: "center", color: "#777" }}>
+            <Text style={[g.caption, { textAlign: "center" }]}>
               {fixture?.league?.name ?? ""}
             </Text>
+
+            {/* SCOREBOARD */}
 
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                marginVertical: 12,
+                marginVertical: spacing.md,
               }}
             >
               <Text numberOfLines={1} style={{ flex: 1, textAlign: "center" }}>
-                {fixture?.teams?.home?.name ?? "-"}
+                {fixture?.teams?.home?.name}
               </Text>
 
               <Text
                 style={{
-                  fontSize: 28,
-                  fontWeight: "bold",
-                  textAlign: "center",
+                  fontSize: 32,
+                  fontWeight: "800",
+                  color: colors.primary,
                 }}
               >
                 {fixture?.goals?.home ?? 0} - {fixture?.goals?.away ?? 0}
               </Text>
 
               <Text numberOfLines={1} style={{ flex: 1, textAlign: "center" }}>
-                {fixture?.teams?.away?.name ?? "-"}
+                {fixture?.teams?.away?.name}
               </Text>
             </View>
 
-            <Text style={{ textAlign: "center", color: "#666" }}>
+            <Text style={{ textAlign: "center" }}>
               {isFinished(fixture)
                 ? "Finalizado"
                 : `Min ${fixture?.status?.elapsed ?? 0}`}
@@ -311,18 +325,20 @@ export default function LiveBetScreen() {
 
             <Text
               style={{
-                marginTop: 10,
+                marginTop: spacing.md,
                 textAlign: "center",
-                fontWeight: "bold",
+                color: colors.primary,
+                fontWeight: "700",
               }}
             >
-              💰 Bote: {totalPot.toLocaleString()} pts
+              💰 Bote {totalPot.toLocaleString()} pts
             </Text>
           </Card.Content>
         </Card>
 
-        <Card style={{ borderRadius: 18 }}>
-          <Card.Title title="Usuarios en la mesa" />
+        <Card style={[g.card]}>
+          <Card.Title title="Jugadores en la mesa" />
+
           <Card.Content>
             {(bet.users ?? []).map((u, idx) => {
               const status = evaluateUserBet(u, fixture);
@@ -330,18 +346,17 @@ export default function LiveBetScreen() {
               return (
                 <Card
                   key={idx}
-                  style={{
-                    marginBottom: 12,
-                    borderRadius: 16,
-                    elevation: 2,
-                  }}
+                  style={[
+                    g.card,
+                    { marginBottom: spacing.sm, borderRadius: radius.lg },
+                  ]}
                 >
                   <Card.Content>
                     <Text style={{ fontWeight: "600" }}>
                       {u?.name ?? "Usuario"}
                     </Text>
 
-                    <Text style={{ marginTop: 4, color: "#666" }}>
+                    <Text style={{ marginTop: 4 }}>
                       🎯 {formatSelection(u?.selection)}
                     </Text>
 
@@ -349,11 +364,11 @@ export default function LiveBetScreen() {
                       <Text
                         style={{
                           marginTop: 6,
-                          fontWeight: "bold",
-                          color: "#1DB954",
+                          color: colors.primary,
+                          fontWeight: "700",
                         }}
                       >
-                        🟢 Va ganando: {prizePerWinner.toLocaleString()} pts
+                        🟢 Va ganando {prizePerWinner.toLocaleString()} pts
                       </Text>
                     )}
 
@@ -361,8 +376,8 @@ export default function LiveBetScreen() {
                       <Text
                         style={{
                           marginTop: 6,
-                          fontWeight: "bold",
                           color: "#E53935",
+                          fontWeight: "700",
                         }}
                       >
                         🔴 Va perdiendo
@@ -378,7 +393,8 @@ export default function LiveBetScreen() {
         {finished && (
           <Button
             mode="contained"
-            style={{ marginTop: 16 }}
+            buttonColor={colors.primary}
+            style={{ marginTop: spacing.md }}
             onPress={() =>
               navigation.navigate("match", {
                 id: String(fixture?.fixtureId ?? ""),
@@ -393,9 +409,6 @@ export default function LiveBetScreen() {
   );
 }
 
-/* =========================
-   HELPERS
-========================= */
 function isFinished(f: LiveMatch) {
   return (
     f?.status?.short === "FT" ||

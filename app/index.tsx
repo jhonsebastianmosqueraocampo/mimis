@@ -2,6 +2,10 @@ import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
 import { loadRewardedAd, showRewardedAd } from "@/services/ads/rewarded";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import {
   LeagueItem,
   LiveMatch,
@@ -74,7 +78,7 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const PRIMARY = "#1DB954";
+const PRIMARY = colors.primary;
 
 export default function home() {
   const { getMatchesToday, getFavorites } = useFetch();
@@ -270,7 +274,14 @@ export default function home() {
                   setSelectedLeague(0);
                   setSelectedLeagueName("Todas");
                 }}
-                style={styles.chip}
+                style={[
+                  styles.chip,
+                  selectedLeague === 0 && styles.chipSelected,
+                ]}
+                textStyle={[
+                  styles.chipText,
+                  selectedLeague === 0 && styles.chipTextSelected,
+                ]}
               >
                 Todas
               </Chip>
@@ -283,7 +294,14 @@ export default function home() {
                     setSelectedLeague(lg.id);
                     setSelectedLeagueName(lg.name);
                   }}
-                  style={styles.leagueChip}
+                  style={[
+                    styles.chip,
+                    selectedLeague === lg.id && styles.chipSelected,
+                  ]}
+                  textStyle={[
+                    styles.chipText,
+                    selectedLeague === lg.id && styles.chipTextSelected,
+                  ]}
                 >
                   {lg.name}
                 </Chip>
@@ -297,11 +315,16 @@ export default function home() {
             value={query}
             onChangeText={setQuery}
             style={styles.search}
+            inputStyle={styles.searchInput}
+            iconColor={colors.textSecondary}
           />
         </View>
 
         <Button
           mode="contained"
+          buttonColor={colors.primary}
+          textColor="#fff"
+          style={{ margin: spacing.md }}
           onPress={() => {
             showRewardedAd(() => {
               Alert.alert("Video visto 🎉", "Simulación de puntos +5");
@@ -365,9 +388,11 @@ export default function home() {
         )}
 
         <Button
-          mode="contained"
           onPress={actionVideos}
-          style={{ margin: 16, backgroundColor: PRIMARY }}
+          mode="contained"
+          buttonColor={colors.primary}
+          textColor="#fff"
+          style={styles.primaryButton}
         >
           Ver Resúmenes
         </Button>
@@ -423,9 +448,11 @@ export default function home() {
         {selectedLeague !== 0 && (
           <View style={{ marginHorizontal: 16, marginBottom: 8 }}>
             <Button
-              mode="contained-tonal"
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor="#fff"
               style={styles.leagueButton}
-              labelStyle={{ fontWeight: "700" }}
+              labelStyle={styles.leagueButtonText}
               onPress={() => actionLeague(selectedLeagueName)}
             >
               Ver {selectedLeagueName}
@@ -442,7 +469,7 @@ export default function home() {
         <View style={{ paddingBottom: 24 }}>
           {sections.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={{ color: "#666" }}>
+              <Text style={{ color: colors.textSecondary }}>
                 No hay partidos para mostrar.
               </Text>
             </View>
@@ -736,158 +763,215 @@ const MatchRow = React.memo(({ match }: { match: LiveMatch }) => {
 
 // ------- STYLES -------
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  toolbar: {
-    padding: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderColor: "#eee",
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  search: { marginBottom: 8 },
-  chipsRow: { flexDirection: "row", flexWrap: "wrap" },
-  chip: { marginRight: 8, marginBottom: 8 },
+
+  toolbar: {
+    padding: spacing.md,
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
 
   sectionHeader: {
-    backgroundColor: "#F9F9F9",
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    backgroundColor: colors.background,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.border,
   },
-  sectionTitle: { fontWeight: "700", color: "#222", fontSize: 13 },
+
+  sectionTitle: {
+    ...g.subtitle,
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
 
   logo: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#eee",
-    marginHorizontal: 6,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.xs,
   },
-  scoreText: { fontSize: 16, fontWeight: "700", color: "#111" },
-  startText: { fontSize: 14, fontWeight: "600", color: "#888" },
-  minute: { fontSize: 12, color: PRIMARY, fontWeight: "700", marginTop: 2 },
 
-  empty: { alignItems: "center", marginTop: 24 },
+  scoreText: {
+    ...g.subtitle,
+    color: colors.textPrimary,
+  },
+
+  startText: {
+    ...g.small,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+
+  minute: {
+    ...g.caption,
+    color: colors.primary,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+
+  empty: {
+    alignItems: "center",
+    marginTop: spacing.lg,
+  },
 
   eventTicker: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    padding: 8,
-    backgroundColor: "#F5F5F5",
-    borderRadius: 8,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
   },
-  eventText: { fontSize: 14, fontWeight: "600", color: "#D32F2F" },
+
+  eventText: {
+    ...g.body,
+    fontWeight: "600",
+    color: colors.error,
+  },
 
   notPlayingBox: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: 10,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
     backgroundColor: "#FFF3F3",
     borderWidth: 1,
     borderColor: "#F5C2C2",
   },
-  notPlayingText: { fontSize: 14, fontWeight: "700", color: "#B00020" },
+
+  notPlayingText: {
+    ...g.body,
+    fontWeight: "700",
+    color: colors.error,
+  },
 
   leagueChip: {
-    marginHorizontal: 6,
-    marginBottom: 8,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
+    marginHorizontal: spacing.xs,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
   },
-  leagueButton: {
-    borderRadius: 10,
-    paddingVertical: 4,
-    backgroundColor: PRIMARY,
-    color: "#F0F0F0",
-  },
+
   chipsRowHorizontal: {
     flexDirection: "row",
     alignItems: "center",
-    paddingRight: 12,
+    paddingRight: spacing.md,
   },
 
-  liveRow: { flexDirection: "row", alignItems: "center" },
+  liveRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   liveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "red",
+    backgroundColor: colors.error,
     marginRight: 4,
   },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
   },
-  modalBox: { backgroundColor: "#fff", padding: 16, borderRadius: 10 },
+
+  modalBox: {
+    backgroundColor: colors.card,
+    padding: spacing.md,
+    borderRadius: radius.md,
+  },
+
   statsModal: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
-    margin: 24,
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: colors.card,
+    margin: spacing.lg,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
   },
+
   matchCard: {
-    backgroundColor: "#fff",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
+    backgroundColor: colors.card,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#ddd",
+    borderColor: colors.border,
   },
-  team: { flex: 1, flexDirection: "row", alignItems: "center", minWidth: 90 },
+
+  team: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 90,
+  },
+
   teamRight: {
     flex: 1,
     flexDirection: "row-reverse",
     alignItems: "center",
     minWidth: 90,
   },
+
   teamName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#222",
+    ...g.body,
+    color: colors.textPrimary,
     flexShrink: 1,
     maxWidth: 90,
   },
-  center: { minWidth: 80, alignItems: "center" },
+
+  center: {
+    minWidth: 80,
+    alignItems: "center",
+  },
+
   actionsRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 6,
-    gap: 12,
+    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
-  actionBtn: { padding: 4 },
+
+  actionBtn: {
+    padding: spacing.xs,
+  },
+
   followBtn: {
-    padding: 6,
-    borderRadius: 50,
-    backgroundColor: "#F2F2F2",
+    padding: spacing.xs,
+    borderRadius: radius.round,
+    backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
   },
 
   statsModalCard: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
+    backgroundColor: colors.card,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    padding: spacing.md,
   },
 
   statsHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
 
   statsTeam: {
@@ -898,11 +982,11 @@ const styles = StyleSheet.create({
   statsLogo: {
     width: 36,
     height: 36,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
 
   statsTeamName: {
-    fontSize: 11,
+    ...g.caption,
     textAlign: "center",
   },
 
@@ -912,37 +996,36 @@ const styles = StyleSheet.create({
   },
 
   statsScoreText: {
-    fontSize: 22,
-    fontWeight: "700",
+    ...g.titleLarge,
   },
 
   statsStatus: {
-    fontSize: 12,
-    color: "#666",
+    ...g.caption,
+    color: colors.textSecondary,
   },
 
   statsGrid: {
-    marginVertical: 8,
+    marginVertical: spacing.sm,
   },
 
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
     borderBottomWidth: 0.5,
-    borderColor: "#eee",
+    borderColor: colors.border,
   },
 
   statsLabel: {
-    fontSize: 12,
-    color: "#555",
+    ...g.caption,
     textAlign: "center",
     width: "40%",
+    color: colors.textSecondary,
   },
 
   statsValue: {
-    fontSize: 13,
+    ...g.body,
     fontWeight: "600",
     width: "30%",
     textAlign: "center",
@@ -950,7 +1033,7 @@ const styles = StyleSheet.create({
 
   statsActions: {
     flexDirection: "row",
-    marginTop: 16,
+    marginTop: spacing.md,
   },
 
   goalsRow: {
@@ -959,7 +1042,56 @@ const styles = StyleSheet.create({
   },
 
   goalItem: {
-    fontSize: 12,
-    marginBottom: 4,
+    ...g.caption,
+    marginBottom: spacing.xs,
+  },
+  chip: {
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  chipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+
+  chipText: {
+    ...g.small,
+    color: colors.textPrimary,
+  },
+
+  chipTextSelected: {
+    ...g.small,
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  primaryButton: {
+    margin: spacing.md,
+    borderRadius: radius.md,
+  },
+
+  leagueButton: {
+    borderRadius: radius.md,
+    paddingVertical: spacing.xs,
+  },
+
+  leagueButtonText: {
+    fontWeight: "700",
+  },
+
+  search: {
+    marginBottom: spacing.sm,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+  },
+
+  searchInput: {
+    ...g.body,
+    color: colors.textPrimary,
   },
 });

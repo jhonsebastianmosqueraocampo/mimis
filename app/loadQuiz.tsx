@@ -1,16 +1,22 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import { QuestionQuiz } from "@/types";
 import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
   Alert,
+  Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import DateTimePicker from "react-native-modal-datetime-picker";
+import PrivateLayout from "./privateLayout";
 
 const emptyQuestion = (): QuestionQuiz => ({
   videoUrl: "",
@@ -21,86 +27,115 @@ const emptyQuestion = (): QuestionQuiz => ({
 
 export default function LoadQuiz() {
   const { loadQuiz } = useFetch();
+
   const [dateKey, setDateKey] = useState("");
-  const [questions, setQuestions] = useState<QuestionQuiz[]>([emptyQuestion()]);
+  const [questions, setQuestions] = useState<any[]>([emptyQuestion()]);
   const [loading, setLoading] = useState(false);
+
+  const [show, setShow] = useState(false);
 
   const getTodayDate = () => {
     const d = new Date();
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
+
     setDateKey(`${yyyy}-${mm}-${dd}`);
   };
 
   const addQuestion = () => {
     if (questions.length >= 30) return;
+
     setQuestions([...questions, emptyQuestion()]);
   };
 
   const removeQuestion = (index: number) => {
     if (questions.length === 1) return;
-    const updated = questions.filter((_, i) => i !== index);
-    setQuestions(updated);
+
+    setQuestions(questions.filter((_, i) => i !== index));
   };
 
   const duplicateQuestion = (index: number) => {
     if (questions.length >= 30) return;
+
     const updated = [...questions];
     updated.splice(index + 1, 0, { ...questions[index] });
+
     setQuestions(updated);
   };
 
-  const updateQuestion = (
-    index: number,
-    field: keyof QuestionQuiz,
-    value: any,
-  ) => {
+  const updateQuestion = (index: number, field: string, value: any) => {
     const updated = [...questions];
-    updated[index] = { ...updated[index], [field]: value };
+
+    updated[index][field] = value;
+
     setQuestions(updated);
   };
 
   const updateOption = (qIndex: number, optIndex: number, value: string) => {
     const updated = [...questions];
+
     updated[qIndex].options[optIndex] = value;
+
     setQuestions(updated);
+  };
+
+  const pickVideo = async (index: number) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+
+      const updated = [...questions];
+
+      updated[index].videoUrl = asset.uri;
+      updated[index].videoFile = asset;
+
+      setQuestions(updated);
+    }
   };
 
   const saveQuiz = async () => {
     if (!dateKey) {
-      Alert.alert("Error", "Debes ingresar la fecha (YYYY-MM-DD)");
+      Alert.alert("Error", "Debes seleccionar la fecha");
       return;
-    }
-
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-
-      if (!q.videoUrl.startsWith("http")) {
-        Alert.alert("Error", `Pregunta ${i + 1}: URL inválida`);
-        return;
-      }
-
-      if (q.options.some((opt) => !opt.trim())) {
-        Alert.alert("Error", `Pregunta ${i + 1}: opciones vacías`);
-        return;
-      }
-
-      if (q.correctIndex < 0 || q.correctIndex > 3) {
-        Alert.alert("Error", `Pregunta ${i + 1}: índice incorrecto inválido`);
-        return;
-      }
     }
 
     setLoading(true);
 
     try {
-      const { success, message } = await loadQuiz(dateKey, questions);
+      const formData = new FormData();
+
+      formData.append("dateKey", dateKey);
+
+      formData.append(
+        "questions",
+        JSON.stringify(
+          questions.map((q) => ({
+            questionText: q.questionText,
+            options: q.options,
+            correctIndex: q.correctIndex,
+          })),
+        ),
+      );
+
+      questions.forEach((q, index) => {
+        formData.append(`video_${index}`, {
+          uri: q.videoFile.uri,
+          name: q.videoFile.fileName || `video_${index}.mp4`,
+          type: q.videoFile.mimeType || "video/mp4",
+        } as any);
+      });
+
+      const { success } = await loadQuiz(formData);
 
       if (!success) {
-        Alert.alert("Error", message || "Error guardando");
+        Alert.alert("Error", "Error guardando");
       } else {
-        Alert.alert("Éxito", "Quiz guardado correctamente");
+        Alert.alert("Éxito", "Quiz guardado");
         setQuestions([emptyQuestion()]);
       }
     } catch (error: any) {
@@ -111,174 +146,177 @@ export default function LoadQuiz() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Cargar Quiz del Día</Text>
+    <PrivateLayout>
+      <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+        <Text style={[g.title, { marginBottom: spacing.md }]}>
+          Cargar Quiz del Día
+        </Text>
 
-      <View style={styles.dateRow}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="YYYY-MM-DD"
-          value={dateKey}
-          onChangeText={setDateKey}
-        />
-        <TouchableOpacity style={styles.todayButton} onPress={getTodayDate}>
-          <Text style={styles.buttonText}>Hoy</Text>
-        </TouchableOpacity>
-      </View>
+        {/* FECHA */}
 
-      {questions.map((q, qIndex) => (
-        <View key={qIndex} style={styles.card}>
-          <View style={styles.headerRow}>
-            <Text style={styles.subtitle}>Pregunta {qIndex + 1}</Text>
-            <View style={styles.actionRow}>
-              <TouchableOpacity onPress={() => duplicateQuestion(qIndex)}>
-                <Text style={styles.smallAction}>Duplicar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => removeQuestion(qIndex)}>
-                <Text style={styles.smallDelete}>Eliminar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.sm,
+            marginBottom: spacing.md,
+          }}
+        >
+          <Pressable
+            style={[
+              g.card,
+              {
+                flex: 1,
+                padding: spacing.sm,
+                borderColor: dateKey ? colors.primary : "#444",
+                borderWidth: 1,
+              },
+            ]}
+            onPress={() => setShow(true)}
+          >
+            <Text>{dateKey ? dateKey : "Seleccionar fecha del quiz"}</Text>
+          </Pressable>
 
           <TouchableOpacity
-            onPress={async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-                quality: 1,
-              });
-
-              if (!result.canceled) {
-                updateQuestion(qIndex, "videoUrl", result.assets[0]);
-              }
+            onPress={getTodayDate}
+            style={{
+              backgroundColor: colors.primary,
+              paddingHorizontal: spacing.md,
+              justifyContent: "center",
+              borderRadius: radius.md,
             }}
           >
-            <Text>{q.videoUrl ? "Cambiar video" : "Seleccionar video"}</Text>
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Hoy</Text>
           </TouchableOpacity>
-
-          <Text style={styles.label}>Texto de la pregunta</Text>
-          <TextInput
-            style={styles.input}
-            value={q.questionText}
-            onChangeText={(text) =>
-              updateQuestion(qIndex, "questionText", text)
-            }
-          />
-
-          {q.options.map((opt: string, optIndex: number) => (
-            <TextInput
-              key={optIndex}
-              style={styles.input}
-              placeholder={`Opción ${optIndex + 1}`}
-              value={opt}
-              onChangeText={(text) => updateOption(qIndex, optIndex, text)}
-            />
-          ))}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Índice correcto (0-3)"
-            keyboardType="numeric"
-            value={String(q.correctIndex)}
-            onChangeText={(text) =>
-              updateQuestion(qIndex, "correctIndex", Number(text))
-            }
-          />
         </View>
-      ))}
 
-      {questions.length < 30 && (
-        <TouchableOpacity style={styles.addButton} onPress={addQuestion}>
-          <Text style={styles.buttonText}>+ Agregar Pregunta</Text>
+        <DateTimePicker
+          isVisible={show}
+          mode="date"
+          onConfirm={(selectedDate: Date) => {
+            setShow(false);
+            setDateKey(selectedDate.toISOString().split("T")[0]);
+          }}
+          onCancel={() => setShow(false)}
+        />
+
+        {/* PREGUNTAS */}
+
+        {questions.map((q, qIndex) => (
+          <View
+            key={qIndex}
+            style={[
+              g.card,
+              {
+                padding: spacing.md,
+                marginBottom: spacing.md,
+              },
+            ]}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: spacing.sm,
+              }}
+            >
+              <Text style={{ fontWeight: "700" }}>Pregunta {qIndex + 1}</Text>
+
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                <TouchableOpacity onPress={() => duplicateQuestion(qIndex)}>
+                  <Text style={{ color: colors.primary }}>Duplicar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => removeQuestion(qIndex)}>
+                  <Text style={{ color: "red" }}>Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* VIDEO */}
+
+            <TouchableOpacity
+              onPress={() => pickVideo(qIndex)}
+              style={{
+                borderWidth: 1,
+                borderColor: q.videoUrl ? colors.primary : "#444",
+                padding: spacing.md,
+                borderRadius: radius.md,
+                marginBottom: spacing.sm,
+              }}
+            >
+              {q.videoUrl ? (
+                <Text style={{ color: colors.primary }}>✅ Video cargado</Text>
+              ) : (
+                <Text style={{ opacity: 0.7 }}>Seleccionar video</Text>
+              )}
+            </TouchableOpacity>
+
+            <TextInput
+              value={q.questionText}
+              onChangeText={(text) =>
+                updateQuestion(qIndex, "questionText", text)
+              }
+              style={[
+                g.card,
+                { padding: spacing.sm, marginBottom: spacing.sm },
+              ]}
+            />
+
+            {q.options.map((opt: string, optIndex: number) => (
+              <TextInput
+                key={optIndex}
+                value={opt}
+                placeholder={`Opción ${optIndex + 1}`}
+                onChangeText={(text) => updateOption(qIndex, optIndex, text)}
+                style={[
+                  g.card,
+                  { padding: spacing.sm, marginBottom: spacing.sm },
+                ]}
+              />
+            ))}
+
+            <TextInput
+              keyboardType="numeric"
+              value={String(q.correctIndex)}
+              placeholder="Respuesta correcta (0-3)"
+              onChangeText={(text) =>
+                updateQuestion(qIndex, "correctIndex", Number(text))
+              }
+              style={[g.card, { padding: spacing.sm }]}
+            />
+          </View>
+        ))}
+
+        {questions.length < 30 && (
+          <TouchableOpacity
+            onPress={addQuestion}
+            style={{
+              backgroundColor: colors.primary,
+              padding: spacing.md,
+              borderRadius: radius.md,
+              marginBottom: spacing.md,
+            }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center" }}>
+              + Agregar Pregunta
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          onPress={saveQuiz}
+          disabled={loading}
+          style={{
+            backgroundColor: "#000",
+            padding: spacing.md,
+            borderRadius: radius.md,
+          }}
+        >
+          <Text style={{ color: "#fff", textAlign: "center" }}>
+            {loading ? "Guardando..." : "Guardar Quiz"}
+          </Text>
         </TouchableOpacity>
-      )}
-
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={saveQuiz}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Guardando..." : "Guardar Quiz"}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
-
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-
-  todayButton: {
-    backgroundColor: "#1DB954",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-
-  subtitle: { fontSize: 16, fontWeight: "bold" },
-  label: { fontWeight: "600", marginBottom: 4 },
-
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    alignItems: "center",
-  },
-
-  actionRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-
-  smallAction: {
-    color: "#1DB954",
-    fontWeight: "600",
-  },
-
-  smallDelete: {
-    color: "red",
-    fontWeight: "600",
-  },
-
-  card: {
-    backgroundColor: "#f2f2f2",
-    padding: 12,
-    marginBottom: 16,
-    borderRadius: 10,
-  },
-
-  input: {
-    backgroundColor: "#fff",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 8,
-  },
-
-  addButton: {
-    backgroundColor: "#1DB954",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-
-  saveButton: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
-  },
-
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-});

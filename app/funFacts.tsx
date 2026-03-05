@@ -1,22 +1,39 @@
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
-import React, { useEffect, useState } from "react";
-import { Alert, FlatList, Linking, View } from "react-native";
-import { ActivityIndicator, Card, IconButton, Text } from "react-native-paper";
+import { FunFact } from "@/types";
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Linking, RefreshControl, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  IconButton,
+  Text,
+} from "react-native-paper";
+import PrivateLayout from "./privateLayout";
+
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { g } from "@/theme/styles";
+import { sx } from "@/theme/sx";
 
 export default function FunFactsScreen() {
   const { getFunFacts } = useFetch();
 
-  const [facts, setFacts] = useState<string[]>([]);
+  const [facts, setFacts] = useState<FunFact[]>([]);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const load = async (p = 1) => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const load = async (p = 1, reset = false) => {
     const { success, list, hasMore } = await getFunFacts(p);
 
     if (success) {
-      if (p === 1) {
+      if (p === 1 || reset) {
         setFacts(list);
       } else {
         setFacts((prev) => [...prev, ...list]);
@@ -35,23 +52,39 @@ export default function FunFactsScreen() {
 
     setLoadingMore(true);
     const nextPage = page + 1;
+
     await load(nextPage);
     setPage(nextPage);
+
     setLoadingMore(false);
   };
 
-  const renderItem = ({ item, index }: { item: string; index: number }) => {
-    if (index > 0 && index % 8 === 0) {
-      return (
-        <View>
-          <AdBanner />
-          <FactCard text={item} onShare={() => shareOnWhatsApp(item)} />
-        </View>
-      );
-    }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setPage(1);
 
-    return <FactCard text={item} onShare={() => shareOnWhatsApp(item)} />;
+    await load(1, true);
+
+    setRefreshing(false);
   };
+
+  /* =========================
+     FILTRO FECHA
+  ========================== */
+
+  const filteredFacts = useMemo(() => {
+    if (!selectedDate) return facts;
+
+    return facts.filter(
+      (fact) =>
+        new Date(fact.createdAt).toDateString() ===
+        new Date(selectedDate).toDateString(),
+    );
+  }, [facts, selectedDate]);
+
+  /* =========================
+     WHATSAPP SHARE
+  ========================== */
 
   const shareOnWhatsApp = async (text: string) => {
     const message = `⚽ Dato curioso:\n\n${text}\n\nDescubre más en MIMIS 🔥`;
@@ -60,49 +93,107 @@ export default function FunFactsScreen() {
 
     const supported = await Linking.canOpenURL(url);
 
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      Alert.alert("WhatsApp no está instalado");
-    }
+    if (supported) await Linking.openURL(url);
+    else Alert.alert("WhatsApp no está instalado");
   };
 
   return (
-    <FlatList
-      data={facts}
-      keyExtractor={(_, index) => index.toString()}
-      renderItem={renderItem}
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.5}
-      ListFooterComponent={
-        loadingMore ? <ActivityIndicator style={{ margin: 20 }} /> : null
-      }
-      contentContainerStyle={{ padding: 12 }}
-      showsVerticalScrollIndicator={false}
-    />
+    <PrivateLayout>
+      <View style={sx({ px: 16, pt: 10 }) as any}>
+        {/* FILTRO */}
+        <View style={[sx({ row: true, mb: 14 }) as any]}>
+          <Button
+            mode={selectedDate === null ? "contained" : "outlined"}
+            buttonColor={selectedDate === null ? colors.primary : undefined}
+            onPress={() => setSelectedDate(null)}
+            style={{ marginRight: 10 }}
+          >
+            Todos
+          </Button>
+
+          <Button
+            mode="outlined"
+            onPress={() => setSelectedDate(new Date().toISOString())}
+          >
+            Hoy
+          </Button>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onScroll={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } =
+              nativeEvent;
+
+            const isCloseToBottom =
+              layoutMeasurement.height + contentOffset.y >=
+              contentSize.height - 100;
+
+            if (isCloseToBottom) loadMore();
+          }}
+          scrollEventThrottle={400}
+        >
+          {filteredFacts.map((fact, index) => (
+            <View key={index}>
+              {index > 0 && index % 8 === 0 && <AdBanner />}
+
+              <FactCard
+                text={fact.text}
+                date={fact.createdAt}
+                onShare={() => shareOnWhatsApp(fact.text)}
+              />
+            </View>
+          ))}
+
+          {loadingMore && <ActivityIndicator style={{ marginVertical: 20 }} />}
+        </ScrollView>
+      </View>
+    </PrivateLayout>
   );
 }
 
-const FactCard = ({ text, onShare }: { text: string; onShare: () => void }) => (
+/* =========================
+   FACT CARD
+========================== */
+
+const FactCard = ({
+  text,
+  date,
+  onShare,
+}: {
+  text: string;
+  date: string;
+  onShare: () => void;
+}) => (
   <Card
-    style={{
-      marginBottom: 16,
-      borderRadius: 20,
-      padding: 20,
-      elevation: 3,
-    }}
+    style={[
+      shadows.sm,
+      {
+        marginBottom: 16,
+        borderRadius: radius.lg,
+        padding: 18,
+        backgroundColor: colors.card,
+      },
+    ]}
   >
-    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-      <Text
-        style={{
-          fontSize: 16,
-          lineHeight: 24,
-          fontWeight: "500",
-          flex: 1,
-        }}
-      >
-        ⚽ {text}
-      </Text>
+    <View
+      style={[
+        sx({ row: true }) as any,
+        { justifyContent: "space-between", alignItems: "flex-start" },
+      ]}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={g.body}>⚽ {text}</Text>
+
+        <Text
+          style={[g.caption, { marginTop: 6, color: colors.textSecondary }]}
+        >
+          {new Date(date).toLocaleDateString()}
+        </Text>
+      </View>
 
       <IconButton
         icon="whatsapp"

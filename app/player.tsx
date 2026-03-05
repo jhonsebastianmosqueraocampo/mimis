@@ -7,13 +7,19 @@ import { useFetch } from "@/hooks/FetchContext";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { Chip, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+
 import AvatarCard from "../components/AvatarCard";
 import VerticalScroll from "../components/VerticalScroll";
 import type { PlayerB, RootStackParamList, swiperItem } from "../types";
+
+import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
+
 import PrivateLayout from "./privateLayout";
 
 const items = [
@@ -31,18 +37,23 @@ export default function Player() {
   const [player, setPlayer] = useState<PlayerB>();
   const [playerNew, setPlayerNews] = useState<swiperItem[]>();
   const [seasons, setSeasons] = useState<number[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingInfoPlayer, setLoadingInfoPlayer] = useState(true);
+  const [loadingNews, setLoadingNews] = useState(true);
+  const [loadingSeasons, setLoadingSeasons] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState(items[0]);
+
   const route = useRoute<PlayerScreenRouteProp>();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const { id } = route.params;
+
   useEffect(() => {
     let isMounted = true;
 
     const getPlayer = async () => {
-      setLoading(true);
+      setLoadingInfoPlayer(true);
       try {
         const { success, player, message } = await getInfoPlayer(id);
 
@@ -56,12 +67,12 @@ export default function Player() {
       } catch (err) {
         if (isMounted) setError("Error al cargar trayectoria del jugador");
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setLoadingInfoPlayer(false);
       }
     };
 
     const playerNews = async () => {
-      setLoading(true);
+      setLoadingNews(true);
       try {
         const { success, news, message } = await getPlayerNews(id);
 
@@ -75,12 +86,12 @@ export default function Player() {
       } catch (err) {
         if (isMounted) setError("Error al cargar trayectoria del jugador");
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setLoadingNews(false);
       }
     };
 
     const playerSeasons = async () => {
-      setLoading(true);
+      setLoadingSeasons(true);
       try {
         const { success, seasons, message } = await getPlayerSeasons(id);
 
@@ -94,7 +105,7 @@ export default function Player() {
       } catch (err) {
         if (isMounted) setError("Error al cargar trayectoria del jugador");
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setLoadingSeasons(false);
       }
     };
 
@@ -109,10 +120,10 @@ export default function Player() {
     };
   }, [id]);
 
-  if (loading) {
+  if (loadingInfoPlayer || loadingNews || loadingSeasons) {
     return (
       <Loading
-        visible={loading}
+        visible={loadingInfoPlayer || loadingNews || loadingSeasons}
         title="Cargando"
         subtitle="Pronto tendrás la información"
       />
@@ -136,45 +147,66 @@ export default function Player() {
           />
 
           <TouchableOpacity
-            style={styles.headerRow}
             onPress={() => handleTeam(player.team?.id.toString() ?? "")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: spacing.sm,
+              paddingHorizontal: spacing.sm,
+            }}
           >
             <Image
               source={{ uri: player?.team?.logo ?? "" }}
-              style={styles.teamImage}
+              style={{
+                width: 40,
+                height: 40,
+                marginRight: spacing.sm,
+              }}
             />
-            <Chip style={styles.clubChip}>{player?.team?.name}</Chip>
+
+            <Chip
+              style={{
+                backgroundColor: colors.border,
+              }}
+              textStyle={{ color: colors.textSecondary }}
+            >
+              {player?.team?.name}
+            </Chip>
           </TouchableOpacity>
 
-          <View style={styles.tabBar}>
+          <View style={{ marginVertical: spacing.sm }}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipContainer}
+              contentContainerStyle={{
+                paddingHorizontal: spacing.sm,
+              }}
             >
-              {items.map((item, index) => (
-                <Chip
-                  key={item.id}
-                  onPress={() => setSelectedItem(item)}
-                  selected={selectedItem.id === item.id}
-                  style={[
-                    styles.chip,
-                    index === 0 && styles.firstChip,
-                    index === items.length - 1 && styles.lastChip,
-                    selectedItem.id === item.id && styles.chipSelected,
-                  ]}
-                  textStyle={{
-                    color: selectedItem.id === item.id ? "#fff" : "#000",
-                  }}
-                >
-                  {item.name.toUpperCase()}
-                </Chip>
-              ))}
+              {items.map((item) => {
+                const active = selectedItem.id === item.id;
+
+                return (
+                  <Chip
+                    key={item.id}
+                    onPress={() => setSelectedItem(item)}
+                    selected={active}
+                    style={{
+                      marginRight: 8,
+                      backgroundColor: active ? colors.primary : colors.border,
+                    }}
+                    textStyle={{
+                      color: active ? "#fff" : colors.textSecondary,
+                    }}
+                  >
+                    {item.name.toUpperCase()}
+                  </Chip>
+                );
+              })}
             </ScrollView>
           </View>
 
-          <View style={styles.container}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
+          <View style={{ padding: spacing.md }}>
+            <Text style={[g.subtitle, { marginBottom: spacing.sm }]}>
               {selectedItem.name.toUpperCase()}
             </Text>
 
@@ -220,56 +252,3 @@ export default function Player() {
     </PrivateLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  avatar: {
-    paddingVertical: 2,
-  },
-  container: {
-    padding: 16,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-    gap: 8,
-    paddingHorizontal: 8,
-  },
-  teamImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  clubChip: {
-    backgroundColor: "transparent",
-    borderColor: "#1DB954",
-  },
-  chipContainer: {
-    flexDirection: "row",
-  },
-  tabBar: {
-    marginVertical: 12,
-  },
-  chip: {
-    marginRight: 8,
-    borderColor: "#1DB954",
-    borderWidth: 1,
-    backgroundColor: "transparent",
-  },
-  firstChip: {
-    marginLeft: 12,
-  },
-
-  lastChip: {
-    marginRight: 12,
-  },
-  chipSelected: {
-    backgroundColor: "#1DB954",
-  },
-  sectionTitle: {
-    marginBottom: 12,
-    color: "#333",
-    fontWeight: "600",
-  },
-});
