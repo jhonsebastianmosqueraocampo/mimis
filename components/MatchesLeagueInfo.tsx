@@ -1,4 +1,5 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -99,7 +100,10 @@ export default function MatchesLeagueInfo({
               selectedItem.id === item.id && styles.chipSelected,
             ]}
             textStyle={{
-              color: selectedItem.id === item.id ? "#fff" : "#000",
+              color:
+                selectedItem.id === item.id
+                  ? colors.textOnPrimary
+                  : colors.textPrimary,
             }}
           >
             {item.name.toUpperCase()}
@@ -150,10 +154,10 @@ const styles = StyleSheet.create({
   },
   chip: {
     marginHorizontal: 4,
-    borderColor: "#1DB954",
-    backgroundColor: "transparent",
+    borderColor: colors.border,
+    backgroundColor: colors.border,
   },
   chipSelected: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
 });

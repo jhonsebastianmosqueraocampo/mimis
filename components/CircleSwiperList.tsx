@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { SwiperListProps } from "@/types";
 import React, { useRef } from "react";
 import {
@@ -49,7 +53,7 @@ export default function CircleSwiperList({ list, action }: SwiperListProps) {
         }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: true },
         )}
         scrollEventThrottle={16}
       >
@@ -151,53 +155,59 @@ const styles = StyleSheet.create({
     height: 160,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: spacing.xs,
   },
+
   card: {
     width: ITEM_SIZE,
     alignItems: "center",
   },
+
   image: {
     height: ITEM_SIZE * 0.9,
     width: ITEM_SIZE * 0.9,
     borderRadius: (ITEM_SIZE * 0.9) / 2,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
+
   overlay: {
     position: "absolute",
     bottom: ITEM_SIZE * 0.2,
     left: "25%",
     width: "50%",
     height: 20,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: 10,
+    backgroundColor: colors.background,
+    borderRadius: radius.round,
     zIndex: -1,
   },
+
   title: {
-    fontSize: 13,
+    ...typography.small,
     fontWeight: "700",
-    color: "#222",
-    marginTop: 8,
+    color: colors.textPrimary,
+    marginTop: spacing.xs,
     textAlign: "center",
   },
+
   indicators: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
-    gap: 6,
+    marginTop: spacing.sm,
+    gap: spacing.xs ?? 6,
   },
+
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: "#1B5E20",
+    borderRadius: radius.round,
+    backgroundColor: colors.primary,
   },
 });

@@ -1,5 +1,9 @@
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LiveEvent, TeamLineup, TeamLineupLive } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
@@ -97,24 +101,52 @@ export default function FixtureLineups({
 
   return (
     <Card
-      style={{ marginTop: 1, marginBottom: 1, borderRadius: 12, elevation: 2 }}
+      style={{
+        marginTop: spacing.xs,
+        marginBottom: spacing.xs,
+        borderRadius: radius.lg,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        elevation: 2,
+      }}
     >
-      <Card.Title title="Alineaciones" titleVariant="titleMedium" />
+      <Card.Title
+        title="Alineaciones"
+        titleVariant="titleMedium"
+        titleStyle={{
+          ...typography.title,
+          color: colors.textPrimary,
+          fontWeight: "700",
+        }}
+      />
+
       <Card.Content>
         {error ? (
           <>
             <Text
               style={{
+                ...typography.body,
                 textAlign: "center",
-                color: "gray",
+                color: colors.textSecondary,
                 fontStyle: "italic",
-                marginVertical: 10,
+                marginVertical: spacing.sm,
               }}
             >
               {error}
             </Text>
+
             {shouldFetch ? (
-              <Button mode="outlined" onPress={fetchLineups}>
+              <Button
+                mode="outlined"
+                onPress={fetchLineups}
+                textColor={colors.primary}
+                style={{
+                  alignSelf: "center",
+                  borderColor: colors.primary,
+                  borderRadius: radius.md ?? 10, // si no existe radius.md, agrégalo
+                }}
+              >
                 Reintentar
               </Button>
             ) : null}
@@ -122,10 +154,11 @@ export default function FixtureLineups({
         ) : !hasLineups ? (
           <Text
             style={{
+              ...typography.body,
               textAlign: "center",
-              color: "gray",
+              color: colors.textSecondary,
               fontStyle: "italic",
-              marginVertical: 20,
+              marginVertical: spacing.lg,
             }}
           >
             Alineaciones no disponibles
@@ -138,7 +171,8 @@ export default function FixtureLineups({
             status={safeStatus}
           />
         )}
-        <View style={{ marginVertical: 24, alignItems: "center" }}>
+
+        <View style={{ marginVertical: spacing.lg, alignItems: "center" }}>
           <AdBanner />
         </View>
       </Card.Content>

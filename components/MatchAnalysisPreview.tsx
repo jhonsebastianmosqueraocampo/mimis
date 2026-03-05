@@ -1,6 +1,10 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { AnalysisOpenAi, PreMatchStats } from "@/types";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
@@ -16,46 +20,6 @@ type MatchAnalysisPreviewProps = {
   stats: PreMatchStats;
   fixtureId: string;
 };
-
-/**
- * IMPORTANT: Tu BD guarda charts así:
- * barCharts: [{ title, data: [{ team, shots }] }]
- * pieCharts: [{ title, data: [{ team, possession }] }]
- */
-type BarChartDB = {
-  title?: string;
-  data?: { team?: string; shots?: number }[];
-};
-type PieChartDB = {
-  title?: string;
-  data?: { team?: string; possession?: number }[];
-};
-
-type ChartsDB = {
-  barCharts?: BarChartDB[];
-  pieCharts?: PieChartDB[];
-  lineCharts?: any[];
-  radarCharts?: any[];
-  heatMaps?: any[];
-};
-
-const adaptBarCharts = (charts: any[] = []) =>
-  charts.map((c) => ({
-    title: c.title,
-    data: Object.entries(c.data || {}).map(([team, shots]) => ({
-      team,
-      shots: Number(shots),
-    })),
-  }));
-
-const adaptPieCharts = (charts: any[] = []) =>
-  charts.map((c) => ({
-    title: c.title,
-    data: Object.entries(c.data || {}).map(([team, possession]) => ({
-      team,
-      possession: Number(possession),
-    })),
-  }));
 
 export default function MatchAnalysisPreview({
   stats,
@@ -114,23 +78,7 @@ export default function MatchAnalysisPreview({
     };
   }, [fixtureId]);
 
-  const generatedLabel = useMemo(() => {
-    if (!analysis?.generatedAt) return null;
-    return new Date(analysis.generatedAt).toLocaleString();
-  }, [analysis?.generatedAt]);
-
   const summary = analysis?.summary;
-  const charts = (analysis?.charts as unknown as ChartsDB) ?? {};
-
-  const barCharts = useMemo(
-    () => adaptBarCharts(charts.barCharts),
-    [charts.barCharts],
-  );
-
-  const pieCharts = useMemo(
-    () => adaptPieCharts(charts.pieCharts),
-    [charts.pieCharts],
-  );
 
   if (loading) {
     return (
@@ -244,46 +192,6 @@ export default function MatchAnalysisPreview({
               empty="Sin recomendaciones."
             />
           </SectionCard>
-
-          {/* GRAFICAS adaptadas a tu BD */}
-          {/* <SectionCard
-            title="Comparativas"
-            subtitle="Tiros y posesión (según lo guardado)"
-            open={open.charts}
-            onToggle={() => setOpen((p) => ({ ...p, charts: !p.charts }))}
-          >
-            {barCharts.length === 0 && pieCharts.length === 0 ? (
-              <Text style={styles.muted}>No hay datos de comparativas.</Text>
-            ) : (
-              <View style={{ gap: 12 }}>
-                {barCharts.map((c, idx) => (
-                  <Card
-                    key={`bar-${idx}`}
-                    style={styles.innerCard}
-                    mode="outlined"
-                  >
-                    <Card.Content style={{ gap: 10 }}>
-                      <Text>{c.title ?? "Comparación"}</Text>
-                      <ShotsCompare data={c.data} />
-                    </Card.Content>
-                  </Card>
-                ))}
-
-                {pieCharts.map((c, idx) => (
-                  <Card
-                    key={`pie-${idx}`}
-                    style={styles.innerCard}
-                    mode="outlined"
-                  >
-                    <Card.Content style={{ gap: 10 }}>
-                      <Text>{c.title ?? "Distribución"}</Text>
-                      <PossessionCompare data={c.data} />
-                    </Card.Content>
-                  </Card>
-                ))}
-              </View>
-            )}
-          </SectionCard> */}
         </>
       ) : null}
 
@@ -383,172 +291,117 @@ function ListCard({
   );
 }
 
-/* ------------------------- Charts (según BD) ------------------------- */
-
-function ShotsCompare({
-  data,
-}: {
-  data?: { team?: string; shots?: number }[];
-}) {
-  const rows = Array.isArray(data) ? data : [];
-  if (!rows.length)
-    return <Text style={styles.muted}>Sin datos de tiros.</Text>;
-
-  const values = rows.map((r) => Number(r.shots) || 0);
-  const max = Math.max(...values, 1);
-
-  return (
-    <View style={{ gap: 10 }}>
-      {rows.map((r, idx) => {
-        const team = r.team ?? `Equipo ${idx + 1}`;
-        const v = Number(r.shots) || 0;
-        const w = (v / max) * 100;
-
-        return (
-          <View key={`${team}-${idx}`} style={{ gap: 6 }}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.muted}>{team}</Text>
-              <Text style={styles.value}>{v.toFixed(1)} tiros</Text>
-            </View>
-
-            <View style={styles.track}>
-              <View style={[styles.fill, { width: `${Math.max(6, w)}%` }]} />
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-function PossessionCompare({
-  data,
-}: {
-  data?: { team?: string; possession?: number }[];
-}) {
-  const rows = Array.isArray(data) ? data : [];
-  if (!rows.length)
-    return <Text style={styles.muted}>Sin datos de posesión.</Text>;
-
-  // posesión ya viene como porcentaje, pero la normalizamos por si acaso
-  const clamp = (n: number) => Math.max(0, Math.min(100, n));
-
-  return (
-    <View style={{ gap: 10 }}>
-      {rows.map((r, idx) => {
-        const team = r.team ?? `Equipo ${idx + 1}`;
-        const pct = clamp(Number(r.possession) || 0);
-
-        return (
-          <View key={`${team}-${idx}`} style={{ gap: 6 }}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.muted}>{team}</Text>
-              <Text style={styles.value}>{pct.toFixed(1)}%</Text>
-            </View>
-
-            <View style={styles.track}>
-              <View style={[styles.fill, { width: `${Math.max(6, pct)}%` }]} />
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-/* ------------------------- Styles (legible, sin “apretar”) ------------------------- */
-
 const styles = StyleSheet.create({
   container: {
-    padding: 14,
-    paddingBottom: 40,
-    gap: 12,
+    padding: spacing.md,
+    paddingBottom: spacing.xl,
+    gap: spacing.sm,
   },
 
   headerCard: {
-    borderRadius: 18,
+    borderRadius: radius.xl ?? 18,
     overflow: "hidden",
   },
+
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: spacing.xs,
   },
+
   headerTitle: {
-    fontSize: 22,
+    ...typography.titleLarge,
     fontWeight: "900",
+    color: colors.textPrimary,
   },
+
   headerSubtitle: {
-    marginTop: 4,
+    ...typography.small,
+    marginTop: spacing.xs ?? 4,
     opacity: 0.7,
+    color: colors.textSecondary,
   },
+
   headerChips: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.xs,
   },
 
   card: {
-    borderRadius: 18,
+    borderRadius: radius.xl ?? 18,
     overflow: "hidden",
+    backgroundColor: colors.surface,
   },
 
   sectionTitle: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: "900",
+    color: colors.textPrimary,
   },
+
   sectionSubtitle: {
-    marginTop: 2,
+    ...typography.small,
+    marginTop: spacing.xs ?? 2,
     opacity: 0.65,
+    color: colors.textSecondary,
   },
 
   body: {
-    fontSize: 14,
+    ...typography.body,
     lineHeight: 20,
+    color: colors.textPrimary,
   },
+
   muted: {
+    ...typography.small,
     opacity: 0.7,
-    fontSize: 13,
     lineHeight: 18,
+    color: colors.textSecondary,
   },
+
   value: {
-    fontSize: 13,
+    ...typography.small,
     fontWeight: "800",
+    color: colors.textPrimary,
   },
 
   rowBetween: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 10,
+    gap: spacing.xs,
   },
 
   innerCard: {
-    borderRadius: 14,
+    borderRadius: radius.lg ?? 14,
+    backgroundColor: colors.surface,
   },
 
   bulletRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    gap: spacing.xs,
   },
+
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 999,
-    marginTop: 6,
-    backgroundColor: "rgba(60,130,255,0.95)",
+    borderRadius: radius.round,
+    marginTop: spacing.xs ?? 6,
+    backgroundColor: colors.primary,
   },
 
   track: {
     height: 10,
-    borderRadius: 999,
+    borderRadius: radius.round,
     overflow: "hidden",
-    backgroundColor: "rgba(0,0,0,0.08)",
+    backgroundColor: colors.surface,
   },
+
   fill: {
     height: "100%",
-    borderRadius: 999,
-    backgroundColor: "rgba(60,130,255,0.85)",
+    borderRadius: radius.round,
+    backgroundColor: colors.primary,
   },
 });

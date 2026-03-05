@@ -1,16 +1,14 @@
-import React from 'react';
-import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
-import { Card, Divider, Title } from 'react-native-paper';
-import { WebView } from 'react-native-webview';
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
+import React from "react";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Card, Divider, Title } from "react-native-paper";
+import { WebView } from "react-native-webview";
 
 export type Goal = {
-  team: 'home' | 'away';
+  team: "home" | "away";
   scorer: string;
   minute: number;
   videoUrl?: string;
@@ -27,9 +25,9 @@ export default function GoalTimeline({
   awayTeam,
   goals,
 }: GoalTimelineProps) {
-  const homeGoals = goals.filter((g) => g.team === 'home');
-  const awayGoals = goals.filter((g) => g.team === 'away');
-  const cardWidth = (Dimensions.get('window').width - 64) / 2;
+  const homeGoals = goals.filter((g) => g.team === "home");
+  const awayGoals = goals.filter((g) => g.team === "away");
+  const cardWidth = (Dimensions.get("window").width - 64) / 2;
 
   return (
     <ScrollView style={styles.container}>
@@ -87,44 +85,55 @@ export default function GoalTimeline({
 
 const styles = StyleSheet.create({
   container: {
-    margin: 16,
+    margin: spacing.md,
   },
+
   title: {
-    marginBottom: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.title,
+    marginBottom: spacing.md,
+    fontWeight: "700",
+    color: colors.textPrimary,
   },
+
   goalsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: spacing.md,
   },
+
   column: {
     flex: 1,
   },
+
   teamTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 4,
-    color: '#1e1e1e',
+    ...typography.body,
+    fontWeight: "700",
+    marginBottom: spacing.xs ?? 4,
+    color: colors.textPrimary,
   },
+
   divider: {
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
+
   goalItem: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
+
   goalText: {
-    fontSize: 14,
-    color: '#444',
+    ...typography.small,
+    color: colors.textSecondary,
   },
+
   videoCard: {
-    marginTop: 8,
+    marginTop: spacing.xs,
     height: 180,
-    overflow: 'hidden',
-    borderRadius: 8,
+    overflow: "hidden",
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
   },
+
   webview: {
     flex: 1,
   },

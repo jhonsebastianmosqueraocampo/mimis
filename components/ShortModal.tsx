@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LoadShortItem, ShortItem } from "@/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Video } from "expo-av";
@@ -223,9 +227,9 @@ export default function ShortModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.surface,
     justifyContent: "center",
-    padding: 20,
+    padding: spacing.lg,
   },
 
   header: {
@@ -233,96 +237,107 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   title: {
+    ...typography.title,
     fontWeight: "700",
+    color: colors.textPrimary,
   },
 
   thumbPicker: {
     height: 190,
-    borderRadius: 14,
-    backgroundColor: "#f0f0f0",
-    marginTop: 10,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    marginTop: spacing.sm,
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
   },
+
   thumbImg: {
     width: "100%",
     height: "100%",
   },
+
   thumbOverlay: {
     position: "absolute",
     bottom: 0,
     width: "100%",
-    padding: 6,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: spacing.xs ?? 6,
+    backgroundColor: colors.surface,
   },
+
   thumbOverlayText: {
-    color: "#fff",
+    ...typography.small,
+    color: colors.textOnPrimary,
     textAlign: "center",
-    fontSize: 12,
   },
+
   thumbText: {
-    color: "#777",
+    ...typography.small,
+    color: colors.textSecondary,
   },
 
   field: {
-    marginTop: 12,
+    marginTop: spacing.sm,
   },
 
   dateField: {
-    marginTop: 12,
-    padding: 14,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
   },
+
   dateLabel: {
-    fontSize: 12,
-    color: "#777",
+    ...typography.small,
+    color: colors.textSecondary,
   },
+
   dateValue: {
-    fontSize: 14,
+    ...typography.small,
     fontWeight: "500",
-    marginTop: 4,
+    marginTop: spacing.xs ?? 4,
+    color: colors.textPrimary,
   },
 
   videoContainer: {
-    marginTop: 12,
-    borderRadius: 14,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
 
   box: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    maxHeight: height * 0.85, // 🔥 CLAVE
-    paddingHorizontal: 18,
-    paddingTop: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    maxHeight: height * 0.85,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
 
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: spacing.lg,
   },
 
   videoBlock: {
-    marginTop: 12,
-    borderRadius: 14,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
 
   video: {
     width: "100%",
-    height: 180, // 🔥 altura controlada
-    backgroundColor: "#000",
+    height: 180,
+    backgroundColor: colors.text,
   },
 
   changeVideoBtn: {
-    marginTop: 8,
+    marginTop: spacing.xs,
   },
 
   saveBtn: {
-    marginTop: 24,
-    borderRadius: 12,
+    marginTop: spacing.lg,
+    borderRadius: radius.md,
   },
 });

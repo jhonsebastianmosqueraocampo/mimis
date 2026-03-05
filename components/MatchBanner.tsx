@@ -1,3 +1,8 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -87,17 +92,25 @@ export default function MatchBanner({
       <Divider style={{ width: "100%", marginVertical: 8 }} />
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="access-time" size={18} color="#555" />
+        <MaterialIcons
+          name="access-time"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>{matchDate.format("dddd, D MMM YYYY - HH:mm")}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="location-on" size={18} color="#555" />
+        <MaterialIcons
+          name="location-on"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>{stadium}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="person" size={18} color="#555" />
+        <MaterialIcons name="person" size={18} color={colors.textSecondary} />
         <Text>Árbitro: {referee}</Text>
       </View>
 
@@ -106,7 +119,7 @@ export default function MatchBanner({
           <MaterialCommunityIcons
             name="trophy-outline"
             size={18}
-            color="#555"
+            color={colors.textSecondary}
           />
           <Text>{tournament}</Text>
         </View>
@@ -123,51 +136,63 @@ export default function MatchBanner({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: "#f5f5f5",
-    shadowColor: "#000",
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    shadowColor: shadows.sm.shadowColor,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
     elevation: 3,
     alignItems: "center",
-    gap: 12,
+    gap: spacing.sm,
   },
+
   title: {
-    fontWeight: "bold",
-    color: "#1DB954",
-    fontFamily: "goli",
+    ...typography.title,
+    fontWeight: "700",
+    color: colors.primary,
   },
+
   teamsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 24,
+    gap: spacing.lg,
   },
+
   team: {
     alignItems: "center",
   },
+
   teamName: {
+    ...typography.body,
     fontWeight: "600",
-    fontFamily: "goli",
-    marginTop: 4,
+    marginTop: spacing.xs,
+    color: colors.textPrimary,
   },
+
   vsText: {
-    fontWeight: "bold",
-    fontFamily: "goli",
+    ...typography.title,
+    fontWeight: "700",
+    color: colors.textSecondary,
   },
+
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.xs,
   },
+
   timeLeftBox: {
-    marginTop: 12,
-    backgroundColor: "#1DB954",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
+    marginTop: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
   },
+
   timeLeftText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontFamily: "liter",
+    ...typography.small,
+    color: colors.textOnPrimary,
+    fontWeight: "700",
   },
 });

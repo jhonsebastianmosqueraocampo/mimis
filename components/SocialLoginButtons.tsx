@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as AuthSession from "expo-auth-session";
 import { makeRedirectUri } from "expo-auth-session";
@@ -85,8 +86,8 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#1DB954",
-    backgroundColor: "#fff",
+    borderColor: colors.primary,
+    backgroundColor: colors.textOnPrimary,
     alignItems: "center",
     justifyContent: "center",
   },

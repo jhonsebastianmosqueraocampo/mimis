@@ -1,6 +1,17 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LiveEvent, LiveMatch } from "@/types";
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Easing, Text, View } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import FixtureLineups from "./FixtureLineups";
 
 const { width } = Dimensions.get("window");
@@ -209,7 +220,7 @@ export default function DynamicMatchView({
   // ✅ NUEVO: color del campo con “flash”
   const fieldBg = fieldFlash.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#0b6623", "#1fa84f"], // flash suave
+    outputRange: [colors.primary, colors.secondary], // flash suave
   });
 
   return (
@@ -218,8 +229,8 @@ export default function DynamicMatchView({
       <Animated.View
         style={{
           borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 12,
+          borderColor: colors.border,
+          borderRadius: radius.md,
           backgroundColor: fieldBg as any, // Animated color
         }}
       >
@@ -233,48 +244,70 @@ export default function DynamicMatchView({
 
         {/* ⚽ Balón animado */}
         <Animated.View
-          style={{
-            position: "absolute",
-            width: 22,
-            height: 22,
-            borderRadius: 11,
-            backgroundColor: "white",
-            borderWidth: 1,
-            borderColor: "#333",
-            justifyContent: "center",
-            alignItems: "center",
-            transform: [{ translateX: ballX }, { translateY: ballY }],
-          }}
+          style={[
+            styles.ball,
+            {
+              transform: [{ translateX: ballX }, { translateY: ballY }],
+            },
+          ]}
           pointerEvents="none"
         >
-          <Text style={{ fontSize: 10 }}>⚽</Text>
+          <Text style={styles.ballText}>⚽</Text>
         </Animated.View>
 
         {/* 💬 Banner animado */}
         <Animated.View
-          style={{
-            position: "absolute",
-            bottom: 16,
-            alignSelf: "center",
-            backgroundColor: "rgba(0,0,0,0.75)",
-            paddingVertical: 6,
-            paddingHorizontal: 14,
-            borderRadius: 10,
-            opacity: eventOpacity,
-          }}
+          style={[styles.eventBanner, { opacity: eventOpacity }]}
           pointerEvents="none"
         >
-          <Text
-            style={{
-              color: "#fff",
-              fontWeight: "600",
-              textAlign: "center",
-            }}
-          >
-            {eventMessage}
-          </Text>
+          <Text style={styles.eventText}>{eventMessage}</Text>
         </Animated.View>
       </Animated.View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: spacing.sm,
+  },
+
+  field: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+  },
+
+  ball: {
+    position: "absolute",
+    width: 22,
+    height: 22,
+    borderRadius: radius.round,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.textPrimary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  ballText: {
+    ...typography.small,
+  },
+
+  eventBanner: {
+    position: "absolute",
+    bottom: spacing.md,
+    alignSelf: "center",
+    backgroundColor: colors.background + "CC",
+    paddingVertical: spacing.xs ?? 6,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+  },
+
+  eventText: {
+    ...typography.small,
+    color: colors.textOnPrimary,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+});

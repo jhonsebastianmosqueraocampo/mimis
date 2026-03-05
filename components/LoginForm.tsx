@@ -1,4 +1,8 @@
 import { useAuth } from "@/hooks/AuthContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { RootStackParamList, User } from "@/types";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
@@ -43,7 +47,7 @@ export default function LoginForm() {
       betsWon: 0,
       betsLost: 0,
       redeemed: 0,
-      badges: []
+      badges: [],
     };
     const result = await login(user);
 
@@ -106,51 +110,57 @@ export default function LoginForm() {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: spacing.sm,
     width: "100%",
   },
+
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderColor: "#ccc",
+    borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
   },
+
   input: {
     flex: 1,
-    marginLeft: 8,
-    fontSize: 16,
-    color: "#000",
+    marginLeft: spacing.xs,
+    ...typography.body,
+    color: colors.textPrimary,
   },
+
   errorText: {
-    color: "#e53935",
+    ...typography.small,
+    color: colors.error,
     textAlign: "center",
-    fontFamily: "goli",
-    fontSize: 14,
   },
+
   forgotContainer: {
     alignItems: "flex-end",
   },
+
   forgotText: {
-    color: "#1DB954",
-    fontFamily: "goli",
+    ...typography.small,
+    color: colors.primary,
   },
+
   button: {
-    backgroundColor: "#1DB954",
-    padding: 14,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: radius.md,
     alignItems: "center",
   },
+
   buttonDisabled: {
     opacity: 0.5,
   },
+
   buttonText: {
-    color: "#fff",
-    fontFamily: "goli",
+    ...typography.body,
+    color: colors.textOnPrimary,
     fontWeight: "600",
-    fontSize: 16,
   },
 });

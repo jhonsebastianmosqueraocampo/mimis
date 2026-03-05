@@ -7,7 +7,11 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Button, Card, ProgressBar, Snackbar, Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
-const GREEN = "#1DB954";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
+import { typography } from "@/theme/typography";
 
 export default function QuizDailyScreen() {
   const { getTodayQuiz, answerQuiz, validateQuizReward, claimQuizReward } =
@@ -116,8 +120,12 @@ export default function QuizDailyScreen() {
     return (
       <PrivateLayout>
         <View style={styles.center}>
-          <Text>Cargando preguntas...</Text>
-          <ProgressBar indeterminate style={{ marginTop: 12 }} />
+          <Text style={g.body}>Cargando preguntas...</Text>
+          <ProgressBar
+            indeterminate
+            style={styles.progress}
+            color={colors.primary}
+          />
         </View>
       </PrivateLayout>
     );
@@ -127,12 +135,13 @@ export default function QuizDailyScreen() {
     return (
       <PrivateLayout>
         <Card style={styles.mainCard}>
-          <Text variant="titleLarge">Quiz del día</Text>
-          <Text style={{ marginTop: 8 }}>Hoy no hay preguntas cargadas.</Text>
+          <Text style={g.title}>Quiz del día</Text>
+          <Text style={[g.bodySecondary, { marginTop: spacing.sm }]}>
+            Hoy no hay preguntas cargadas.
+          </Text>
           <Button
             mode="contained"
-            buttonColor={GREEN}
-            style={{ marginTop: 16 }}
+            style={{ marginTop: spacing.md }}
             onPress={load}
           >
             Reintentar
@@ -146,7 +155,6 @@ export default function QuizDailyScreen() {
     const percentage = total ? Math.round((score / total) * 100) : 0;
 
     const handleReward = async () => {
-      // 1. Validar primero
       const validation = await validateQuizReward(dateKey);
 
       if (!validation.success) {
@@ -166,9 +174,7 @@ export default function QuizDailyScreen() {
         return;
       }
 
-      // 2. Mostrar rewarded ad
       showRewardedAd(async () => {
-        // 🏆 3. Reclamar recompensa en backend
         const claim = await claimQuizReward(dateKey);
 
         if (!claim.success) {
@@ -179,7 +185,6 @@ export default function QuizDailyScreen() {
           return;
         }
 
-        // 4. Actualizar estado
         setRewardClaimed(true);
 
         setSnack({
@@ -195,11 +200,13 @@ export default function QuizDailyScreen() {
           <Card style={styles.completedCard}>
             <Text style={styles.completedTitle}>🎉 ¡Quiz completado!</Text>
 
-            <Text style={styles.completedSubtitle}>Resultado final</Text>
+            <Text style={[g.bodySecondary, styles.completedSubtitle]}>
+              Resultado final
+            </Text>
 
             <View style={styles.scoreCircle}>
               <Text style={styles.scoreBig}>{score}</Text>
-              <Text style={{ color: "#666" }}>/ {total}</Text>
+              <Text style={g.bodySecondary}>/ {total}</Text>
             </View>
 
             <Text style={styles.percentage}>{percentage}% de aciertos</Text>
@@ -207,18 +214,22 @@ export default function QuizDailyScreen() {
             {!rewardClaimed ? (
               <Button
                 mode="contained"
-                buttonColor={GREEN}
-                style={{ marginTop: 24 }}
+                style={{ marginTop: spacing.xl }}
                 onPress={handleReward}
               >
                 🎁 Reclamar recompensa
               </Button>
             ) : (
-              <View style={{ marginTop: 24, alignItems: "center" }}>
-                <Text style={{ color: GREEN, fontWeight: "600" }}>
+              <View style={{ marginTop: spacing.xl, alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: colors.success,
+                    fontFamily: typography.subtitle.fontFamily,
+                  }}
+                >
                   ✅ Recompensa reclamada
                 </Text>
-                <Text style={{ marginTop: 4, color: "#666" }}>
+                <Text style={[g.bodySecondary, { marginTop: spacing.xs }]}>
                   Vuelve mañana para un nuevo quiz
                 </Text>
               </View>
@@ -239,13 +250,13 @@ export default function QuizDailyScreen() {
   return (
     <PrivateLayout>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text variant="titleLarge">
+        <Text style={g.titleLarge}>
           Pregunta {answeredCount + 1} / {total}
         </Text>
 
         <ProgressBar
           progress={progress}
-          color={GREEN}
+          color={colors.primary}
           style={styles.progress}
         />
 
@@ -261,8 +272,8 @@ export default function QuizDailyScreen() {
             />
           )}
 
-          <View style={{ padding: 20 }}>
-            <Text variant="titleMedium" style={{ marginBottom: 16 }}>
+          <View style={{ padding: spacing.lg }}>
+            <Text style={[g.subtitle, { marginBottom: spacing.md }]}>
               {question?.questionText}
             </Text>
 
@@ -274,7 +285,7 @@ export default function QuizDailyScreen() {
                   key={idx}
                   style={[
                     styles.optionCard,
-                    selected && { borderColor: GREEN },
+                    selected && { borderColor: colors.primary },
                   ]}
                   onPress={() => setSelectedIndex(idx)}
                   activeOpacity={0.8}
@@ -282,7 +293,7 @@ export default function QuizDailyScreen() {
                   <View
                     style={[
                       styles.radio,
-                      selected && { backgroundColor: GREEN },
+                      selected && { backgroundColor: colors.primary },
                     ]}
                   />
                   <Text style={styles.optionText}>{op.label}</Text>
@@ -292,8 +303,7 @@ export default function QuizDailyScreen() {
 
             <Button
               mode="contained"
-              buttonColor={GREEN}
-              style={{ marginTop: 20 }}
+              style={{ marginTop: spacing.lg }}
               disabled={selectedIndex === null || sending}
               loading={sending}
               onPress={onNext}
@@ -317,95 +327,103 @@ export default function QuizDailyScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
   },
+
   center: {
     flex: 1,
     justifyContent: "center",
-    padding: 16,
+    padding: spacing.lg,
   },
+
   mainCard: {
-    marginTop: 16,
-    borderRadius: 16,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
     overflow: "hidden",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
+
   video: {
     width: "100%",
     height: 250,
     backgroundColor: "#000",
   },
+
   progress: {
-    marginTop: 12,
-    borderRadius: 10,
+    marginTop: spacing.sm,
+    borderRadius: radius.sm,
   },
+
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#ddd",
-    marginBottom: 12,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.sm,
   },
+
   optionText: {
-    fontSize: 16,
-    marginLeft: 12,
+    marginLeft: spacing.sm,
+    fontFamily: typography.body.fontFamily,
+    color: colors.textPrimary,
   },
+
   radio: {
     width: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: "#999",
+    borderColor: colors.textSecondary,
   },
-  scoreText: {
-    fontSize: 26,
-    fontWeight: "bold",
-    marginTop: 8,
-  },
+
   completedContainer: {
     flex: 1,
     justifyContent: "center",
-    padding: 20,
+    padding: spacing.lg,
   },
 
   completedCard: {
-    padding: 24,
-    borderRadius: 20,
+    padding: spacing.xl,
+    borderRadius: radius.xl,
     alignItems: "center",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   completedTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: GREEN,
+    ...typography.titleLarge,
+    color: colors.primary,
   },
 
   completedSubtitle: {
-    marginTop: 8,
-    color: "#666",
+    marginTop: spacing.xs,
   },
 
   scoreCircle: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.surfaceVariant,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: spacing.lg,
   },
 
   scoreBig: {
     fontSize: 32,
-    fontWeight: "bold",
-    color: GREEN,
+    fontFamily: typography.title.fontFamily,
+    color: colors.primary,
   },
 
   percentage: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "600",
+    marginTop: spacing.sm,
+    fontFamily: typography.subtitle.fontFamily,
+    color: colors.textPrimary,
   },
 });

@@ -1,6 +1,7 @@
 import { useFetch } from "@/hooks/FetchContext";
 import { showInterstitial } from "@/services/ads/interstitial";
 import { loadRewardedAd, showRewardedAd } from "@/services/ads/rewarded";
+import { colors } from "@/theme/colors";
 import { WeeklyGoalVideo } from "@/types";
 import { ResizeMode, Video } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
@@ -318,7 +319,7 @@ export default function WeeklyVideoFeed({
                 left: 20,
                 zIndex: 999,
                 backgroundColor:
-                  votesUsed >= 3 ? "rgba(255,0,0,0.75)" : "rgba(0,0,0,0.6)",
+                  votesUsed >= 3 ? colors.error : "rgba(0,0,0,0.6)",
                 paddingHorizontal: 12,
                 paddingVertical: 6,
                 borderRadius: 20,
@@ -416,7 +417,9 @@ export default function WeeklyVideoFeed({
                   <Icon
                     name={item.isFavorite ? "heart" : "heart-outline"}
                     size={45}
-                    color={item.isFavorite ? "#ff3366" : "#ffffffaa"}
+                    color={
+                      item.isFavorite ? colors.error : colors.textSecondary
+                    }
                   />
                 </TouchableOpacity>
 
@@ -426,7 +429,13 @@ export default function WeeklyVideoFeed({
                 </Text>
 
                 {/* 👁️ Vistas */}
-                <Text style={{ fontSize: 30, color: "#fff", marginTop: 15 }}>
+                <Text
+                  style={{
+                    fontSize: 30,
+                    color: colors.textSecondary,
+                    marginTop: 15,
+                  }}
+                >
                   👁
                 </Text>
                 <Text style={{ color: "white" }}>{item.views}</Text>
@@ -452,10 +461,14 @@ export default function WeeklyVideoFeed({
                   }}
                   onPress={handleReward}
                 >
-                  <IconButton icon="gift" size={24} iconColor="#FFD700" />
+                  <IconButton
+                    icon="gift"
+                    size={24}
+                    iconColor={colors.warning}
+                  />
                   <Text
                     style={{
-                      color: "#FFD700",
+                      color: colors.warning,
                       fontSize: 11,
                       fontWeight: "600",
                     }}
@@ -476,14 +489,14 @@ export default function WeeklyVideoFeed({
             >
               <Text
                 style={{
-                  color: "#fff",
+                  color: colors.textOnPrimary,
                   fontSize: 18,
                   fontWeight: "bold",
                 }}
               >
                 {item.user?.name ?? ""}
               </Text>
-              <Text style={{ color: "#fff", fontSize: 14 }}>
+              <Text style={{ color: colors.textOnPrimary, fontSize: 14 }}>
                 {item.fixture.teamA} ⚽ {item.fixture.teamB}
               </Text>
             </View>
@@ -555,7 +568,7 @@ const styles = StyleSheet.create({
 
   progressFill: {
     height: 4,
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
   timeContainer: {
     position: "absolute",

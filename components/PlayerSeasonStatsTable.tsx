@@ -1,4 +1,8 @@
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { PlayerB, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useState } from "react";
@@ -220,106 +224,108 @@ export default function PlayerStatisticsView({ player }: PlayerStatsProps) {
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: spacing.lg,
     alignItems: "center",
   },
 
   photo: {
     width: 70,
     height: 70,
-    borderRadius: 35,
-    backgroundColor: "#eee",
+    borderRadius: radius.round,
+    backgroundColor: colors.surfaceVariant ?? colors.border,
   },
 
   playerName: {
-    fontSize: 20,
+    ...typography.title,
     fontWeight: "700",
-    color: "#222",
+    color: colors.textPrimary,
   },
 
   subText: {
-    color: "#666",
-    fontSize: 14,
-    marginTop: 2,
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: spacing.xs ?? 2,
   },
 
   /* Chips */
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "#F2F2F2",
-    marginRight: 8,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs ?? 6,
+    borderRadius: radius.round,
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: "#E5E5E5",
+    borderColor: colors.border,
   },
 
   chipSelected: {
-    backgroundColor: "#1DB954",
-    borderColor: "#1DB954",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 
   chipText: {
-    color: "#555",
-    fontSize: 14,
+    ...typography.small,
+    color: colors.textSecondary,
   },
 
   chipTextSelected: {
-    color: "#fff",
     fontWeight: "600",
+    ...typography.small,
+    color: colors.textOnPrimary,
   },
 
   /* Card */
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: "#EAEAEA",
+    borderColor: colors.border,
   },
 
   leagueHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
 
   leagueLogo: {
     width: 32,
     height: 32,
-    marginRight: 10,
+    marginRight: spacing.sm,
   },
 
   leagueName: {
-    color: "#222",
-    fontSize: 16,
+    ...typography.body,
+    color: colors.textPrimary,
     fontWeight: "700",
   },
 
   sectionTitle: {
-    color: "#1DB954",
-    fontSize: 15,
+    ...typography.body,
+    color: colors.primary,
     fontWeight: "700",
-    marginTop: 14,
-    marginBottom: 6,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs ?? 6,
   },
 
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: spacing.xs ?? 4,
   },
 
   label: {
-    color: "#555",
-    fontSize: 14,
+    ...typography.small,
+    color: colors.textSecondary,
     flex: 1,
   },
 
   value: {
-    color: "#222",
+    ...typography.small,
+    color: colors.textPrimary,
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: spacing.xs,
   },
 });

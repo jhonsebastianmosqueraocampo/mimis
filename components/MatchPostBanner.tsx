@@ -1,3 +1,8 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { useNavigation } from "expo-router";
@@ -28,7 +33,8 @@ export default function MatchPostBanner({
   tournamentId,
   result,
 }: MatchPostBannerProps) {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const matchDate = dayjs(datetime).format("dddd, D MMM YYYY - HH:mm");
 
@@ -80,23 +86,35 @@ export default function MatchPostBanner({
 
       {/* Información del partido */}
       <View style={styles.infoRow}>
-        <MaterialIcons name="schedule" size={18} color="#555" />
+        <MaterialIcons name="schedule" size={18} color={colors.textSecondary} />
         <Text>{matchDate}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="location-on" size={18} color="#555" />
+        <MaterialIcons
+          name="location-on"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>{stadium}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialCommunityIcons name="whistle-outline" size={18} color="#555" />
+        <MaterialCommunityIcons
+          name="whistle-outline"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>Árbitro: {referee}</Text>
       </View>
 
       <TouchableOpacity onPress={() => actionLeague(tournamentId)}>
         <View style={styles.infoRow}>
-          <MaterialCommunityIcons name="trophy-outline" size={18} color="#555" />
+          <MaterialCommunityIcons
+            name="trophy-outline"
+            size={18}
+            color={colors.textSecondary}
+          />
           <Text>{tournament}</Text>
         </View>
       </TouchableOpacity>
@@ -106,57 +124,63 @@ export default function MatchPostBanner({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: "#f5f5f5",
-    shadowColor: "#000",
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    shadowColor: shadows.sm.shadowColor,
     elevation: 3,
     alignItems: "center",
-    gap: 12,
-    marginBottom: 16,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
+
   title: {
-    fontWeight: "bold",
-    color: "#1DB954",
-    fontFamily: "goli",
+    ...typography.title,
+    fontWeight: "700",
+    color: colors.primary,
   },
+
   teamsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 24,
+    gap: spacing.lg,
     justifyContent: "center",
   },
+
   team: {
     alignItems: "center",
     width: 90,
   },
+
   teamName: {
+    ...typography.small,
     fontWeight: "600",
-    fontFamily: "goli",
-    marginTop: 4,
+    marginTop: spacing.xs ?? 4,
     textAlign: "center",
+    color: colors.textPrimary,
   },
+
   scoreBox: {
-    backgroundColor: "#1DB954",
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 6,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs ?? 6,
     alignItems: "center",
   },
+
   scoreText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 22,
-    fontFamily: "liter",
+    ...typography.titleLarge,
+    fontWeight: "700",
   },
+
   finalLabel: {
-    color: "#fff",
-    fontSize: 12,
+    ...typography.small,
     opacity: 0.9,
   },
+
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.xs,
   },
 });

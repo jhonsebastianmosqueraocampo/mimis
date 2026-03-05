@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { Product, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import { useMemo, useState } from "react";
@@ -100,7 +101,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {
                   backgroundColor: (v.color || "#ccc") as string,
                   borderWidth: v.color === selectedColor ? 2 : 0,
-                  borderColor: "#1DB954",
+                  borderColor: colors.primary,
                 },
               ]}
               onTouchEnd={() => {
@@ -144,7 +145,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Text
             style={[
               styles.stockIndicator,
-              { color: selectedSize.stock === 0 ? "#999" : "#1DB954" },
+              {
+                color: selectedSize.stock === 0 ? colors.text : colors.success,
+              },
             ]}
           >
             {selectedSize.stock === 0
@@ -157,7 +160,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Card.Actions style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
         <Button
           mode="contained"
-          buttonColor="#1DB954"
+          buttonColor={colors.primary}
           style={{ flex: 1, borderRadius: 10 }}
           onPress={() => navigation.navigate("productDetail", { product })}
         >
@@ -177,7 +180,7 @@ const styles = StyleSheet.create({
 
   imageContainer: {
     height: 190,
-    backgroundColor: "#f7f7f7",
+    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -205,7 +208,7 @@ const styles = StyleSheet.create({
   dot: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#000",
+    backgroundColor: colors.text,
   },
 
   title: {
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 16,
     fontWeight: "bold",
-    color: "#1DB954",
+    color: colors.primary,
   },
 
   colorSelector: {

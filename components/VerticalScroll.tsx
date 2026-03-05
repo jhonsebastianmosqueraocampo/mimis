@@ -1,4 +1,6 @@
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { shadows } from "@/theme/shadows";
 import React from "react";
 import { Linking, StyleSheet, Text, View } from "react-native";
 import { Card, Paragraph, Title } from "react-native-paper";
@@ -56,9 +58,9 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 14,
     borderRadius: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.textOnPrimary,
     elevation: 3, // sombra en Android
-    shadowColor: "#000", // sombra en iOS
+    shadowColor: shadows.md.shadowColor, // sombra en iOS
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
@@ -67,16 +69,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 4,
-    color: "#1e293b", // azul grisáceo elegante
+    color: colors.text,
   },
   source: {
     fontSize: 14,
-    color: "#475569",
+    color: colors.textSecondary,
     marginBottom: 6,
   },
   date: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: colors.textSecondary,
     marginTop: 4,
   },
 });

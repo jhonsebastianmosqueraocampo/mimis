@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { PreMatchStats, RootStackParamList } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
@@ -232,7 +233,11 @@ export default function MatchStatsPreview({ stats }: MatchStatsPreviewProps) {
 
             {/* Separador */}
             <View
-              style={{ height: 1, backgroundColor: "#eee", marginVertical: 8 }}
+              style={{
+                height: 1,
+                backgroundColor: colors.background,
+                marginVertical: 8,
+              }}
             />
 
             {/* --- Asistentes --- */}

@@ -1,5 +1,5 @@
-import { useAuth } from "@/hooks/AuthContext";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
 import { CarruselFoto, NewsItem } from "@/types";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
@@ -29,7 +29,6 @@ type Props = {
   setNews: React.Dispatch<React.SetStateAction<NewsItem[]>>;
 };
 
-const GREEN = "#2ecc71";
 const ENTIDADES = ["Jugador", "Equipo", "Entrenador"];
 
 const getImageUri = (foto: string | ImagePicker.ImagePickerAsset): string => {
@@ -49,7 +48,6 @@ export default function NewsForm({
   setNews,
 }: Props) {
   const { createUserNew, editUserNew } = useFetch();
-  const { user } = useAuth();
 
   const isEdit = !!existingNews;
 
@@ -222,10 +220,14 @@ export default function NewsForm({
                 onPress={() => setEntidad(opt)}
                 style={[
                   styles.chip,
-                  entidad === opt && { backgroundColor: GREEN },
+                  entidad === opt && {
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary,
+                  },
                 ]}
                 textStyle={{
-                  color: entidad === opt ? "white" : "black",
+                  color:
+                    entidad === opt ? colors.textOnPrimary : colors.textPrimary,
                   fontWeight: "bold",
                 }}
               >
@@ -295,7 +297,11 @@ export default function NewsForm({
                   />
                 ) : (
                   <View style={styles.emptyImage}>
-                    <Icon name="image-off" size={40} color="#777" />
+                    <Icon
+                      name="image-off"
+                      size={40}
+                      color={colors.textSecondary}
+                    />
                   </View>
                 )}
 
@@ -361,7 +367,7 @@ export default function NewsForm({
 // estilos: los tuyos, sin cambios
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: GREEN,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 20,
     flexDirection: "row",
@@ -369,22 +375,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: { color: "white", fontSize: 20, fontWeight: "bold" },
-  container: { padding: 20, backgroundColor: "#f7f7f7" },
+  container: { padding: 20, backgroundColor: colors.background },
   mainImage: { width: "100%", height: 200, borderRadius: 12, marginBottom: 16 },
   input: { marginBottom: 15, backgroundColor: "white" },
   sectionTitle: { fontWeight: "bold", marginBottom: 10 },
   carruselItem: {
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.background,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   carruselImage: { width: "100%", height: 150, borderRadius: 10 },
   emptyImage: {
     height: 150,
-    backgroundColor: "#eee",
+    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -405,6 +411,6 @@ const styles = StyleSheet.create({
   },
   chip: {
     borderWidth: 1,
-    borderColor: GREEN,
+    borderColor: colors.primary,
   },
 });

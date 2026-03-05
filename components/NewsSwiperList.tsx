@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { SwiperListProps } from "@/types";
 import React, { useRef } from "react";
 import {
@@ -32,7 +33,7 @@ export default function NewsSwiperList({ list, action }: SwiperListProps) {
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: true },
         )}
       >
         {list.map((item, index) => {
@@ -140,8 +141,8 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     borderRadius: 18,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
+    backgroundColor: colors.background,
+    shadowColor: colors.textPrimary,
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 8,
@@ -154,14 +155,14 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)", // simula degradado
+    backgroundColor: colors.surface,
   },
   textContainer: {
     position: "absolute",
     bottom: 12,
     left: 14,
     right: 14,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.surface,
     borderRadius: 10,
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.textOnPrimary,
     textAlign: "center",
   },
   indicators: {
@@ -183,6 +184,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#1B5E20",
+    backgroundColor: colors.primary,
   },
 });

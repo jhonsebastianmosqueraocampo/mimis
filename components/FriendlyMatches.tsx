@@ -1,13 +1,12 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { Fixture } from "@/types";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Avatar, Card } from "react-native-paper";
 
 dayjs.extend(relativeTime);
@@ -17,7 +16,10 @@ type FriendlyMatchesListProps = {
   teamId?: string;
 };
 
-export default function FriendlyMatches({ standings, teamId }: FriendlyMatchesListProps) {
+export default function FriendlyMatches({
+  standings,
+  teamId,
+}: FriendlyMatchesListProps) {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollArea} contentContainerStyle={{ gap: 16 }}>
@@ -49,11 +51,19 @@ export default function FriendlyMatches({ standings, teamId }: FriendlyMatchesLi
           return (
             <Card
               key={match.fixtureId}
-              style={[styles.card, { backgroundColor: "#ffffff", borderLeftColor: borderColor }]}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderLeftColor: borderColor,
+                },
+              ]}
               elevation={2}
             >
               <View style={styles.header}>
-                <Text style={[styles.dateText, { color: borderColor }]}>{formattedDate}</Text>
+                <Text style={[styles.dateText, { color: borderColor }]}>
+                  {formattedDate}
+                </Text>
                 <Text style={[styles.tag, { color: tagColor }]}>
                   {match.league.name}
                 </Text>
@@ -101,69 +111,88 @@ export default function FriendlyMatches({ standings, teamId }: FriendlyMatchesLi
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
-    paddingHorizontal: 12,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
+
   scrollArea: {
-    paddingRight: 4,
+    paddingRight: spacing.xs ?? 4,
   },
+
   card: {
-    padding: 16,
-    borderRadius: 14,
+    padding: spacing.md,
+    borderRadius: radius.md,
     borderLeftWidth: 5,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
   },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
+
   dateText: {
+    ...typography.small,
     fontWeight: "600",
-    fontSize: 14,
+    color: colors.textPrimary,
   },
+
   tag: {
-    fontSize: 13,
+    ...typography.small,
     fontWeight: "600",
     textTransform: "uppercase",
+    color: colors.primary,
   },
+
   teams: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
+
   team: {
     alignItems: "center",
     width: 90,
   },
+
   teamName: {
-    marginTop: 6,
-    fontSize: 13,
+    ...typography.small,
+    marginTop: spacing.xs ?? 6,
     textAlign: "center",
-    color: "#333",
+    color: colors.textPrimary,
   },
+
   scoreBox: {
     minWidth: 50,
     alignItems: "center",
     justifyContent: "center",
   },
+
   scoreText: {
-    fontWeight: "bold",
-    fontSize: 16,
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.textPrimary,
   },
+
   vs: {
-    fontWeight: "bold",
-    fontSize: 16,
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.textSecondary,
   },
+
   stadiumText: {
-    fontSize: 12,
-    color: "#777",
+    ...(typography.subtitle ?? typography.small),
+    color: colors.textSecondary,
     textAlign: "center",
-    marginBottom: 4,
+    marginBottom: spacing.xs ?? 4,
   },
+
   timeUntil: {
-    fontSize: 12,
-    color: "#999",
+    ...(typography.subtitle ?? typography.small),
+    color: colors.textSecondary,
     textAlign: "center",
   },
 });

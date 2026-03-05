@@ -1,6 +1,7 @@
 import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
 import { LeagueB, RootStackParamList, Team } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -17,8 +18,10 @@ import {
 } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
+import { radius } from "@/theme/radius";
 
-const PRIMARY = "#1DB954"; // 💚 color principal
 const currentYear = new Date().getFullYear();
 
 type TeamSummary = {
@@ -59,7 +62,11 @@ type TeamSummary = {
 
 const FormChip = ({ result }: { result: string }) => {
   const color =
-    result === "W" ? "#2ecc71" : result === "D" ? "#f39c12" : "#e74c3c";
+    result === "W"
+      ? colors.primary
+      : result === "D"
+        ? colors.info
+        : colors.error;
   return (
     <Chip
       style={{
@@ -186,21 +193,21 @@ export default function Stats() {
               label="Buscar liga"
               value={search}
               onChangeText={setSearch}
-              outlineColor={PRIMARY}
-              activeOutlineColor={PRIMARY}
+              outlineColor={colors.primary}
+              activeOutlineColor={colors.primary}
               style={{ marginBottom: 12 }}
-              right={<TextInput.Icon icon="magnify" color={PRIMARY} />}
+              right={<TextInput.Icon icon="magnify" color={colors.primary} />}
             />
 
             {loading ? (
-              <ActivityIndicator animating color={PRIMARY} />
+              <ActivityIndicator animating color={colors.primary} />
             ) : (
               filteredLeagues.map((l) => (
                 <Card
                   key={l.league.id}
                   style={{
                     marginBottom: 12,
-                    borderLeftColor: PRIMARY,
+                    borderLeftColor: colors.primary,
                     borderLeftWidth: 4,
                   }}
                   onPress={() => actionLeague(l.league.id.toString())}
@@ -217,7 +224,7 @@ export default function Stats() {
                     right={() => (
                       <Button
                         textColor="white"
-                        buttonColor={PRIMARY}
+                        buttonColor={colors.primary}
                         onPress={() => handleSelectLeague(l)}
                       >
                         Ver equipos
@@ -236,9 +243,9 @@ export default function Stats() {
             <Button
               icon="arrow-left"
               mode="outlined"
-              textColor={PRIMARY}
+              textColor={colors.primary}
               style={{
-                borderColor: PRIMARY,
+                borderColor: colors.primary,
                 marginBottom: 10,
               }}
               onPress={() => setSelectedLeague(null)}
@@ -273,14 +280,14 @@ export default function Stats() {
             </View>
 
             {loading ? (
-              <ActivityIndicator animating color={PRIMARY} />
+              <ActivityIndicator animating color={colors.primary} />
             ) : (
               teams.map((t) => (
                 <Card
                   key={t.teamId}
                   style={{
                     marginBottom: 12,
-                    borderLeftColor: PRIMARY,
+                    borderLeftColor: colors.primary,
                     borderLeftWidth: 4,
                   }}
                   onPress={() => actionTeam(t.teamId.toString())}
@@ -294,7 +301,7 @@ export default function Stats() {
                     right={() => (
                       <Button
                         textColor="white"
-                        buttonColor={PRIMARY}
+                        buttonColor={colors.primary}
                         onPress={() =>
                           handleSelectTeam(
                             t,
@@ -319,9 +326,9 @@ export default function Stats() {
             <Button
               icon="arrow-left"
               mode="outlined"
-              textColor={PRIMARY}
+              textColor={colors.primary}
               style={{
-                borderColor: PRIMARY,
+                borderColor: colors.primary,
                 marginBottom: 10,
               }}
               onPress={() => setSelectedTeam(null)}
@@ -333,7 +340,7 @@ export default function Stats() {
             <View
               style={{
                 borderWidth: 1,
-                borderColor: PRIMARY,
+                borderColor: colors.primary,
                 borderRadius: 8,
                 marginBottom: 16,
                 paddingHorizontal: 8,
@@ -341,7 +348,7 @@ export default function Stats() {
             >
               <Text
                 style={{
-                  color: PRIMARY,
+                  color: colors.primary,
                   fontWeight: "600",
                   paddingVertical: 8,
                 }}
@@ -360,7 +367,7 @@ export default function Stats() {
                     icon="calendar"
                     contentStyle={{ flexDirection: "row-reverse" }}
                     style={{
-                      borderColor: PRIMARY,
+                      borderColor: colors.primary,
                       justifyContent: "space-between",
                     }}
                   >
@@ -377,7 +384,7 @@ export default function Stats() {
                     }}
                     title={`${year}`}
                     titleStyle={{
-                      color: year === season ? PRIMARY : "#333",
+                      color: year === season ? colors.primary : "#333",
                       fontWeight: year === season ? "bold" : "normal",
                     }}
                     leadingIcon={year === season ? "check" : undefined}
@@ -389,7 +396,7 @@ export default function Stats() {
             <Card
               style={{
                 marginBottom: 16,
-                borderLeftColor: PRIMARY,
+                borderLeftColor: colors.primary,
                 borderLeftWidth: 4,
               }}
             >
@@ -414,9 +421,9 @@ export default function Stats() {
                   <Button
                     icon="arrow-right"
                     mode="outlined"
-                    textColor={PRIMARY}
+                    textColor={colors.primary}
                     style={{
-                      borderColor: PRIMARY,
+                      borderColor: colors.primary,
                       marginBottom: 10,
                     }}
                     onPress={() =>
@@ -479,8 +486,11 @@ export default function Stats() {
                     <Chip
                       icon="trending-up"
                       mode="outlined"
-                      textStyle={{ color: PRIMARY }}
-                      style={{ borderColor: PRIMARY, marginLeft: "auto" }}
+                      textStyle={{ color: colors.primary }}
+                      style={{
+                        borderColor: colors.primary,
+                        marginLeft: "auto",
+                      }}
                     >
                       Jugador Clave
                     </Chip>
@@ -508,14 +518,14 @@ export default function Stats() {
                         padding: 10,
                         marginTop: 10,
                         borderWidth: 1,
-                        borderColor: PRIMARY,
+                        borderColor: colors.primary,
                       }}
                     >
                       <Text
                         variant="titleSmall"
                         style={{
                           marginBottom: 8,
-                          color: PRIMARY,
+                          color: colors.primary,
                           fontWeight: "bold",
                         }}
                       >
@@ -584,26 +594,23 @@ export default function Stats() {
 
 const styles = StyleSheet.create({
   leagueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    gap: 12,
-  },
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  paddingVertical: spacing.sm,
+  gap: spacing.sm,
+},
 
-  leagueName: {
-    color: PRIMARY,
-    fontSize: 16,
-    fontWeight: "700",
-  },
+leagueName: {
+  ...typography.subtitle,
+},
 
-  leagueCountry: {
-    color: "#666",
-    fontSize: 13,
-  },
+leagueCountry: {
+  ...typography.small,
+},
 
-  leagueButton: {
-    borderRadius: 20,
-    paddingHorizontal: 12,
-  },
+leagueButton: {
+  borderRadius: radius.round,
+  paddingHorizontal: spacing.sm,
+},
 });

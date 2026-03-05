@@ -1,5 +1,6 @@
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
 import { PlayerCareer } from "@/types";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -88,7 +89,8 @@ export default function PlayerTeamHistory({
                 selectedItem === item && styles.chipSelected,
               ]}
               textStyle={{
-                color: selectedItem === item ? "#fff" : "#000",
+                color:
+                  selectedItem === item ? colors.textOnPrimary : colors.text,
               }}
             >
               {item}
@@ -114,9 +116,9 @@ const styles = StyleSheet.create({
   },
   chip: {
     marginRight: 8,
-    borderColor: "#1DB954",
+    borderColor: colors.primary,
     borderWidth: 1,
-    backgroundColor: "transparent",
+    backgroundColor: colors.background,
   },
   firstChip: {
     marginLeft: 12,
@@ -126,6 +128,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   chipSelected: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
 });

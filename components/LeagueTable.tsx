@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { useNavigation } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -48,8 +52,8 @@ export default function LeagueTable({
       (m) =>
         (m.teams.home.id === teamId || m.teams.away.id === teamId) &&
         ["1H", "HT", "2H", "ET", "BT", "P", "INT", "LIVE"].includes(
-          m.status.short
-        )
+          m.status.short,
+        ),
     );
 
     if (!match) return null;
@@ -82,7 +86,7 @@ export default function LeagueTable({
 
             const liveScore = getLiveScore(team.team.id);
             const isFavoriteTeam = favoriteSet.has(
-              team.team.name.toLowerCase()
+              team.team.name.toLowerCase(),
             );
 
             return (
@@ -141,7 +145,7 @@ export default function LeagueTable({
               const isUserTeam = team.team.id.toString() === teamId;
               const isSelected = selectedTeam === team.team.id.toString();
               const isFavoriteTeam = favoriteSet.has(
-                team.team.name.toLowerCase()
+                team.team.name.toLowerCase(),
               );
               return (
                 <TouchableOpacity
@@ -197,8 +201,8 @@ export default function LeagueTable({
                           char === "W"
                             ? { backgroundColor: "green" }
                             : char === "L"
-                            ? { backgroundColor: "red" }
-                            : { backgroundColor: "gray" },
+                              ? { backgroundColor: "red" }
+                              : { backgroundColor: "gray" },
                         ]}
                       />
                     ))}
@@ -232,7 +236,7 @@ export default function LeagueTable({
 
                 <Button
                   mode="contained"
-                  style={{ marginTop: 16, backgroundColor: "#1db954" }}
+                  style={{ marginTop: 16, backgroundColor: colors.primary }}
                   onPress={() => setModalVisible(false)}
                 >
                   Cerrar
@@ -249,141 +253,168 @@ export default function LeagueTable({
 const styles = StyleSheet.create({
   tableContainer: {
     flexDirection: "row",
-    paddingBottom: 30,
+    paddingBottom: spacing.xl,
   },
+
   fixedColumn: {
     width: 200,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRightWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     zIndex: 2,
     elevation: 5,
   },
+
   headerFixed: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#181a20",
+    backgroundColor: colors.surfaceVariant ?? colors.primary,
     height: 44,
   },
+
   scrollSection: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
+
   headerScroll: {
     flexDirection: "row",
-    backgroundColor: "#20232a",
+    backgroundColor: colors.surfaceVariant ?? colors.primary,
     height: 44,
     alignItems: "center",
   },
+
   headerText: {
-    color: "#fff",
+    ...typography.small,
+    color: colors.textOnPrimary,
     fontWeight: "600",
     textAlign: "center",
-    fontSize: 13,
     width: 60,
   },
+
   fixedRow: {
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.border,
     borderLeftWidth: 4,
     height: 44,
   },
+
   scrollRow: {
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.border,
     height: 44,
   },
+
   logo: {
     width: 22,
     height: 22,
-    marginHorizontal: 6,
+    marginHorizontal: spacing.xs,
   },
+
   rank: {
     width: 30,
     textAlign: "center",
-    fontWeight: "bold",
-    color: "#444",
+    fontWeight: "700",
+    color: colors.textSecondary,
   },
+
   teamInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: spacing.xs ?? 4,
   },
+
   teamName: {
+    ...typography.small,
     width: 110,
-    fontSize: 13,
-    color: "#333",
+    color: colors.textPrimary,
   },
+
   liveScore: {
-    backgroundColor: "#00c853",
-    color: "#fff",
-    fontWeight: "bold",
+    backgroundColor: colors.success ?? "#00c853",
+    color: colors.textOnPrimary,
+    fontWeight: "700",
     fontSize: 11,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs ?? 2,
+    borderRadius: radius.sm,
   },
+
   cell: {
+    ...typography.small,
     width: 60,
     textAlign: "center",
-    fontSize: 13,
-    color: "#333",
+    color: colors.textPrimary,
   },
+
   userRow: {
-    backgroundColor: "#e3fcec",
+    backgroundColor: colors.textSecondary,
   },
+
   selectedRow: {
-    backgroundColor: "#d6f5ff",
+    backgroundColor: colors.info,
   },
+
   userText: {
-    fontWeight: "bold",
-    color: "#1db954",
+    fontWeight: "700",
+    color: colors.primary,
   },
+
   hasDescription: {
     borderLeftWidth: 6,
   },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: colors.surface,
     justifyContent: "center",
     alignItems: "center",
   },
+
   modalCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
     width: "85%",
     maxHeight: "80%",
   },
+
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
+    ...typography.title,
+    fontWeight: "700",
+    marginBottom: spacing.sm,
     textAlign: "center",
+    color: colors.textPrimary,
   },
+
   subtitle: {
+    ...typography.body,
     fontWeight: "600",
-    marginTop: 6,
+    marginTop: spacing.xs,
+    color: colors.textPrimary,
   },
+
   formContainer: {
     flexDirection: "row",
-    gap: 6,
-    marginVertical: 6,
+    gap: spacing.xs ?? 6,
+    marginVertical: spacing.xs ?? 6,
     justifyContent: "center",
   },
+
   formCircle: {
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: radius.round,
   },
+
   favoriteRow: {
-    backgroundColor: "#FFF7E0",
+    backgroundColor: colors.warning,
     borderLeftWidth: 6,
-    borderLeftColor: "#FFC107",
-    shadowColor: "#FFC107",
+    borderLeftColor: colors.warning,
+    shadowColor: colors.warning,
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,

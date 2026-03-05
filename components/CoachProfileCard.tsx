@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import type { ReactNode } from "react";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -21,12 +25,12 @@ export default function CoachProfileCard({
   const renderChip = (
     icon: string,
     label: string,
-    key?: string | number
+    key?: string | number,
   ): ReactNode => (
     <Chip
       key={key || label}
       style={styles.chip}
-      textStyle={{ color: "#1DB954" }}
+      textStyle={{ color: colors.textOnPrimary }}
       mode="outlined"
     >
       {label}
@@ -60,31 +64,39 @@ export default function CoachProfileCard({
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: 16,
-    marginHorizontal: 24,
-    borderRadius: 12,
+    marginVertical: spacing.md,
+    marginHorizontal: spacing.lg,
+    borderRadius: radius.md,
     elevation: 4,
+    backgroundColor: colors.surface,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   name: {
-    fontWeight: "bold",
-    color: "#333",
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.textPrimary,
   },
+
   subtitle: {
-    color: "#888",
+    ...typography.small,
+    color: colors.textSecondary,
   },
+
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 16,
-    gap: 8,
+    marginTop: spacing.md,
+    gap: spacing.xs,
   },
+
   chip: {
-    borderColor: "#1DB954",
-    marginRight: 8,
-    marginBottom: 8,
+    borderColor: colors.primary,
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
   },
 });

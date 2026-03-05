@@ -1,13 +1,14 @@
+import { colors } from "@/theme/colors";
 import type { SyntheticMatch, SyntheticMatchStatus } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, ScrollView, StyleSheet, View } from "react-native";
 import {
-    Button,
-    Chip,
-    Divider,
-    IconButton,
-    Text,
-    TextInput,
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  Text,
+  TextInput,
 } from "react-native-paper";
 
 type Form = {
@@ -57,7 +58,6 @@ type Props = {
 
 const STATUSES: { key: SyntheticMatchStatus; label: string }[] = [
   { key: "scheduled", label: "Próximo" },
-  { key: "live", label: "En vivo" },
   { key: "finished", label: "Finalizado" },
   { key: "cancelled", label: "Cancelado" },
 ];
@@ -126,7 +126,7 @@ export default function SyntheticMatchModal({
       homeLogo: editing.homeTeam?.logo ?? "",
       awayName: editing.awayTeam?.name ?? "",
       awayLogo: editing.awayTeam?.logo ?? "",
-      scheduledAt: toInputDate(editing.scheduledAt),
+      scheduledAt: toInputDate(editing.scheduledAt ?? ""),
       status: editing.status,
       scoreHome: editing.score?.home == null ? "" : String(editing.score.home),
       scoreAway: editing.score?.away == null ? "" : String(editing.score.away),
@@ -139,7 +139,7 @@ export default function SyntheticMatchModal({
     });
   }, [editing, visible]);
 
-  const showScore = f.status === "live" || f.status === "finished";
+  const showScore = f.status === "finished";
 
   const valid = useMemo(() => {
     if (!f.homeName.trim() || !f.awayName.trim()) return false;
@@ -208,9 +208,7 @@ export default function SyntheticMatchModal({
         <View style={styles.box}>
           <View style={styles.header}>
             <Text variant="titleLarge" style={{ fontWeight: "900" }}>
-              {editing
-                ? `Editar partido #${editing.matchNumber}`
-                : "Crear partido"}
+              {editing ? `Editar partido #${editing.id}` : "Crear partido"}
             </Text>
             <IconButton icon="close" onPress={onClose} />
           </View>
@@ -224,7 +222,7 @@ export default function SyntheticMatchModal({
             {!!err && (
               <Text
                 style={{
-                  color: "#b71c1c",
+                  color: colors.error,
                   fontWeight: "700",
                   marginBottom: 10,
                 }}
@@ -283,7 +281,10 @@ export default function SyntheticMatchModal({
                     styles.chip,
                     f.status === s.key && styles.chipSelected,
                   ]}
-                  textStyle={{ color: f.status === s.key ? "#fff" : "#111" }}
+                  textStyle={{
+                    color:
+                      f.status === s.key ? colors.textOnPrimary : colors.text,
+                  }}
                 >
                   {s.label}
                 </Chip>
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   box: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 14,
     maxHeight: "90%",
@@ -406,5 +407,5 @@ const styles = StyleSheet.create({
   section: { marginTop: 14, marginBottom: 8, fontWeight: "900", opacity: 0.85 },
   chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   chip: { borderRadius: 999 },
-  chipSelected: { backgroundColor: "#1DB954" },
+  chipSelected: { backgroundColor: colors.primary },
 });

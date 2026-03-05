@@ -1,15 +1,19 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { Prediction } from "@/types";
 import React, { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import {
-    Button,
-    Card,
-    Chip,
-    Dialog,
-    Divider,
-    IconButton,
-    Portal,
-    Text,
+  Button,
+  Card,
+  Chip,
+  Dialog,
+  Divider,
+  IconButton,
+  Portal,
+  Text,
 } from "react-native-paper";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
@@ -259,7 +263,7 @@ export default function AdvancedMatchStats({
     });
 
     const goalsPerMatch = h2h.map(
-      (m: any) => num(m?.goals?.home) + num(m?.goals?.away)
+      (m: any) => num(m?.goals?.home) + num(m?.goals?.away),
     );
     const total = h2h.length;
 
@@ -287,7 +291,7 @@ export default function AdvancedMatchStats({
               size={18}
               onPress={() =>
                 showInfo(
-                  "Comparación de fuerzas entre local y visitante. Las barras muestran el reparto porcentual entre ambos equipos para cada métrica."
+                  "Comparación de fuerzas entre local y visitante. Las barras muestran el reparto porcentual entre ambos equipos para cada métrica.",
                 )
               }
               style={{ margin: 0 }}
@@ -327,7 +331,7 @@ export default function AdvancedMatchStats({
               size={18}
               onPress={() =>
                 showInfo(
-                  "Promedios de goles a favor y en contra (totales) basados en los partidos de liga registrados."
+                  "Promedios de goles a favor y en contra (totales) basados en los partidos de liga registrados.",
                 )
               }
               style={{ margin: 0 }}
@@ -362,7 +366,7 @@ export default function AdvancedMatchStats({
               size={18}
               onPress={() =>
                 showInfo(
-                  "Distribución de partidos disputados en casa, fuera y el total en la competición de liga actual."
+                  "Distribución de partidos disputados en casa, fuera y el total en la competición de liga actual.",
                 )
               }
               style={{ margin: 0 }}
@@ -383,7 +387,7 @@ export default function AdvancedMatchStats({
             value={`${hPlayed.total}`}
             onInfo={() =>
               showInfo(
-                "Cantidad total de partidos de liga jugados por el equipo local (casa + visita)."
+                "Cantidad total de partidos de liga jugados por el equipo local (casa + visita).",
               )
             }
           />
@@ -402,7 +406,7 @@ export default function AdvancedMatchStats({
             value={`${aPlayed.total}`}
             onInfo={() =>
               showInfo(
-                "Cantidad total de partidos de liga jugados por el equipo visitante (casa + visita)."
+                "Cantidad total de partidos de liga jugados por el equipo visitante (casa + visita).",
               )
             }
           />
@@ -419,7 +423,7 @@ export default function AdvancedMatchStats({
               size={18}
               onPress={() =>
                 showInfo(
-                  "Resumen de los últimos enfrentamientos directos: victorias por bando, empates y goles totales. El minigráfico muestra los goles totales por partido."
+                  "Resumen de los últimos enfrentamientos directos: victorias por bando, empates y goles totales. El minigráfico muestra los goles totales por partido.",
                 )
               }
               style={{ margin: 0 }}
@@ -449,7 +453,7 @@ export default function AdvancedMatchStats({
               value={`${h2hSummary.goalsH} - ${h2hSummary.goalsA}`}
               onInfo={() =>
                 showInfo(
-                  "Suma de goles anotados por cada equipo en los H2H recientes."
+                  "Suma de goles anotados por cada equipo en los H2H recientes.",
                 )
               }
             />
@@ -487,88 +491,161 @@ export default function AdvancedMatchStats({
 }
 
 const styles = StyleSheet.create({
-  card: { margin: 12, borderRadius: 14, elevation: 3 },
-  title: { fontWeight: "700", marginBottom: 8 },
-  blockTitle: { fontWeight: "600", marginBottom: 6, marginTop: 6 },
+  card: {
+    margin: spacing.md,
+    borderRadius: radius.lg,
+    elevation: 3,
+    backgroundColor: colors.surface,
+  },
 
-  row: { flexDirection: "row", alignItems: "center" },
+  title: {
+    ...typography.title,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+
+  blockTitle: {
+    ...typography.body,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    marginTop: spacing.xs,
+  },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   rowBetween: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: spacing.xs ?? 4,
   },
-  rowLabel: { fontSize: 14, fontWeight: "600" },
-  rowValue: { fontWeight: "700" },
 
-  dualRow: { flexDirection: "row", gap: 8, marginTop: 6, flexWrap: "wrap" },
-  dualChip: { marginRight: 6 },
-  bold: { fontWeight: "700" },
+  rowLabel: {
+    ...typography.body,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+
+  rowValue: {
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+
+  dualRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    flexWrap: "wrap",
+  },
+
+  dualChip: {
+    marginRight: spacing.xs,
+  },
+
+  bold: {
+    fontWeight: "700",
+  },
 
   segmentedBar: {
     width: "100%",
-    borderRadius: 6,
+    borderRadius: radius.sm,
     overflow: "hidden",
     flexDirection: "row",
-    backgroundColor: "#efefef",
+    backgroundColor: colors.surfaceVariant ?? "#efefef",
   },
-  segmentHome: { backgroundColor: "#43a047" },
-  segmentAway: { backgroundColor: "#e53935" },
+
+  segmentHome: {
+    backgroundColor: colors.success ?? "#43a047",
+  },
+
+  segmentAway: {
+    backgroundColor: colors.error ?? "#e53935",
+  },
+
   segmentLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
+    marginTop: spacing.xs ?? 4,
   },
-  segmentText: { fontSize: 12, fontWeight: "600" },
+
+  segmentText: {
+    ...typography.small,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
 
   tinyBars: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 8,
-    paddingVertical: 6,
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
   },
-  tinyBarCol: { alignItems: "center", width: 20 },
+
+  tinyBarCol: {
+    alignItems: "center",
+    width: 20,
+  },
+
   tinyBar: {
     width: 16,
-    borderRadius: 4,
-    backgroundColor: "#5e35b1",
+    borderRadius: radius.xs ?? 4,
+    backgroundColor: colors.primary,
   },
-  tinyBarLabel: { fontSize: 10, marginTop: 2, color: "#555" },
-  smallMuted: { fontSize: 12, color: "#666" },
+
+  tinyBarLabel: {
+    ...typography.small,
+    marginTop: 2,
+    color: colors.textSecondary,
+  },
+
+  smallMuted: {
+    ...typography.small,
+    color: colors.textSecondary,
+  },
+
   h2hChips: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-around",
-    marginVertical: 8,
+    marginVertical: spacing.sm,
   },
+
   chip: {
-    marginVertical: 4,
-    paddingHorizontal: 6,
+    marginVertical: spacing.xs ?? 4,
+    paddingHorizontal: spacing.xs,
   },
+
   statBlock: {
-    marginTop: 12,
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#f9f9f9",
+    marginTop: spacing.sm,
+    padding: spacing.xs,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceVariant ?? "#f9f9f9",
   },
+
   subLabel: {
-    fontSize: 13,
-    color: "#666",
-    marginTop: 4,
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: spacing.xs ?? 4,
     textAlign: "right",
   },
+
   chartBlock: {
-    marginTop: 14,
-    padding: 8,
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    marginTop: spacing.sm,
+    padding: spacing.xs,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
     elevation: 1,
   },
+
   chartLabel: {
-    fontSize: 13,
+    ...typography.small,
     fontWeight: "500",
-    color: "#444",
-    marginBottom: 6,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
 });

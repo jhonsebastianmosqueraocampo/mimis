@@ -1,6 +1,7 @@
 import { useFetch } from "@/hooks/FetchContext";
 import { showInterstitial } from "@/services/ads/interstitial";
 import { loadRewardedAd, showRewardedAd } from "@/services/ads/rewarded";
+import { colors } from "@/theme/colors";
 import { WeeklyWorldTopVideo } from "@/types";
 import { ResizeMode, Video } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
@@ -256,10 +257,14 @@ export default function WorldVideoFeed({
                   }}
                   onPress={handleReward}
                 >
-                  <IconButton icon="gift" size={24} iconColor="#FFD700" />
+                  <IconButton
+                    icon="gift"
+                    size={24}
+                    iconColor={colors.warning}
+                  />
                   <Text
                     style={{
-                      color: "#FFD700",
+                      color: colors.warning,
                       fontSize: 11,
                       fontWeight: "600",
                     }}
@@ -363,7 +368,7 @@ const styles = StyleSheet.create({
 
   progressFill: {
     height: 4,
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
     borderRadius: 3,
   },
 

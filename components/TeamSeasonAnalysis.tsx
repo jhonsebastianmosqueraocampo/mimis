@@ -41,7 +41,7 @@ export default function TeamSeasonAnalysis({
     }
   };
 
-  // 🔥 1️⃣ Estado inicial (ANTES de generar análisis)
+  // Estado inicial (ANTES de generar análisis)
   if (!analysis && !loading && !hasRequested) {
     return (
       <Card style={styles.card}>
@@ -72,7 +72,7 @@ export default function TeamSeasonAnalysis({
     );
   }
 
-  // 🔥 2️⃣ Loading mientras genera
+  // Loading mientras genera
   if (loading) {
     return (
       <Loading
@@ -83,7 +83,7 @@ export default function TeamSeasonAnalysis({
     );
   }
 
-  // 🔥 3️⃣ Si hubo error
+  //  Si hubo error
   if (message && !analysis) {
     return (
       <Card style={styles.card}>
@@ -161,25 +161,6 @@ export default function TeamSeasonAnalysis({
           </Card.Content>
         </Card>
       }
-      // chartsView={
-      //   <>
-      //     {analysis.charts?.barCharts?.map((c, i) => (
-      //       <BarChartView key={i} {...c} />
-      //     ))}
-
-      //     {analysis.charts?.lineCharts?.map((c, i) => (
-      //       <LineChartView key={i} {...c} />
-      //     ))}
-
-      //     {analysis.charts?.pieCharts?.map((c, i) => (
-      //       <PieChartView key={i} {...c} />
-      //     ))}
-
-      //     {analysis.charts?.radarCharts?.map((c, i) => (
-      //       <RadarChartView key={i} {...c} />
-      //     ))}
-      //   </>
-      // }
     />
   );
 }

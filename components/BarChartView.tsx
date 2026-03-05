@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { BarChartData } from "@/types";
 import React from "react";
 import { Dimensions } from "react-native";
@@ -18,7 +19,7 @@ export const BarChartView = ({ title, xLabels, values }: BarChartViewProps) => {
         backgroundColor: "#fff",
         backgroundGradientFrom: "#fff",
         backgroundGradientTo: "#fff",
-        color: () => "#0FA958",
+        color: () => colors.primary,
         barPercentage: 0.5,
       }}
       style={{ marginVertical: 8, borderRadius: 16 }}

@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "react-native-paper";
@@ -22,12 +23,19 @@ export default function AnalysisTabs({
         <Button
           mode={tab === "text" ? "contained" : "outlined"}
           onPress={() => setTab("text")}
+          buttonColor={tab === "text" ? colors.primary : colors.border}
+          textColor={tab === "text" ? colors.textOnPrimary : colors.textPrimary}
         >
           Análisis
         </Button>
+
         <Button
           mode={tab === "summary" ? "contained" : "outlined"}
           onPress={() => setTab("summary")}
+          buttonColor={tab === "summary" ? colors.primary : colors.border}
+          textColor={
+            tab === "summary" ? colors.textOnPrimary : colors.textPrimary
+          }
         >
           Resumen
         </Button>

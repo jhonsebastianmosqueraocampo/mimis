@@ -3,6 +3,12 @@ import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
 import { loadInterstitial } from "@/services/ads/interstitial";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
+import { typography } from "@/theme/typography";
 import { ShortItem } from "@/types";
 import { ResizeMode, Video } from "expo-av";
 import { useFocusEffect } from "expo-router";
@@ -196,8 +202,8 @@ export default function Shorts() {
   return (
     <PrivateLayout>
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>🔥 Shorts</Text>
-        <Text style={styles.headerSubtitle}>Los mejores momentos en video</Text>
+        <Text style={g.titleLarge}>🔥 Shorts</Text>
+        <Text style={g.bodySecondary}>Los mejores momentos en video</Text>
       </View>
 
       <TextInput
@@ -206,12 +212,15 @@ export default function Shorts() {
         onChangeText={setSearch}
         style={styles.search}
         left={<TextInput.Icon icon="magnify" />}
+        outlineColor={colors.border}
+        activeOutlineColor={colors.primary}
       />
 
       <View style={styles.filters}>
         <Button
           mode={orderBy === "fecha_desc" ? "contained" : "outlined"}
           onPress={() => setOrderBy("fecha_desc")}
+          buttonColor={orderBy === "fecha_desc" ? colors.primary : undefined}
         >
           Recientes
         </Button>
@@ -219,6 +228,7 @@ export default function Shorts() {
         <Button
           mode={orderBy === "fecha_asc" ? "contained" : "outlined"}
           onPress={() => setOrderBy("fecha_asc")}
+          buttonColor={orderBy === "fecha_asc" ? colors.primary : undefined}
         >
           Antiguos
         </Button>
@@ -226,6 +236,7 @@ export default function Shorts() {
         <Button
           mode={orderBy === "favoritos" ? "contained" : "outlined"}
           onPress={() => setOrderBy("favoritos")}
+          buttonColor={orderBy === "favoritos" ? colors.primary : undefined}
         >
           ❤️ Favoritos
         </Button>
@@ -260,37 +271,42 @@ export default function Shorts() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    textAlign: "center",
-    marginBottom: 8,
-    fontWeight: "700",
-  },
   row: {
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: spacing.md,
   },
+
   card: {
     width: width * 0.47,
-    borderRadius: 12,
+    borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: "#111",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
+
   video: {
     width: "100%",
     height: 220,
   },
+
   thumbnail: {
     width: "100%",
     height: 220,
   },
-  info: { padding: 6 },
-  fecha: {
-    fontSize: 12,
-    opacity: 0.6,
+
+  info: {
+    padding: spacing.xs,
   },
+
+  fecha: {
+    ...typography.small,
+  },
+
   desc: {
-    marginTop: 3,
-    color: "white",
+    ...typography.body,
+    marginTop: spacing.xs,
   },
 
   grid: {
@@ -300,20 +316,20 @@ const styles = StyleSheet.create({
   },
 
   cardWrapper: {
-    width: "48%", // 👈 2 columnas estilo CSS
-    marginBottom: 14,
+    width: "48%",
+    marginBottom: spacing.md,
   },
 
   overlay: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    top: spacing.sm,
+    right: spacing.sm,
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.xs,
     backgroundColor: "rgba(0,0,0,0.45)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.round,
   },
 
   counter: {
@@ -327,36 +343,27 @@ const styles = StyleSheet.create({
   },
 
   counterText: {
-    color: "white",
+    fontFamily: typography.subtitle.fontFamily,
+    color: colors.textOnPrimary,
     fontSize: 12,
-    fontWeight: "600",
   },
+
   search: {
-    marginHorizontal: 16,
-    marginBottom: 8,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xs,
+    backgroundColor: colors.surfaceVariant,
   },
 
   filters: {
     flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
+
   headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-
-  headerSubtitle: {
-    fontSize: 13,
-    color: "#777",
-    marginTop: 2,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
 });

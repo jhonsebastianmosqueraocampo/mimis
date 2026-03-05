@@ -1,5 +1,10 @@
 import PrivateLayout from "@/app/privateLayout";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LiveMatch, RootStackParamList, swiperItem } from "@/types";
 import { useNavigation } from "expo-router";
 import React, {
@@ -33,7 +38,7 @@ const mergeById = (oldArr: LiveMatch[], newArr: LiveMatch[]): LiveMatch[] => {
   const map = new Map<number, LiveMatch>();
   oldArr.forEach((m) => map.set(m.fixtureId, m));
   newArr.forEach((m) =>
-    map.set(m.fixtureId, { ...m, status: { ...m.status } })
+    map.set(m.fixtureId, { ...m, status: { ...m.status } }),
   );
   return Array.from(map.values());
 };
@@ -71,11 +76,11 @@ export default function MatchesLiveLeague({
       allMatches.flatMap((m) => [
         m.teams.home.name.toLowerCase(),
         m.teams.away.name.toLowerCase(),
-      ])
+      ]),
     );
 
     return equiposFavoritos.filter((fav) =>
-      teamsInMatches.has(fav.title.toLowerCase())
+      teamsInMatches.has(fav.title.toLowerCase()),
     );
   }, [equiposFavoritos, allMatches]);
 
@@ -127,7 +132,7 @@ export default function MatchesLiveLeague({
       results = results.filter(
         (match) =>
           match.teams.home.name.toLowerCase() === favLower ||
-          match.teams.away.name.toLowerCase() === favLower
+          match.teams.away.name.toLowerCase() === favLower,
       );
     }
 
@@ -137,7 +142,7 @@ export default function MatchesLiveLeague({
       results = results.filter(
         (match) =>
           match.teams.home.name.toLowerCase().includes(q) ||
-          match.teams.away.name.toLowerCase().includes(q)
+          match.teams.away.name.toLowerCase().includes(q),
       );
     }
 
@@ -156,7 +161,7 @@ export default function MatchesLiveLeague({
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar equipo..."
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textSecondary}
           value={searchText}
           onChangeText={setSearchText}
         />
@@ -186,14 +191,16 @@ export default function MatchesLiveLeague({
                 selected={selectedFavoriteTeam === eq.title}
                 onPress={() =>
                   setSelectedFavoriteTeam((prev) =>
-                    prev === eq.title ? "ALL" : eq.title
+                    prev === eq.title ? "ALL" : eq.title,
                   )
                 }
                 style={[
                   styles.chip,
                   {
                     backgroundColor:
-                      selectedFavoriteTeam === eq.title ? "#D6F5D6" : "#F0F0F0",
+                      selectedFavoriteTeam === eq.title
+                        ? colors.primary
+                        : colors.border,
                   },
                 ]}
                 avatar={
@@ -203,7 +210,7 @@ export default function MatchesLiveLeague({
                       width: 24,
                       height: 24,
                       borderRadius: 12,
-                      backgroundColor: "#fff",
+                      backgroundColor: colors.background,
                     }}
                   />
                 }
@@ -283,88 +290,107 @@ export default function MatchesLiveLeague({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 14,
-    paddingTop: 10,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.xs,
   },
+
   headerTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1B5E20",
-    marginBottom: 8,
+    ...typography.titleLarge,
+    fontWeight: "700",
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
+
   searchInput: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 15,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    ...typography.body,
     borderWidth: 1,
-    borderColor: "#ccc",
-    color: "#000",
+    borderColor: colors.border,
+    color: colors.textPrimary,
   },
+
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    marginBottom: 14,
-    padding: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
     elevation: 5,
-    shadowColor: "#000",
+    shadowColor: shadows.lg.shadowColor,
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+
   team: {
     alignItems: "center",
     flex: 1,
   },
+
   teamName: {
-    fontSize: 13,
+    ...typography.small,
     fontWeight: "600",
-    color: "#333",
+    color: colors.textPrimary,
     textAlign: "center",
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
+
   scoreContainer: {
     alignItems: "center",
     justifyContent: "center",
     flex: 1.1,
   },
+
   scoreText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#222",
+    ...typography.titleLarge,
+    fontWeight: "700",
+    color: colors.textPrimary,
   },
+
   liveChip: {
-    backgroundColor: "#1B5E20",
-    marginTop: 6,
+    backgroundColor: colors.success ?? colors.primary,
+    marginTop: spacing.xs,
   },
+
   liveChipText: {
-    color: "#fff",
+    ...typography.small,
+    color: colors.textOnPrimary,
     fontWeight: "600",
   },
+
   venueText: {
+    ...typography.title,
     textAlign: "center",
-    fontSize: 12,
-    color: "#777",
-    marginTop: 8,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
+
   logo: {
     backgroundColor: "transparent",
   },
+
   noResults: {
+    ...typography.body,
     textAlign: "center",
-    color: "#777",
-    marginTop: 40,
-    fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: spacing.xl,
   },
-  chip: { marginRight: 8, marginBottom: 8 },
+
+  chip: {
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+
   chipsRowHorizontal: {
     flexDirection: "row",
     alignItems: "center",
-    paddingRight: 12,
+    paddingRight: spacing.sm,
   },
 });

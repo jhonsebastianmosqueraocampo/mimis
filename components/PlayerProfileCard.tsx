@@ -1,3 +1,8 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { TeamPlayer } from "@/types";
 import type { ReactNode } from "react";
 import React from "react";
@@ -35,7 +40,7 @@ export default function PlayerProfileCard({
     <Chip
       key={key}
       style={styles.chip}
-      textStyle={{ color: "#1DB954" }}
+      textStyle={{ color: colors.primary }}
       mode="outlined"
     >
       {key}
@@ -75,44 +80,55 @@ export default function PlayerProfileCard({
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: 16,
-    marginHorizontal: 24,
-    borderRadius: 12,
+    marginVertical: spacing.md,
+    marginHorizontal: spacing.lg,
+    borderRadius: radius.md,
     elevation: 4,
+    backgroundColor: colors.surface,
+    shadowColor: shadows.md.shadowColor,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   name: {
-    fontWeight: "bold",
-    color: "#333",
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.textPrimary,
   },
+
   subtitle: {
-    color: "#888",
+    ...typography.small,
+    color: colors.textSecondary,
   },
+
   chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 16,
-    gap: 8,
+    marginTop: spacing.md,
+    gap: spacing.xs,
   },
+
   chip: {
-    borderColor: "#1DB954",
-    marginRight: 8,
-    marginBottom: 8,
+    borderColor: colors.primary,
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
   },
+
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
-    gap: 8,
-    paddingHorizontal: 8,
+    marginBottom: spacing.xs,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
+
   teamImage: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    marginRight: 8,
+    borderRadius: radius.round,
+    marginRight: spacing.xs,
   },
 });

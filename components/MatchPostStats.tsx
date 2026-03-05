@@ -1,4 +1,8 @@
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { TeamStatistics } from "@/types";
 import React from "react";
 import { Animated, ScrollView, StyleSheet, View } from "react-native";
@@ -25,7 +29,7 @@ export default function MatchPostStats({ stats }: MatchPostStatsProps) {
           <Avatar.Image
             source={{ uri: home.team.logo }}
             size={56}
-            style={{ backgroundColor: "transparent" }}
+            style={{ backgroundColor: colors.background }}
           />
           <Text style={styles.teamName}>{home.team.name}</Text>
         </View>
@@ -38,7 +42,7 @@ export default function MatchPostStats({ stats }: MatchPostStatsProps) {
           <Avatar.Image
             source={{ uri: away.team.logo }}
             size={56}
-            style={{ backgroundColor: "transparent" }}
+            style={{ backgroundColor: colors.background }}
           />
           <Text style={styles.teamName}>{away.team.name}</Text>
         </View>
@@ -67,7 +71,10 @@ export default function MatchPostStats({ stats }: MatchPostStatsProps) {
                 <Animated.View
                   style={[
                     styles.bar,
-                    { width: `${homePercent}%`, backgroundColor: "#1DB954" },
+                    {
+                      width: `${homePercent}%`,
+                      backgroundColor: colors.primary,
+                    },
                   ]}
                 />
                 <Animated.View
@@ -75,7 +82,7 @@ export default function MatchPostStats({ stats }: MatchPostStatsProps) {
                     styles.bar,
                     {
                       width: `${awayPercent}%`,
-                      backgroundColor: "#e53935",
+                      backgroundColor: colors.error,
                       alignSelf: "flex-end",
                     },
                   ]}
@@ -116,59 +123,68 @@ const formatValue = (value: any): string => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: spacing.md,
   },
+
   teamsHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+
   teamBlock: {
     alignItems: "center",
     width: "30%",
   },
+
   teamName: {
-    fontSize: 12,
+    ...typography.small,
     fontWeight: "600",
     textAlign: "center",
-    color: "#333",
-    marginTop: 4,
+    color: colors.textPrimary,
+    marginTop: spacing.xs ?? 4,
   },
+
   vsLabel: {
-    fontWeight: "bold",
-    color: "#1DB954",
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.primary,
     textAlign: "center",
-    fontSize: 16,
   },
+
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 8,
+    marginVertical: spacing.xs,
   },
+
   barContainer: {
     flex: 1,
     height: 24,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 12,
+    backgroundColor: colors.border,
+    borderRadius: radius.round,
     overflow: "hidden",
     justifyContent: "center",
   },
+
   bar: {
     height: "100%",
     position: "absolute",
-    borderRadius: 12,
+    borderRadius: radius.round,
   },
+
   statType: {
     position: "absolute",
     alignSelf: "center",
-    fontSize: 11,
-    color: "#333",
+    ...typography.small,
+    color: colors.textPrimary,
     fontWeight: "500",
   },
+
   valueText: {
     width: 36,
-    fontSize: 12,
+    ...typography.small,
     fontWeight: "600",
-    color: "#222",
+    color: colors.textPrimary,
   },
 });

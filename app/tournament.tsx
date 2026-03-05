@@ -5,6 +5,10 @@ import MatchesLeagueInfo from "@/components/MatchesLeagueInfo";
 import SeasonResults from "@/components/SeasonResults";
 import VerticalScroll from "@/components/VerticalScroll";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LeagueB, RootStackParamList, swiperItem } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import React, { useEffect, useMemo, useState } from "react";
@@ -158,9 +162,8 @@ export default function TournamentScreen() {
               typographyProps={{
                 variant: "titleLarge",
                 style: {
-                  color: "#333333",
-                  fontFamily: "BubbleSans",
-                  fontWeight: "600",
+                  ...typography.titleLarge,
+                  color: colors.textPrimary,
                   textAlign: "center",
                 },
               }}
@@ -174,7 +177,16 @@ export default function TournamentScreen() {
                   style={styles.leagueImage}
                 />
               )}
-              <Chip style={styles.leagueChip}>{infoLeague.country.name}</Chip>
+              <Chip
+                textStyle={{
+                  color:
+                    selectedItem.id == infoLeague.league.id.toString()
+                      ? colors.textOnPrimary
+                      : colors.textPrimary,
+                }}
+              >
+                {infoLeague.country.name}
+              </Chip>
             </View>
           </>
         )}
@@ -245,55 +257,64 @@ export default function TournamentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
+
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
-    gap: 8,
-    paddingHorizontal: 8,
+    marginBottom: spacing.xs,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
+
   leagueImage: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    marginRight: 8,
+    borderRadius: radius.round,
+    marginRight: spacing.xs,
   },
+
   leagueChip: {
     backgroundColor: "transparent",
-    borderColor: "#1DB954",
+    borderColor: colors.primary,
   },
+
   chipContainer: {
     flexDirection: "row",
   },
+
   tabBar: {
-    marginVertical: 12,
+    marginVertical: spacing.sm,
   },
+
   chip: {
-    marginRight: 8,
-    borderColor: "#1DB954",
+    marginRight: spacing.xs,
+    borderColor: colors.primary,
     borderWidth: 1,
     backgroundColor: "transparent",
+    borderRadius: radius.round,
   },
+
   firstChip: {
-    marginLeft: 12,
+    marginLeft: spacing.sm,
   },
 
   lastChip: {
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
+
   chipSelected: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
+
   content: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
   },
+
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-    fontFamily: "BubbleSans",
+    ...typography.title,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
 });

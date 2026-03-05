@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import React, { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Avatar, List, Text, useTheme } from "react-native-paper";
@@ -13,7 +14,7 @@ export default function TopPlayerTeamStatsList({
   const theme = useTheme();
 
   const sortedPlayers = [...players].sort(
-    (a, b) => b.totalStats - a.totalStats
+    (a, b) => b.totalStats - a.totalStats,
   );
 
   const handleToggle = (id: number) => {
@@ -41,24 +42,24 @@ export default function TopPlayerTeamStatsList({
               title={player.name}
               description={`${player.totalStats} ${pluralize(
                 player.totalStats > 1 ? 2 : 1,
-                statTitle
+                statTitle,
               )} en ${player.matches} ${pluralize(
                 player.matches > 1 ? 2 : 1,
-                "partido"
+                "partido",
               )}`}
               expanded={isExpanded}
               onPress={() => handleToggle(player.id)}
               titleStyle={{
                 fontWeight: "bold",
-                color: isExpanded ? "#fff" : "#000",
+                color: isExpanded ? colors.textOnPrimary : colors.text,
               }}
               descriptionStyle={{
-                color: isExpanded ? "#e0fbe6" : "#666",
+                color: isExpanded ? colors.text : colors.textSecondary,
               }}
               style={{
-                backgroundColor: isExpanded ? "#1DB954" : "#fff",
+                backgroundColor: isExpanded ? colors.primary : colors.surface,
                 borderWidth: 1,
-                borderColor: "#1DB954",
+                borderColor: colors.primary,
                 borderRadius: 12,
                 padding: 4,
               }}
@@ -84,7 +85,13 @@ export default function TopPlayerTeamStatsList({
                         marginBottom: 4,
                       }}
                     >
-                      <Text style={{ color: isExpanded ? "#fff" : "#000" }}>
+                      <Text
+                        style={{
+                          color: isExpanded
+                            ? colors.textOnPrimary
+                            : colors.text,
+                        }}
+                      >
                         {competition}
                       </Text>
                       <Text
@@ -92,16 +99,16 @@ export default function TopPlayerTeamStatsList({
                           fontWeight: "bold",
                           color:
                             goals >= 5
-                              ? "#e53935"
+                              ? colors.error
                               : isExpanded
-                              ? "#fff"
-                              : "#1DB954",
+                                ? colors.textOnPrimary
+                                : colors.success,
                         }}
                       >
                         {goals} {pluralize(goals > 1 ? 2 : 1, statTitle)}
                       </Text>
                     </View>
-                  )
+                  ),
                 )}
               </View>
             </List.Accordion>

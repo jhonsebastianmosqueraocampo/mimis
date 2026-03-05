@@ -1,12 +1,9 @@
 import { useInside } from "@/hooks/InsideContext";
+import { colors } from "@/theme/colors";
+import { shadows } from "@/theme/shadows";
 import { format } from "date-fns";
 import React from "react";
-import {
-  Text as RNText,
-  ScrollView,
-  StyleSheet,
-  View
-} from "react-native";
+import { Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import {
   IconButton,
@@ -36,7 +33,7 @@ export default function NotificationDrawer({ open, setOpen }: Props) {
     <View style={styles.deleteAction}>
       <IconButton
         icon="delete"
-        iconColor="#fff"
+        iconColor={colors.textOnPrimary}
         onPress={() => handleDelete(id)}
       />
     </View>
@@ -61,7 +58,7 @@ export default function NotificationDrawer({ open, setOpen }: Props) {
           <Text style={styles.titleModal}>Notificaciones</Text>
           <IconButton
             icon="close"
-            iconColor="#fff"
+            iconColor={colors.textOnPrimary}
             size={24}
             onPress={handleClose}
           />
@@ -82,9 +79,9 @@ export default function NotificationDrawer({ open, setOpen }: Props) {
                   title={notif.title}
                   description={`${notif.body}\n${format(
                     new Date(notif.receivedAt),
-                    "dd MMM yyyy HH:mm"
+                    "dd MMM yyyy HH:mm",
                   )}`}
-                  left={() => <List.Icon icon="bell" color="#1DB954" />}
+                  left={() => <List.Icon icon="bell" color={colors.primary} />}
                   titleStyle={{ fontFamily: "System" }}
                   descriptionNumberOfLines={3}
                   style={styles.notificationItem}
@@ -107,7 +104,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    shadowColor: "#000",
+    shadowColor: shadows.sm.shadowColor,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.2,
     elevation: 8,
@@ -117,7 +114,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   headerModal: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -127,7 +124,7 @@ const styles = StyleSheet.create({
   },
   titleModal: {
     fontSize: 20,
-    color: "#fff",
+    color: colors.textOnPrimary,
     fontWeight: "bold",
     textAlign: "center",
     flex: 1,
@@ -140,8 +137,8 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   notificationItem: {
-    backgroundColor: "white",
-    borderBottomColor: "#eee",
+    backgroundColor: colors.background,
+    borderBottomColor: colors.border,
     borderBottomWidth: 1,
   },
 });

@@ -1,3 +1,8 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { SwiperListProps } from "@/types";
 import React, { useRef } from "react";
 import {
@@ -49,7 +54,7 @@ export default function SquareSwiperList({ list, action }: SwiperListProps) {
         }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: true },
         )}
         scrollEventThrottle={16}
       >
@@ -90,7 +95,7 @@ export default function SquareSwiperList({ list, action }: SwiperListProps) {
                 ]}
               >
                 <Image source={{ uri: item.img }} style={styles.image} />
-                
+
                 {/* 🖤 Capa inferior oscura en lugar del degradado */}
                 <View style={styles.overlay} />
 
@@ -149,54 +154,60 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: 200,
-    borderRadius: 18,
-    backgroundColor: "#fff",
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: shadows.lg.shadowColor,
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 10,
     elevation: 10,
   },
+
   image: {
     width: "100%",
     height: "100%",
   },
+
   overlay: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     height: 80,
-    backgroundColor: "rgba(0, 0, 0, 0.55)", // Simula un degradado suave
+    backgroundColor: colors.surface + "CC", // 🖤 Capa oscura con transparencia
   },
+
   textContainer: {
     position: "absolute",
-    bottom: 12,
-    left: 12,
-    right: 12,
+    bottom: spacing.sm,
+    left: spacing.sm,
+    right: spacing.sm,
     alignItems: "center",
   },
+
   title: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.textOnPrimary,
     textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.4)",
+    textShadowColor: colors.surface + "CC",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+
   indicators: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 12,
-    gap: 6,
+    marginTop: spacing.sm,
+    gap: spacing.xs ?? 6,
   },
+
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: "#1B5E20",
+    borderRadius: radius.round,
+    backgroundColor: colors.primary,
   },
 });

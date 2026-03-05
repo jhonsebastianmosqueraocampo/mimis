@@ -5,9 +5,15 @@ import { RouteProp, useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
-import { Button, Card, Divider, Text, useTheme } from "react-native-paper";
+import { Button, Card, Divider, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
+
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
+import { typography } from "@/theme/typography";
 
 type PurchaseSummaryRouteProp = RouteProp<
   RootStackParamList,
@@ -16,23 +22,28 @@ type PurchaseSummaryRouteProp = RouteProp<
 
 export default function PurchaseSummary() {
   const { getUserPoints } = useFetch();
-  const theme = useTheme();
+
   const [loading, setLoading] = useState(false);
   const [userPoints, setUserPoints] = useState(0);
 
   useEffect(() => {
     let mounted = true;
+
     const loadUserPoints = async () => {
       setLoading(true);
+
       try {
-        const { success, points, message } = await getUserPoints();
+        const { success, points } = await getUserPoints();
+
         if (!mounted) return;
+
         if (success) {
           setUserPoints(points);
         }
       } catch (err) {
         console.error("❌ Error cargando favoritos:", err);
       }
+
       setLoading(false);
     };
 
@@ -45,6 +56,7 @@ export default function PurchaseSummary() {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const route = useRoute<PurchaseSummaryRouteProp>();
 
   const { products } = route.params;
@@ -67,55 +79,67 @@ export default function PurchaseSummary() {
     <PrivateLayout>
       <ScrollView contentContainerStyle={styles.container}>
         {/* ================= HEADER ================= */}
-        <Text variant="titleLarge" style={styles.title}>
+
+        <Text style={[g.titleLarge, styles.title]}>
           ✅ ¡Compra realizada con éxito!
         </Text>
-        <Text style={styles.subtitle}>
+
+        <Text style={[g.bodySecondary, styles.subtitle]}>
           Gracias por tu compra 🙌 Hemos recibido tu pedido y pronto estará en
           camino.
         </Text>
 
         {/* ================= LISTA DE PRODUCTOS ================= */}
+
         {products.map((item) => (
           <Card key={item.id} style={styles.itemCard}>
-            <Text variant="titleMedium">{item.name}</Text>
-            <Text>
+            <Text style={g.subtitle}>{item.name}</Text>
+
+            <Text style={g.bodySecondary}>
               Color: {item.color} · Talla: {item.size}
             </Text>
-            <Text>Cantidad: {item.quantity}</Text>
+
+            <Text style={g.bodySecondary}>Cantidad: {item.quantity}</Text>
+
             <Text style={styles.price}>{item.price.toLocaleString()} pts</Text>
           </Card>
         ))}
 
         {/* ================= RESUMEN ================= */}
+
         <Card style={styles.summary}>
-          <Text variant="titleMedium">Resumen de puntos</Text>
-          <Divider style={{ marginVertical: 8 }} />
+          <Text style={g.subtitle}>Resumen de puntos</Text>
 
-          <Text>Total gastado: {total.toLocaleString()} pts</Text>
-          <Text>Puntos disponibles: {userPoints.toLocaleString()} pts</Text>
+          <Divider style={styles.divider} />
 
-          <Divider style={{ marginVertical: 8 }} />
+          <Text style={g.body}>
+            Total gastado: {total.toLocaleString()} pts
+          </Text>
+
+          <Text style={g.body}>
+            Puntos disponibles: {userPoints.toLocaleString()} pts
+          </Text>
+
+          <Divider style={styles.divider} />
 
           <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color:
-                remainingPoints >= 0
-                  ? theme.colors.primary
-                  : theme.colors.error,
-            }}
+            style={[
+              styles.remaining,
+              {
+                color: remainingPoints >= 0 ? colors.primary : colors.error,
+              },
+            ]}
           >
             Saldo restante: {remainingPoints.toLocaleString()} pts
           </Text>
         </Card>
 
         {/* ================= CTA ================= */}
+
         <Button
           mode="contained"
           onPress={() => navigation.navigate("store")}
-          style={{ marginTop: 24 }}
+          style={styles.button}
         >
           Volver a la tienda
         </Button>
@@ -126,29 +150,55 @@ export default function PurchaseSummary() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
+
   title: {
     textAlign: "center",
-    fontWeight: "700",
-    marginBottom: 6,
+    marginBottom: spacing.xs,
   },
+
   subtitle: {
     textAlign: "center",
-    marginBottom: 24,
-    color: "#666",
+    marginBottom: spacing.xl,
   },
+
   itemCard: {
-    marginBottom: 12,
-    padding: 12,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
+
   price: {
-    marginTop: 6,
-    fontWeight: "600",
+    marginTop: spacing.xs,
+    fontFamily: typography.subtitle.fontFamily,
+    color: colors.textPrimary,
   },
+
   summary: {
-    marginTop: 20,
-    padding: 14,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  divider: {
+    marginVertical: spacing.sm,
+  },
+
+  remaining: {
+    fontSize: 16,
+    fontFamily: typography.title.fontFamily,
+  },
+
+  button: {
+    marginTop: spacing.xl,
+    borderRadius: radius.md,
   },
 });

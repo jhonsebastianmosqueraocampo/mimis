@@ -1,4 +1,6 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { shadows } from "@/theme/shadows";
 import { VideoYoutube } from "@/types";
 import React, { useEffect, useState } from "react";
 import {
@@ -16,85 +18,103 @@ import Loading from "./Loading";
 const { width } = Dimensions.get("window");
 
 type MatchPostVideosProps = {
-    teamA: string;
-    teamB: string;
-    query: string;
-    season: string;
-}
+  teamA: string;
+  teamB: string;
+  query: string;
+  season: string;
+};
 
-export default function MatchPostVideos({teamA, teamB, query, season}: MatchPostVideosProps){
-    const { getVideoMatchFromYoutube } = useFetch();
-    const [videos, setVideos] = useState<VideoYoutube[]>([]);
-    const [loading, setLoading] = useState(true);
-      const [error, setError] = useState<string | null>(null);
+export default function MatchPostVideos({
+  teamA,
+  teamB,
+  query,
+  season,
+}: MatchPostVideosProps) {
+  const { getVideoMatchFromYoutube } = useFetch();
+  const [videos, setVideos] = useState<VideoYoutube[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-     useEffect(() => {
-        let mounted = true;
-        const loadFixture = async () => {
-          try {
-            const { success, videos, message } = await getVideoMatchFromYoutube(teamA, teamB, season, query);
-            if (mounted) {
-              if (success) {
-                setVideos(videos!);
-              } else setError(message!);
-            }
-            setLoading(false);
-          } catch {
-            setError("Error al cargar el fixture");
-          } finally {
-            setLoading(false);
-          }
-        };
-        loadFixture();
-        return () => {
-          mounted = false;
-        };
-      }, []);
+  useEffect(() => {
+    let mounted = true;
+    const loadFixture = async () => {
+      try {
+        const { success, videos, message } = await getVideoMatchFromYoutube(
+          teamA,
+          teamB,
+          season,
+          query,
+        );
+        if (mounted) {
+          if (success) {
+            setVideos(videos!);
+          } else setError(message!);
+        }
+        setLoading(false);
+      } catch {
+        setError("Error al cargar el fixture");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFixture();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-      if (loading) return <Loading
-                visible={loading}
-                title="Cargando"
-                subtitle="Pronto tendrás la información"
-              />;
+  if (loading)
+    return (
+      <Loading
+        visible={loading}
+        title="Cargando"
+        subtitle="Pronto tendrás la información"
+      />
+    );
 
-      const openVideo = (id: string) => {
-          Linking.openURL(`https://www.youtube.com/watch?v=${id}`);
-        };
+  const openVideo = (id: string) => {
+    Linking.openURL(`https://www.youtube.com/watch?v=${id}`);
+  };
 
-    return(
-        <View style={styles.container}>
-        <Text style={styles.header}>{teamA} vs {teamB}</Text>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>
+        {teamA} vs {teamB}
+      </Text>
 
-        {/* Galería de videos */}
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
-        >
-          <View style={styles.grid}>
-            {videos.length === 0 ? (
-              <Text style={styles.emptyText}>No hay videos disponibles.</Text>
-            ) : (
-              videos.map((item) => (
-                <TouchableOpacity
-                  key={item.videoId}
-                  style={styles.card}
-                  activeOpacity={0.9}
-                  onPress={() => openVideo(item.videoId)}
-                >
-                  <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-                  <Text numberOfLines={2} style={styles.videoTitle}>
-                    {item.title}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.channelTitle}>
-                    {item.channelTitle}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        </ScrollView>
-      </View>
-    )
+      {/* Galería de videos */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
+        <View style={styles.grid}>
+          {videos.length === 0 ? (
+            <Text style={styles.emptyText}>No hay videos disponibles.</Text>
+          ) : (
+            videos.map((item) => (
+              <TouchableOpacity
+                key={item.videoId}
+                style={styles.card}
+                activeOpacity={0.9}
+                onPress={() => openVideo(item.videoId)}
+              >
+                <Image
+                  source={{ uri: item.thumbnail }}
+                  style={styles.thumbnail}
+                />
+                <Text numberOfLines={2} style={styles.videoTitle}>
+                  {item.title}
+                </Text>
+                <Text numberOfLines={1} style={styles.channelTitle}>
+                  {item.channelTitle}
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  );
 }
 
 const cardWidth = (width - 48) / 2; // dos columnas con margen
@@ -107,7 +127,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#1e1e1e",
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   tabs: {
@@ -120,17 +140,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     marginHorizontal: 6,
     borderRadius: 20,
-    backgroundColor: "#e6e6e6",
+    backgroundColor: colors.background,
   },
   activeTab: {
-    backgroundColor: "#007AFF",
+    backgroundColor: colors.primary,
   },
   tabText: {
-    color: "#333",
+    color: colors.textPrimary,
     fontWeight: "600",
   },
   activeTabText: {
-    color: "#fff",
+    color: colors.textOnPrimary,
   },
   scrollContainer: {
     paddingBottom: 100,
@@ -142,10 +162,10 @@ const styles = StyleSheet.create({
   },
   card: {
     width: cardWidth,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
     borderRadius: 14,
     marginBottom: 16,
-    shadowColor: "#000",
+    shadowColor: shadows.sm.shadowColor,
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
@@ -159,19 +179,19 @@ const styles = StyleSheet.create({
   videoTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1e1e1e",
+    color: colors.textPrimary,
     paddingHorizontal: 8,
     marginTop: 6,
   },
   channelTitle: {
     fontSize: 12,
-    color: "#777",
+    color: colors.textSecondary,
     paddingHorizontal: 8,
     marginBottom: 8,
   },
   emptyText: {
     textAlign: "center",
-    color: "#888",
+    color: colors.textSecondary,
     marginTop: 60,
     fontSize: 16,
   },

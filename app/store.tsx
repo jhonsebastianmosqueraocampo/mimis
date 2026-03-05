@@ -141,7 +141,7 @@ export default function StoreScreen() {
         return Array.from(map.values());
       });
     } catch (e) {
-      console.log("❌ loadPage error:", e);
+      return;
     } finally {
       setLoadingFirst(false);
       setLoadingMore(false);

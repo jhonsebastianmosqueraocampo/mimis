@@ -1,4 +1,8 @@
 import { useAuth } from "@/hooks/AuthContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { ShortItem, User } from "@/types";
 import React, { useEffect, useState } from "react";
 import { Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
@@ -101,12 +105,7 @@ export default function ShortsCommentsDrawer({
         <Pressable style={styles.backdrop} onPress={onClose} />
 
         {/* Drawer */}
-        <View
-          style={[
-            styles.drawer,
-            { marginBottom: keyboardHeight }, // 👈 se mueve con el teclado
-          ]}
-        >
+        <View style={[styles.drawer, { marginBottom: keyboardHeight }]}>
           <Text style={styles.title}>Comentarios</Text>
 
           {/* Lista */}
@@ -123,7 +122,7 @@ export default function ShortsCommentsDrawer({
           <View style={styles.inputRow}>
             <TextInput
               placeholder="Escribe un comentario..."
-              placeholderTextColor="#888"
+              placeholderTextColor={colors.textSecondary}
               style={styles.input}
               value={text}
               onChangeText={setText}
@@ -142,63 +141,64 @@ export default function ShortsCommentsDrawer({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    justifyContent: "flex-end", // 🔑 SIEMPRE abajo
+    justifyContent: "flex-end",
   },
 
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.surfaceVariant ?? colors.surface + "CC",
   },
 
   drawer: {
     width: "100%",
-    backgroundColor: "white",
-    padding: 16,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
   },
 
   title: {
     textAlign: "center",
-    fontSize: 18,
+    ...typography.body,
     fontWeight: "600",
+    color: colors.textPrimary,
   },
 
   list: {
-    marginTop: 16,
+    marginTop: spacing.md,
     maxHeight: 300,
   },
 
   commentItem: {
-    paddingVertical: 8,
-    borderBottomWidth: 0.5,
-    borderColor: "#ddd",
+    paddingVertical: spacing.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
 
   user: {
+    ...typography.small,
     fontWeight: "600",
-    fontSize: 13,
-    color: "#1DB954",
-    marginBottom: 2,
+    color: colors.primary,
+    marginBottom: spacing.sm ?? 2,
   },
 
   commentText: {
-    fontSize: 14,
-    color: "#222",
+    ...typography.small,
+    color: colors.textPrimary,
   },
 
   inputRow: {
     flexDirection: "row",
-    marginTop: 16,
+    marginTop: spacing.md,
     alignItems: "center",
-    gap: 8,
+    gap: spacing.xs,
   },
 
   input: {
     flex: 1,
-    backgroundColor: "#eee",
-    padding: 10,
-    borderRadius: 10,
-    color: "#222",
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    color: colors.textPrimary,
   },
 });

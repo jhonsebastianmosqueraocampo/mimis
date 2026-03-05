@@ -1,4 +1,6 @@
 import { useAuth } from "@/hooks/AuthContext";
+import { colors } from "@/theme/colors";
+import { typography } from "@/theme/typography";
 import { RootStackParamList, User } from "@/types";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
@@ -29,7 +31,8 @@ export default function RegisterForm() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const { register } = useAuth();
 
@@ -40,7 +43,7 @@ export default function RegisterForm() {
 
   const handleSubmit = async () => {
     const user: User = {
-      id: '',
+      id: "",
       nickName: form.nickName,
       email: form.email,
       password: form.password,
@@ -50,7 +53,7 @@ export default function RegisterForm() {
       betsWon: 0,
       betsLost: 0,
       redeemed: 0,
-      badges: []
+      badges: [],
     };
     const result = await register(user);
 
@@ -58,7 +61,7 @@ export default function RegisterForm() {
       setError(result.message || "Error");
     } else {
       setError("");
-      navigation.navigate('selectFavorite')
+      navigation.navigate("selectFavorite");
     }
   };
 
@@ -74,7 +77,7 @@ export default function RegisterForm() {
         <TextInput
           style={styles.input}
           placeholder="Nombre de usuario"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.textSecondary}
           value={form.nickName}
           onChangeText={(text) => handleChange("nickName", text)}
         />
@@ -85,7 +88,7 @@ export default function RegisterForm() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.textSecondary}
           value={form.email}
           onChangeText={(text) => handleChange("email", text)}
         />
@@ -96,7 +99,7 @@ export default function RegisterForm() {
         <TextInput
           style={styles.input}
           placeholder="Contraseña"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.textSecondary}
           secureTextEntry={!showPassword}
           value={form.password}
           onChangeText={(text) => handleChange("password", text)}
@@ -111,11 +114,11 @@ export default function RegisterForm() {
       </View>
 
       <View style={styles.inputContainer}>
-        <MaterialIcons name="lock" size={20} color="#666" />
+        <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
         <TextInput
           style={styles.input}
           placeholder="Confirmar contraseña"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={colors.textSecondary}
           secureTextEntry={!showConfirmPassword}
           value={form.confirmPassword}
           onChangeText={(text) => handleChange("confirmPassword", text)}
@@ -123,7 +126,7 @@ export default function RegisterForm() {
         <Feather
           name={showConfirmPassword ? "eye" : "eye-off"}
           size={20}
-          color="#666"
+          color={colors.textSecondary}
           onPress={() => setShowConfirmPassword(!showConfirmPassword)}
           style={{ marginLeft: 8 }}
         />
@@ -151,27 +154,27 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderColor: "#ccc",
+    borderColor: colors.textSecondary,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
   },
   input: {
     flex: 1,
     marginLeft: 8,
     fontSize: 16,
-    color: "#000",
+    color: colors.text,
   },
   errorText: {
-    color: "#e53935",
+    color: colors.error,
     textAlign: "center",
-    fontFamily: "goli",
+    fontFamily: typography.title.fontFamily,
     fontSize: 14,
   },
   button: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -180,8 +183,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    color: "#fff",
-    fontFamily: "goli",
+    color: colors.textOnPrimary,
+    fontFamily: typography.title.fontFamily,
     fontWeight: "600",
     fontSize: 16,
   },

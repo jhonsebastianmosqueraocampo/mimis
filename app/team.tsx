@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { Chip, Text } from "react-native-paper";
-
 import FavoriteBadge from "@/components/FavoriteBadge";
 import Loading from "@/components/Loading";
 import MatchesTeamInfo from "@/components/MatchesTeamInfo";
 import SigningsAndRumors from "@/components/SigningsAndRumors";
 import TemplateTeam from "@/components/TemplateTeam";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { RootStackParamList, swiperItem, Team } from "@/types";
 import { RouteProp, useRoute } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { Chip, Text } from "react-native-paper";
 import AvatarCard from "../components/AvatarCard";
 import SeasonResults from "../components/SeasonResults";
 import TeamStats from "../components/TeamStats";
@@ -120,7 +123,11 @@ export default function TeamScreen() {
         imageUrl={team ? team.logo : ""}
         typographyProps={{
           variant: "titleLarge",
-          style: { textAlign: "center", fontWeight: "bold", color: "#333" },
+          style: {
+            textAlign: "center",
+            ...typography.titleLarge,
+            color: colors.textPrimary,
+          },
         }}
       />
 
@@ -147,7 +154,10 @@ export default function TeamScreen() {
               selectedItem.id === item.id && styles.chipSelected,
             ]}
             textStyle={{
-              color: selectedItem.id === item.id ? "#fff" : "#000",
+              color:
+                selectedItem.id === item.id
+                  ? colors.textOnPrimary
+                  : colors.textPrimary,
               lineHeight: 20,
             }}
           >
@@ -198,27 +208,32 @@ export default function TeamScreen() {
 
 const styles = StyleSheet.create({
   chipScroll: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface, // TODO brand si no existe
   },
+
   chip: {
-    marginHorizontal: 4,
-    borderColor: "#1DB954",
+    marginHorizontal: spacing.xs,
+    borderColor: colors.primary,
     backgroundColor: "transparent",
     height: 36,
     justifyContent: "center",
+    borderRadius: radius.round,
   },
+
   chipSelected: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
+
   sectionContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
+
   sectionTitle: {
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
+    ...typography.subtitle,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
 });

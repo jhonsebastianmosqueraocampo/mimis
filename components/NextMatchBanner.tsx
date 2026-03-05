@@ -1,3 +1,6 @@
+import { colors } from "@/theme/colors";
+import { shadows } from "@/theme/shadows";
+import { typography } from "@/theme/typography";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -15,8 +18,8 @@ type NextMatchProps = {
   stadium: string;
   referee: string;
   tournament: string;
-  fixtureId: number
-  actionMatch: (id: string) => void
+  fixtureId: number;
+  actionMatch: (id: string) => void;
 };
 
 export default function NextMatchBanner({
@@ -27,7 +30,7 @@ export default function NextMatchBanner({
   referee,
   tournament,
   fixtureId,
-  actionMatch
+  actionMatch,
 }: NextMatchProps) {
   const matchDate = dayjs(datetime);
   const now = dayjs();
@@ -36,7 +39,10 @@ export default function NextMatchBanner({
     : "En curso o finalizado";
 
   return (
-    <TouchableOpacity style={styles.container} onPress={()=>actionMatch(fixtureId.toString())}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => actionMatch(fixtureId.toString())}
+    >
       <Text variant="titleMedium" style={styles.title}>
         Próximo Partido
       </Text>
@@ -44,7 +50,7 @@ export default function NextMatchBanner({
       <View style={styles.teamsContainer}>
         <View style={styles.team}>
           <Avatar.Image
-            style={{ backgroundColor: "transparent" }}
+            style={{ backgroundColor: colors.background }}
             size={56}
             source={{ uri: homeTeam.img }}
           />
@@ -57,7 +63,7 @@ export default function NextMatchBanner({
 
         <View style={styles.team}>
           <Avatar.Image
-            style={{ backgroundColor: "transparent" }}
+            style={{ backgroundColor: colors.background }}
             size={56}
             source={{ uri: awayTeam.img }}
           />
@@ -68,22 +74,34 @@ export default function NextMatchBanner({
       <Divider style={{ width: "100%", marginVertical: 8 }} />
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="access-time" size={18} color="#555" />
+        <MaterialIcons
+          name="access-time"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>{matchDate.format("dddd, D MMM YYYY - HH:mm")}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="location-on" size={18} color="#555" />
+        <MaterialIcons
+          name="location-on"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>{stadium}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialIcons name="person" size={18} color="#555" />
+        <MaterialIcons name="person" size={18} color={colors.textSecondary} />
         <Text>Árbitro: {referee}</Text>
       </View>
 
       <View style={styles.infoRow}>
-        <MaterialCommunityIcons name="trophy-outline" size={18} color="#555" />
+        <MaterialCommunityIcons
+          name="trophy-outline"
+          size={18}
+          color={colors.textSecondary}
+        />
         <Text>{tournament}</Text>
       </View>
 
@@ -98,16 +116,16 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     borderRadius: 16,
-    backgroundColor: "#f5f5f5",
-    shadowColor: "#000",
+    backgroundColor: colors.surface,
+    shadowColor: shadows.sm.shadowColor,
     elevation: 3,
     alignItems: "center",
     gap: 12,
   },
   title: {
     fontWeight: "bold",
-    color: "#1DB954",
-    fontFamily: "goli",
+    color: colors.primary,
+    fontFamily: typography.title.fontFamily,
   },
   teamsContainer: {
     flexDirection: "row",
@@ -119,12 +137,12 @@ const styles = StyleSheet.create({
   },
   teamName: {
     fontWeight: "600",
-    fontFamily: "goli",
+    fontFamily: typography.body.fontFamily,
     marginTop: 4,
   },
   vsText: {
     fontWeight: "bold",
-    fontFamily: "goli",
+    fontFamily: typography.body.fontFamily,
   },
   infoRow: {
     flexDirection: "row",
@@ -133,14 +151,14 @@ const styles = StyleSheet.create({
   },
   timeLeftBox: {
     marginTop: 12,
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 8,
   },
   timeLeftText: {
-    color: "#fff",
+    color: colors.textOnPrimary,
     fontWeight: "bold",
-    fontFamily: "liter",
+    fontFamily: typography.body.fontFamily,
   },
 });

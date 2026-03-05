@@ -1,7 +1,15 @@
 // CoachTeamHistory.tsx (versión React Native con react-native-paper)
+import { colors } from "@/theme/colors";
 import React, { useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Avatar, Card, Chip, Divider, Text, useTheme } from "react-native-paper";
+import {
+  Avatar,
+  Card,
+  Chip,
+  Divider,
+  Text,
+  useTheme,
+} from "react-native-paper";
 
 type SeasonStats = {
   year: string;
@@ -52,7 +60,7 @@ export default function CoachTeamHistory({ history }: Props) {
                 <View
                   key={sIdx}
                   style={{
-                    backgroundColor: "#f9f9f9",
+                    backgroundColor: colors.background,
                     borderRadius: 8,
                     padding: 12,
                     marginBottom: 12,
@@ -81,12 +89,22 @@ export default function CoachTeamHistory({ history }: Props) {
                       <Text variant="bodySmall" style={{ marginBottom: 4 }}>
                         Títulos ganados:
                       </Text>
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          flexWrap: "wrap",
+                          gap: 6,
+                        }}
+                      >
                         {season.titles.map((title, tIdx) => (
                           <Chip
                             key={tIdx}
                             icon="trophy"
-                            style={{ backgroundColor: "#fff8e1", marginRight: 6, marginBottom: 6 }}
+                            style={{
+                              backgroundColor: "#fff8e1",
+                              marginRight: 6,
+                              marginBottom: 6,
+                            }}
                           >
                             {`${title.name} (${title.year})`}
                           </Chip>

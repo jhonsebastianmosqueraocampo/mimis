@@ -1,5 +1,5 @@
 import { Image, StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { Text } from "react-native-paper";
 
 type LogoProps = {
   size?: "sm" | "md" | "lg";
@@ -7,12 +7,10 @@ type LogoProps = {
 };
 
 export default function Logo({ size = "md", showText = false }: LogoProps) {
-  const theme = useTheme();
-
   const sizes = {
-    sm: { width: 90, height: 36 },
-    md: { width: 140, height: 56 },
-    lg: { width: 200, height: 80 },
+    sm: { width: 150, height: 120 },
+    md: { width: 150, height: 120 },
+    lg: { width: 150, height: 120 },
   };
 
   return (

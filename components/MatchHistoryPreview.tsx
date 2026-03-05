@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { GoalEvent, PreMatchStats, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useMemo } from "react";
@@ -38,8 +39,8 @@ export default function MatchHistoryPreview({
         <>
           <Text
             style={{
-              backgroundColor: "#e8f5e9",
-              color: "#2e7d32",
+              backgroundColor: colors.border,
+              color: colors.primary,
               paddingHorizontal: 6,
               paddingVertical: 2,
               borderRadius: 4,
@@ -63,8 +64,8 @@ export default function MatchHistoryPreview({
           </Text>
           <Text
             style={{
-              backgroundColor: "#e3f2fd",
-              color: "#1565c0",
+              backgroundColor: colors.border,
+              color: colors.info,
               paddingHorizontal: 6,
               paddingVertical: 2,
               borderRadius: 4,
@@ -92,7 +93,13 @@ export default function MatchHistoryPreview({
             <Text style={{ fontWeight: "bold", marginBottom: 2 }}>
               {match.league.name} • {match.league.season}
             </Text>
-            <Text style={{ fontSize: 12, color: "gray", marginBottom: 6 }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginBottom: 6,
+              }}
+            >
               {new Date(match.fixture.date).toLocaleDateString("es-ES", {
                 day: "2-digit",
                 month: "short",
@@ -160,7 +167,11 @@ export default function MatchHistoryPreview({
               </View>
             ) : (
               <Text
-                style={{ fontSize: 12, fontStyle: "italic", color: "gray" }}
+                style={{
+                  fontSize: 12,
+                  fontStyle: "italic",
+                  color: colors.textSecondary,
+                }}
               >
                 Sin goles registrados
               </Text>

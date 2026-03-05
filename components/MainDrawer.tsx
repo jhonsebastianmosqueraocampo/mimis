@@ -34,6 +34,7 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
+  { label: "Buscar", icon: "magnify", to: "search" },
   { label: "Inicio", icon: "home-outline", to: "index" },
   { label: "Shorts", icon: "play-circle-outline", to: "shorts" },
   { label: "Top 10 Ligas", icon: "trophy-outline", to: "worldTop10Screen" },
@@ -50,7 +51,6 @@ const menuItems: MenuItem[] = [
   },
   { label: "Resúmenes y Goles", icon: "soccer-field", to: "resumeAndGoals" },
   { label: "Entrevistas", icon: "microphone-outline", to: "interviews" },
-  { label: "Buscar", icon: "magnify", to: "search" },
 
   { label: "Favoritos", icon: "heart-outline", to: "favorites" },
   { label: "Equipos Seguidos", icon: "shield-outline", to: "favoriteTeams" },

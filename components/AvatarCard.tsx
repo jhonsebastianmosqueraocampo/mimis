@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import React from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -23,10 +27,7 @@ export default function AvatarCard({
         style={styles.avatar}
         resizeMode="cover"
       />
-      <Text
-        variant="titleLarge"
-        style={[styles.text, typographyProps?.style]}
-      >
+      <Text variant="titleLarge" style={[styles.text, typographyProps?.style]}>
         {name.toUpperCase()}
       </Text>
     </View>
@@ -37,18 +38,20 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 10
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
   },
+
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: radius.round,
   },
+
   text: {
+    ...typography.body,
     textAlign: "center",
     fontWeight: "600",
-    color: "#333",
-    fontFamily: "BubbleSans",
+    color: colors.textPrimary,
   },
 });

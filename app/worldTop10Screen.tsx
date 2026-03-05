@@ -3,6 +3,8 @@ import WorldVideoFeed from "@/components/worldVideoFeed";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
 import { loadInterstitial } from "@/services/ads/interstitial";
+import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
 import { WeeklyWorldTopVideo } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
@@ -188,8 +190,14 @@ export default function WorldTop10Screen() {
 
   return (
     <PrivateLayout>
-      <View style={{ flex: 1, backgroundColor: "#fff", padding: 16 }}>
-        <Text variant="titleLarge" style={{ marginBottom: 10 }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          padding: spacing.lg,
+        }}
+      >
+        <Text variant="titleLarge" style={{ marginBottom: spacing.sm }}>
           🌍 Top 10 Goles del Mundo
         </Text>
 
@@ -319,7 +327,7 @@ export default function WorldTop10Screen() {
 
                       <View
                         style={{
-                          backgroundColor: "rgba(0,0,0,0.55)",
+                          backgroundColor: colors.background + "cc",
                           position: "absolute",
                           bottom: 0,
                           width: "100%",

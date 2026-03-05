@@ -10,6 +10,10 @@ import {
 import { Button, Card, Chip, Text, TextInput } from "react-native-paper";
 
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import {
   LeagueItem,
   Lineup,
@@ -613,64 +617,144 @@ export default function OneByOneForm({
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
-  header: { padding: 16 },
-  headerTitle: { fontWeight: "700", fontSize: 22 },
-  headerSubtitle: { opacity: 0.7, marginTop: 4 },
+  header: { padding: spacing.md },
 
-  fixtureSelectContainer: { paddingHorizontal: 16, paddingBottom: 80 },
+  headerTitle: {
+    ...typography.titleLarge,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
 
-  chipsScroll: { marginBottom: 8 },
-  chip: { marginRight: 8 },
+  headerSubtitle: {
+    ...typography.body,
+    opacity: 0.7,
+    marginTop: spacing.xs ?? 4,
+    color: colors.textSecondary,
+  },
 
-  fixtureSearchInput: { marginBottom: 8 },
+  fixtureSelectContainer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl ?? 80,
+  },
 
-  fixtureListContent: { paddingBottom: 80 },
+  chipsScroll: { marginBottom: spacing.xs ?? 8 },
 
-  fixtureCard: { marginBottom: 8 },
+  chip: { marginRight: spacing.xs },
+
+  fixtureSearchInput: { marginBottom: spacing.xs ?? 8 },
+
+  fixtureListContent: { paddingBottom: spacing.xl ?? 80 },
+
+  fixtureCard: { marginBottom: spacing.xs ?? 8 },
 
   fixtureRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   fixtureTeamCol: { flex: 1, alignItems: "center" },
+
   fixtureCenterCol: { width: 70, alignItems: "center" },
-  fixtureLogo: { width: 36, height: 36, marginBottom: 4 },
-  fixtureScore: { fontWeight: "700" },
-  fixtureSubtitle: { marginTop: 4, opacity: 0.7 },
-  vsLabel: { opacity: 0.7 },
 
-  selectedFixtureContainer: { paddingHorizontal: 16 },
+  fixtureLogo: { width: 36, height: 36, marginBottom: spacing.xs ?? 4 },
 
-  selectedFixtureCard: { marginBottom: 16 },
+  fixtureScore: {
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+
+  fixtureSubtitle: {
+    ...typography.small,
+    marginTop: spacing.xs ?? 4,
+    opacity: 0.7,
+    color: colors.textSecondary,
+  },
+
+  vsLabel: {
+    ...typography.small,
+    opacity: 0.7,
+    color: colors.textSecondary,
+  },
+
+  selectedFixtureContainer: {
+    paddingHorizontal: spacing.md,
+  },
+
+  selectedFixtureCard: {
+    marginBottom: spacing.md,
+  },
 
   teamsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 12,
+    marginVertical: spacing.sm,
   },
+
   teamContainer: { flex: 1, alignItems: "center" },
-  teamLogo: { width: 52, height: 52, marginBottom: 4 },
-  teamName: { textAlign: "center", fontSize: 14 },
+
+  teamLogo: {
+    width: 52,
+    height: 52,
+    marginBottom: spacing.xs ?? 4,
+  },
+
+  teamName: {
+    textAlign: "center",
+    ...typography.small,
+    color: colors.textPrimary,
+  },
 
   vsContainer: { width: 80, alignItems: "center" },
-  vsText: { fontWeight: "700", fontSize: 18 },
-  scoreText: { fontWeight: "700", fontSize: 18 },
 
-  fixtureMeta: { opacity: 0.6 },
+  vsText: {
+    ...typography.title,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
 
-  playersSection: { marginBottom: 16 },
-  sectionTitle: { fontWeight: "700", marginBottom: 8 },
+  scoreText: {
+    ...typography.title,
+    fontWeight: "700",
+    color: colors.primary,
+  },
 
-  playersRow: { flexDirection: "row", gap: 12 },
+  fixtureMeta: {
+    ...typography.small,
+    opacity: 0.6,
+    color: colors.textSecondary,
+  },
+
+  playersSection: {
+    marginBottom: spacing.md,
+  },
+
+  sectionTitle: {
+    ...typography.body,
+    fontWeight: "700",
+    marginBottom: spacing.xs ?? 8,
+    color: colors.textPrimary,
+  },
+
+  playersRow: {
+    flexDirection: "row",
+    gap: spacing.sm ?? 12,
+  },
 
   playersColumn: { flex: 1 },
-  playersColumnTitle: { marginBottom: 6, opacity: 0.7 },
+
+  playersColumnTitle: {
+    marginBottom: spacing.xs ?? 6,
+    opacity: 0.7,
+    ...typography.small,
+    color: colors.textSecondary,
+  },
 
   playerCard: {
-    marginBottom: 6,
-    borderRadius: 12,
-    backgroundColor: "#fff",
+    marginBottom: spacing.xs ?? 6,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
     elevation: 1,
   },
 
@@ -680,84 +764,110 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  playerInfo: { flexDirection: "row", alignItems: "center", flex: 1 },
+  playerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
 
   playerPhoto: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    marginRight: 8,
+    borderRadius: radius.round,
+    marginRight: spacing.xs,
   },
 
   playerTextContainer: { flexShrink: 1 },
-  playerName: { fontWeight: "600" },
-  playerSub: { opacity: 0.7 },
+
+  playerName: {
+    ...typography.body,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+
+  playerSub: {
+    ...typography.small,
+    opacity: 0.7,
+    color: colors.textSecondary,
+  },
 
   footer: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 16,
+    padding: spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#ddd",
-    backgroundColor: "white",
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
+
   infoCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: "#FFF8E1",
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.warning ?? "rgba(255,193,7,0.15)",
   },
 
   infoTitle: {
+    ...typography.body,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: spacing.xs ?? 4,
+    color: colors.textPrimary,
   },
 
   infoText: {
+    ...typography.small,
     opacity: 0.8,
     lineHeight: 18,
+    color: colors.textSecondary,
   },
 
   pendingText: {
-    marginTop: 6,
-    fontSize: 12,
+    marginTop: spacing.xs ?? 6,
+    ...typography.small,
     opacity: 0.6,
     fontStyle: "italic",
+    color: colors.textSecondary,
   },
 
   fixtureItem: {
-    marginBottom: 8,
+    marginBottom: spacing.xs ?? 8,
   },
 
   emptyText: {
     textAlign: "center",
     opacity: 0.6,
-    marginTop: 24,
+    marginTop: spacing.lg ?? 24,
+    ...typography.body,
+    color: colors.textSecondary,
   },
+
   playerCardRated: {
     borderWidth: 1.5,
-    borderColor: "#1DB954",
-    backgroundColor: "#F1FAF4",
+    borderColor: colors.primary,
+    backgroundColor: colors.primary ?? "rgba(29,185,84,0.08)",
   },
+
   playerCardInner: {
-    padding: 10,
+    padding: spacing.sm ?? 10,
   },
+
   ratingBadge: {
     position: "absolute",
-    top: 6,
-    right: 6,
-    backgroundColor: "#1DB954",
-    borderRadius: 10,
-    paddingHorizontal: 6,
+    top: spacing.xs ?? 6,
+    right: spacing.xs ?? 6,
+    backgroundColor: colors.primary,
+    borderRadius: radius.round,
+    paddingHorizontal: spacing.xs ?? 6,
     paddingVertical: 2,
     zIndex: 2,
   },
+
   ratingText: {
-    color: "#fff",
-    fontSize: 12,
+    ...typography.small,
+    color: colors.textOnPrimary,
     fontWeight: "700",
   },
 });

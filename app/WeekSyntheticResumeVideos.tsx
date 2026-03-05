@@ -3,6 +3,10 @@ import WeeklyVideoFeed from "@/components/WeeklyVideoFeed";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
 import { loadInterstitial } from "@/services/ads/interstitial";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { WeeklyGoalVideo } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
@@ -112,13 +116,26 @@ export default function WeekSyntheticResumeVideos() {
 
   return (
     <PrivateLayout>
-      <View style={{ flex: 1, padding: 16 }}>
-        <Text variant="titleLarge" style={{ marginBottom: 10 }}>
+      <View style={{ flex: 1, padding: spacing.lg }}>
+        <Text
+          variant="titleLarge"
+          style={{
+            ...typography.titleLarge,
+            marginBottom: spacing.sm,
+            color: colors.textPrimary,
+          }}
+        >
           🏆 Top 10 Goles Semanales Sintética
         </Text>
 
         {/* Chips de modo */}
-        <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.xs,
+            marginBottom: spacing.sm,
+          }}
+        >
           <Chip
             selected={mode === "view"}
             onPress={() => setMode("view")}
@@ -161,7 +178,7 @@ export default function WeekSyntheticResumeVideos() {
           ))}
         </Menu>
 
-        <Divider style={{ marginVertical: 10 }} />
+        <Divider style={{ marginVertical: spacing.sm }} />
 
         {/* GRID - dos columnas con scroll */}
         {loading ? (
@@ -178,6 +195,7 @@ export default function WeekSyntheticResumeVideos() {
               flexDirection: "row",
               flexWrap: "wrap",
               justifyContent: "space-between",
+              gap: spacing.sm,
             }}
           >
             {filtered.map((item) => {
@@ -191,11 +209,11 @@ export default function WeekSyntheticResumeVideos() {
                   key={item.id}
                   style={{
                     width: "48%",
-                    marginBottom: 12,
-                    borderRadius: 10,
+                    marginBottom: spacing.sm,
+                    borderRadius: radius.md,
                     overflow: "hidden",
                     borderWidth: isWinner ? 3 : 0,
-                    borderColor: isWinner ? "#FFD700" : "transparent",
+                    borderColor: isWinner ? colors.warning : colors.textPrimary,
                   }}
                   onPress={() => handleSelectVideo(item)}
                 >
@@ -203,7 +221,11 @@ export default function WeekSyntheticResumeVideos() {
                     source={{
                       uri: item.thumbail,
                     }}
-                    style={{ width: "100%", height: 180 }}
+                    style={{
+                      width: "100%",
+                      height: 180,
+                      backgroundColor: colors.surface,
+                    }}
                   />
 
                   {/* 👁️ Badges de vistas y likes */}
@@ -213,13 +235,18 @@ export default function WeekSyntheticResumeVideos() {
                       position: "absolute",
                       top: 6,
                       right: 6,
-                      backgroundColor: "rgba(0,0,0,0.6)",
+                      backgroundColor: colors.background,
                       borderRadius: 20,
                       paddingHorizontal: 8,
                       paddingVertical: 2,
                     }}
                   >
-                    <Text style={{ color: "white", fontSize: 12 }}>
+                    <Text
+                      style={{
+                        ...typography.small,
+                        color: colors.textOnPrimary,
+                      }}
+                    >
                       👁 {item.views}
                     </Text>
                   </View>
@@ -242,7 +269,9 @@ export default function WeekSyntheticResumeVideos() {
                     <Icon
                       name={item.isFavorite ? "heart" : "heart-outline"}
                       size={18}
-                      color={item.isFavorite ? "#ff3366" : "#ffffffaa"}
+                      color={
+                        item.isFavorite ? colors.error : colors.textOnPrimary
+                      }
                     />
                     <Text style={{ color: "white", fontSize: 12 }}>
                       {item.favorites}
@@ -253,13 +282,18 @@ export default function WeekSyntheticResumeVideos() {
                     style={{
                       position: "absolute",
                       bottom: 0,
-                      backgroundColor: "rgba(0,0,0,0.5)",
+                      backgroundColor: colors.background,
                       width: "100%",
                       paddingVertical: 4,
                       alignItems: "center",
                     }}
                   >
-                    <Text style={{ color: "white", fontSize: 14 }}>
+                    <Text
+                      style={{
+                        ...typography.body,
+                        color: colors.textOnPrimary,
+                      }}
+                    >
                       {item.user?.name ?? ""}
                     </Text>
                   </View>
@@ -269,7 +303,7 @@ export default function WeekSyntheticResumeVideos() {
           </ScrollView>
         )}
 
-        <View style={{ marginVertical: 12 }}>
+        <View style={{ marginVertical: spacing.sm }}>
           <AdBanner />
         </View>
 
@@ -287,7 +321,14 @@ export default function WeekSyntheticResumeVideos() {
         )}
 
         {message ? (
-          <Text style={{ color: "orange", marginTop: 10 }}>{message}</Text>
+          <Text
+            style={{
+              color: colors.warning ?? "orange",
+              marginTop: spacing.sm,
+            }}
+          >
+            {message}
+          </Text>
         ) : null}
       </View>
     </PrivateLayout>

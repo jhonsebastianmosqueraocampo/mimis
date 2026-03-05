@@ -1,4 +1,8 @@
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LiveMatch, RootStackParamList } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
@@ -84,12 +88,15 @@ export default function MatchPost({
             mode={selectedItem.id === item.id ? "flat" : "outlined"}
             style={{
               backgroundColor:
-                selectedItem.id === item.id ? "#1DB954" : "transparent",
-              borderColor: "#1DB954",
+                selectedItem.id === item.id ? colors.primary : colors.border,
+              borderColor: colors.primary,
               marginRight: 8,
             }}
             textStyle={{
-              color: selectedItem.id === item.id ? "#fff" : "#000",
+              color:
+                selectedItem.id === item.id
+                  ? colors.textOnPrimary
+                  : colors.textSecondary,
             }}
           >
             {item.name.toUpperCase()}
@@ -158,10 +165,10 @@ export default function MatchPost({
                         size={16}
                         color={
                           g.detail?.includes("Own")
-                            ? "#e53935"
+                            ? colors.error
                             : g.detail?.includes("Penalty")
-                              ? "#1976D2"
-                              : "#1B5E20"
+                              ? colors.info
+                              : colors.success
                         }
                         style={{ marginRight: 4 }}
                       />
@@ -219,118 +226,142 @@ export default function MatchPost({
 const styles = StyleSheet.create({
   chipScroll: {
     flexDirection: "row",
-    paddingVertical: 8,
+    paddingVertical: spacing.xs,
   },
+
   placeholder: {
+    ...typography.body,
     textAlign: "center",
-    marginVertical: 16,
+    marginVertical: spacing.md,
     fontWeight: "500",
+    color: colors.textSecondary,
   },
+
   videoCard: {
-    marginBottom: 12,
-    borderRadius: 12,
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
   },
+
   videoThumbnail: {
     width: "100%",
     height: 220,
   },
+
   videoTitle: {
-    padding: 8,
+    padding: spacing.xs,
+    ...typography.small,
     fontWeight: "600",
-    fontSize: 14,
+    color: colors.textPrimary,
   },
+
   modalContainer: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.surface,
   },
+
   fullVideo: {
     width: "100%",
     height: "100%",
   },
+
   modalTitle: {
     position: "absolute",
     bottom: 60,
-    color: "#fff",
     textAlign: "center",
     width: "100%",
-    fontWeight: "bold",
-    fontSize: 16,
+    ...typography.body,
+    fontWeight: "700",
   },
+
   closeButton: {
     position: "absolute",
     top: 40,
-    right: 20,
-    padding: 10,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 20,
+    right: spacing.md,
+    padding: spacing.xs,
+    backgroundColor: colors.surface,
+    borderRadius: radius.round,
   },
+
   container: {
-    marginTop: 8,
-    paddingHorizontal: 8,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
+
   emptyText: {
-    color: "gray",
+    ...typography.small,
+    color: colors.textSecondary,
     fontStyle: "italic",
     textAlign: "center",
-    marginVertical: 10,
+    marginVertical: spacing.xs,
   },
+
   itemRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
+
   timeline: {
     width: 16,
     alignItems: "center",
   },
+
   timelineDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: "#1DB954",
-    marginTop: 6,
+    borderRadius: radius.round,
+    backgroundColor: colors.primary,
+    marginTop: spacing.xs ?? 6,
   },
+
   timelineLine: {
     flex: 1,
     width: 2,
-    backgroundColor: "#ddd",
-    marginTop: 4,
+    backgroundColor: colors.border,
+    marginTop: spacing.xs ?? 4,
   },
+
   content: {
     flex: 1,
-    marginLeft: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "#f8f8f8",
-    paddingHorizontal: 8,
+    marginLeft: spacing.xs,
+    paddingVertical: spacing.xs ?? 4,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    paddingHorizontal: spacing.xs,
   },
+
   minute: {
-    fontWeight: "bold",
-    color: "#1B5E20",
-    fontSize: 13,
-    marginBottom: 4,
+    ...typography.small,
+    fontWeight: "700",
+    color: colors.primary,
+    marginBottom: spacing.xs ?? 4,
   },
+
   eventRow: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   playerRow: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   playerName: {
+    ...typography.small,
     fontWeight: "600",
-    fontSize: 13,
-    color: "#222",
+    color: colors.textPrimary,
   },
+
   assistText: {
-    color: "#555",
-    fontSize: 12,
+    ...typography.small,
+    color: colors.textSecondary,
   },
+
   teamText: {
-    color: "#777",
-    fontSize: 12,
+    ...typography.small,
+    color: colors.textSecondary,
   },
 });

@@ -1,7 +1,15 @@
+import { colors } from "@/theme/colors";
 import type { LiveMatch, RootStackParamList } from "@/types"; // ✅ asegúrate de importar correctamente
 import { useNavigation } from "expo-router";
 import React from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
 type GroupStanding = {
@@ -34,13 +42,31 @@ type Props = {
 };
 
 const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   // 🔍 Crear un mapa rápido para buscar si un equipo está en un partido en vivo
   const liveMatchMap = React.useMemo(() => {
-    const map: Record<number, { opponent: string; goals: { home: number; away: number }; isHome: boolean; elapsed?: number }> = {};
+    const map: Record<
+      number,
+      {
+        opponent: string;
+        goals: { home: number; away: number };
+        isHome: boolean;
+        elapsed?: number;
+      }
+    > = {};
     for (const match of matches) {
       if (!match?.status?.short) continue;
-      const isLive = ["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"].includes(match.status.short);
+      const isLive = [
+        "1H",
+        "HT",
+        "2H",
+        "ET",
+        "BT",
+        "P",
+        "LIVE",
+        "INT",
+      ].includes(match.status.short);
       if (!isLive) continue;
 
       // Asocia ambos equipos al partido
@@ -60,18 +86,21 @@ const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
     return map;
   }, [matches]);
 
-  const grouped = standings.reduce((acc, curr) => {
-    const groupKey = `${curr.group}-${curr.leagueId}-${curr.season}`;
-    if (!acc[groupKey]) acc[groupKey] = { name: curr.group, teams: [] };
-    acc[groupKey].teams.push(curr);
-    return acc;
-  }, {} as Record<string, { name: string; teams: GroupStanding[] }>);
+  const grouped = standings.reduce(
+    (acc, curr) => {
+      const groupKey = `${curr.group}-${curr.leagueId}-${curr.season}`;
+      if (!acc[groupKey]) acc[groupKey] = { name: curr.group, teams: [] };
+      acc[groupKey].teams.push(curr);
+      return acc;
+    },
+    {} as Record<string, { name: string; teams: GroupStanding[] }>,
+  );
 
   const seenGroups = new Set();
 
   const handleTeam = (id: string) => {
-    navigation.navigate('team', {id})
-  }
+    navigation.navigate("team", { id });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -122,7 +151,7 @@ const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
                           isFavorite && styles.favoriteRow,
                           isLive && styles.liveRow,
                         ]}
-                        onPress={()=>handleTeam(team.team.id.toString())}
+                        onPress={() => handleTeam(team.team.id.toString())}
                       >
                         <Text
                           style={[
@@ -135,8 +164,17 @@ const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
                         </Text>
 
                         <View style={styles.teamCell}>
-                          <Image source={{ uri: team.team.logo }} style={styles.logo} />
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <Image
+                            source={{ uri: team.team.logo }}
+                            style={styles.logo}
+                          />
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
                             <Text
                               numberOfLines={1}
                               style={[
@@ -151,7 +189,9 @@ const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
                             {/* ⚡ Mostrar marcador si el equipo está en vivo */}
                             {isLive && (
                               <View style={styles.liveBadge}>
-                                <Text style={styles.liveScore}>{scoreDisplay}</Text>
+                                <Text style={styles.liveScore}>
+                                  {scoreDisplay}
+                                </Text>
                                 <Text style={styles.liveElapsed}>
                                   {live.elapsed ? `${live.elapsed}'` : ""}
                                 </Text>
@@ -165,8 +205,12 @@ const GroupPhaseView = ({ standings, teamId, matches = [] }: Props) => {
                         <Text style={styles.cell}>{team.all.draw}</Text>
                         <Text style={styles.cell}>{team.all.lose}</Text>
                         <Text style={styles.cell}>{team.all.goals.for}</Text>
-                        <Text style={styles.cell}>{team.all.goals.against}</Text>
-                        <Text style={[styles.cell, styles.bold]}>{team.points}</Text>
+                        <Text style={styles.cell}>
+                          {team.all.goals.against}
+                        </Text>
+                        <Text style={[styles.cell, styles.bold]}>
+                          {team.points}
+                        </Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -200,26 +244,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     borderBottomWidth: 0.5,
-    borderColor: "#ccc",
-    backgroundColor: "#fff",
+    borderColor: colors.border,
+    backgroundColor: colors.background,
     borderRadius: 6,
     marginBottom: 2,
     paddingHorizontal: 6,
   },
   header: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.background,
   },
   teamRow: {
-    backgroundColor: "#fafafa",
+    backgroundColor: colors.background,
   },
   favoriteRow: {
-    backgroundColor: "#e0f7ff",
-    borderColor: "#2196f3",
+    backgroundColor: colors.background,
+    borderColor: colors.border,
     borderWidth: 1,
   },
   liveRow: {
-    backgroundColor: "#fff6f6",
-    borderColor: "#ff4d4f",
+    backgroundColor: colors.background,
+    borderColor: colors.border,
     borderWidth: 0.5,
   },
   cellRank: {
@@ -259,17 +303,17 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
   },
   favoriteText: {
-    color: "#007bff",
+    color: colors.primary,
     fontWeight: "bold",
   },
   liveText: {
-    color: "#e53935",
+    color: colors.error,
     fontWeight: "700",
   },
   liveBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff0f0",
+    backgroundColor: colors.background,
     borderRadius: 6,
     paddingHorizontal: 4,
     paddingVertical: 1,
@@ -277,12 +321,12 @@ const styles = StyleSheet.create({
   },
   liveScore: {
     fontSize: 12,
-    color: "#d32f2f",
+    color: colors.error,
     fontWeight: "700",
   },
   liveElapsed: {
     fontSize: 11,
-    color: "#d32f2f",
+    color: colors.error,
     marginLeft: 3,
   },
 });

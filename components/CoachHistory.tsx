@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { SeasonStats } from "@/types";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
@@ -17,7 +18,11 @@ export default function CoachHistory({ history }: Props) {
             subtitle={h.team?.name ?? "Equipo desconocido"}
             left={(props) =>
               h.team?.logo ? (
-                <Avatar.Image {...props} size={40} source={{ uri: h.team.logo }} />
+                <Avatar.Image
+                  {...props}
+                  size={40}
+                  source={{ uri: h.team.logo }}
+                />
               ) : null
             }
           />
@@ -41,7 +46,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 12,
-    backgroundColor: "#f2f2f2",
+    backgroundColor: colors.background,
   },
   card: {
     marginVertical: 8,

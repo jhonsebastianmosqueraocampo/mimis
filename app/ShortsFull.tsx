@@ -2,6 +2,10 @@ import ShortsCommentsDrawer from "@/components/ShortsCommentsDrawer";
 import { useFetch } from "@/hooks/FetchContext";
 import { showInterstitial } from "@/services/ads/interstitial";
 import { loadRewardedAd, showRewardedAd } from "@/services/ads/rewarded";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { ShortItem } from "@/types";
 import { ResizeMode, Video } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
@@ -294,7 +298,9 @@ export default function ShortsFull({
                   <IconButton
                     icon={currentShort.liked ? "heart" : "heart-outline"}
                     size={26}
-                    iconColor={currentShort.liked ? "#1DB954" : "white"}
+                    iconColor={
+                      currentShort.liked ? colors.primary : colors.textOnPrimary
+                    }
                   />
                 )}
               </TouchableOpacity>
@@ -318,17 +324,21 @@ export default function ShortsFull({
                     alignItems: "center",
                     marginTop: 10,
                     backgroundColor: highlightReward
-                      ? "rgba(255,215,0,0.35)"
-                      : "rgba(255,215,0,0.15)",
+                      ? colors.primary
+                      : colors.info,
                     padding: 6,
                     borderRadius: 30,
                   }}
                   onPress={handleReward}
                 >
-                  <IconButton icon="gift" size={24} iconColor="#FFD700" />
+                  <IconButton
+                    icon="gift"
+                    size={24}
+                    iconColor={colors.textOnPrimary}
+                  />
                   <Text
                     style={{
-                      color: "#FFD700",
+                      color: colors.textOnPrimary,
                       fontSize: 11,
                       fontWeight: "600",
                     }}
@@ -362,51 +372,74 @@ export default function ShortsFull({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "black" },
-  video: { height: height, width: "100%" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.textPrimary,
+  },
+
+  video: {
+    height: height,
+    width: "100%",
+  },
+
   controls: {
     position: "absolute",
     top: "45%",
     left: "45%",
   },
+
   progressBar: {
     height: 3,
-    backgroundColor: "white",
+    backgroundColor: colors.textOnPrimary,
     position: "absolute",
     bottom: 0,
   },
+
   sidePanel: {
     position: "absolute",
-    right: 10,
+    right: spacing.sm,
     bottom: 120,
     alignItems: "center",
-    gap: 20,
+    gap: spacing.lg,
   },
+
   likeBtn: {
     alignItems: "center",
   },
+
   bottomInfo: {
     position: "absolute",
-    bottom: 25,
-    left: 15,
-    right: 15,
+    bottom: spacing.lg,
+    left: spacing.md,
+    right: spacing.md,
   },
-  date: { color: "#eee", marginBottom: 4 },
-  desc: { color: "white", fontSize: 16, fontWeight: "500" },
+
+  date: {
+    ...typography.small,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+
+  desc: {
+    ...typography.subtitle,
+    color: colors.textOnPrimary,
+  },
+
   closeBtnContainer: {
     position: "absolute",
     top: 40,
-    right: 16,
+    right: spacing.md,
   },
 
   closeBtn: {
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 20,
+    backgroundColor: colors.textOnPrimary,
+    borderRadius: radius.round,
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
+
   progressContainer: {
     position: "absolute",
     bottom: 0,
@@ -417,30 +450,31 @@ const styles = StyleSheet.create({
 
   progressTrack: {
     height: 4,
-    backgroundColor: "rgba(255,255,255,0.3)",
+    backgroundColor: colors.primary,
   },
 
   progressFill: {
     height: 4,
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
+
   timeContainer: {
     position: "absolute",
     bottom: 26,
-    right: 12,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 8,
+    right: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: radius.sm,
   },
 
   timeText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "500",
+    ...typography.small,
+    color: colors.textOnPrimary,
   },
+
   fullModal: {
     flex: 1,
-    backgroundColor: "black",
+    backgroundColor: colors.textPrimary,
   },
 });

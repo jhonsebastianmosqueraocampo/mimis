@@ -2,6 +2,10 @@ import Loading from "@/components/Loading";
 import VerticalScroll from "@/components/VerticalScroll";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { swiperItem } from "@/types";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -95,7 +99,7 @@ export default function TransferNews() {
                 selected={selectedTab === "favorites"}
                 onPress={() => setSelectedTab("favorites")}
                 style={styles.chip}
-                selectedColor="#1DB954"
+                selectedColor={colors.primary}
               >
                 ⭐ Favoritos
               </Chip>
@@ -104,7 +108,7 @@ export default function TransferNews() {
                 selected={selectedTab === "general"}
                 onPress={() => setSelectedTab("general")}
                 style={styles.chip}
-                selectedColor="#1DB954"
+                selectedColor={colors.primary}
               >
                 🌍 Generales
               </Chip>
@@ -150,7 +154,8 @@ export default function TransferNews() {
                 <Button
                   mode="outlined"
                   onPress={() => setPage((p) => p + 1)}
-                  style={{ marginTop: 12 }}
+                  style={{ marginTop: spacing.sm }}
+                  textColor={colors.primary}
                 >
                   Ver más noticias
                 </Button>
@@ -171,15 +176,15 @@ export default function TransferNews() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    paddingBottom: 24,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
 
   sectionCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     elevation: 2,
     shadowColor: "#000",
     shadowOpacity: 0.05,
@@ -188,34 +193,34 @@ const styles = StyleSheet.create({
   },
 
   sectionHeader: {
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
 
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#222",
+    ...typography.title,
+    color: colors.textPrimary,
   },
 
   sectionSubtitle: {
-    fontSize: 13,
-    color: "#777",
+    ...typography.small,
+    color: colors.textSecondary,
     marginTop: 2,
   },
 
   sectionSpacer: {
-    height: 20,
+    height: spacing.lg,
   },
+
   emptyText: {
     textAlign: "center",
-    color: "#999",
-    fontSize: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    ...typography.body,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
+
   chipsContainer: {
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
 
   chipsRow: {
@@ -223,15 +228,16 @@ const styles = StyleSheet.create({
   },
 
   chip: {
-    marginRight: 8,
-    backgroundColor: "#f0f0f0",
+    marginRight: spacing.xs,
+    backgroundColor: colors.surface,
   },
+
   searchInput: {
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
 
   orderRow: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
 });

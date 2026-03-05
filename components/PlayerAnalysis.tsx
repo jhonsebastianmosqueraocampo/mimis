@@ -76,22 +76,6 @@ export default function PlayerAnalysis({
           </Card.Content>
         </Card>
       }
-      // chartsView={
-      //   <>
-      //     {analysis.charts?.barCharts?.map((c, i) => (
-      //       <BarChartView key={i} {...c} />
-      //     ))}
-      //     {analysis.charts?.lineCharts?.map((c, i) => (
-      //       <LineChartView key={i} {...c} />
-      //     ))}
-      //     {analysis.charts?.pieCharts?.map((c, i) => (
-      //       <PieChartView key={i} {...c} />
-      //     ))}
-      //     {analysis.charts?.radarCharts?.map((c, i) => (
-      //       <RadarChartView key={i} {...c} />
-      //     ))}
-      //   </>
-      // }
     />
   );
 }

@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -35,7 +39,7 @@ export default function FavoriteBadge({
           <Icon
             name={isFavorite ? "star" : "star-outline"}
             size={22}
-            color={isFavorite ? "#fff" : "#1DB954"}
+            color={isFavorite ? "#fff" : colors.primary}
           />
         </View>
 
@@ -57,60 +61,61 @@ const stylesFav = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 28,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.round,
     borderWidth: 1.4,
-    shadowColor: "#1DB954",
+    shadowColor: colors.primary,
   },
 
   /* 🔥 ESTADO ACTIVO PREMIUM */
   activeContainer: {
-    backgroundColor: "rgba(29,185,84,0.15)",
-    borderColor: "#1DB954",
+    backgroundColor: colors.surface,
+    borderColor: colors.primary,
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
 
   /* ⚪ ESTADO INACTIVO PREMIUM */
   inactiveContainer: {
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderColor: "#1DB954",
+    backgroundColor: colors.surface,
+    borderColor: colors.primary,
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
 
-  /* 🔘 ICONO ENVUELTO EN UN CÍRCULO HERMOSO */
+  /* 🔘 ICONO ENVUELTO EN UN CÍRCULO */
   iconWrapper: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.round,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 10,
+    marginRight: spacing.sm,
   },
 
   iconWrapperActive: {
-    backgroundColor: "#1DB954",
-    shadowColor: "#1DB954",
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
     shadowOpacity: 0.35,
     shadowRadius: 8,
   },
 
   iconWrapperInactive: {
-    backgroundColor: "rgba(29,185,84,0.1)",
+    backgroundColor: colors.surface,
   },
 
   /* TEXTOS */
   activeText: {
-    color: "#1DB954",
+    color: colors.primary,
   },
+
   inactiveText: {
-    color: "#1DB954",
+    color: colors.primary,
   },
 
   text: {
-    fontSize: 15,
+    ...typography.body,
     fontWeight: "700",
     letterSpacing: 0.4,
   },

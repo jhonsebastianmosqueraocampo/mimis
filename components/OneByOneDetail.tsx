@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { OneByOneType, PlayerOneByOne } from "@/types";
 import React, { useMemo } from "react";
 import { Image, Modal, ScrollView, StyleSheet, View } from "react-native";
@@ -154,7 +155,7 @@ export default function OneByOneDetail({ oneByOne, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.surface + "CC", // Fondo semitransparente
     justifyContent: "flex-end",
   },
   modalBox: {
@@ -205,12 +206,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     marginRight: 12,
-    backgroundColor: "#eee",
+    backgroundColor: colors.textOnPrimary,
   },
 
   playerMeta: {
     fontSize: 12,
-    color: "#777",
+    color: colors.textSecondary,
     marginTop: 2,
   },
 });

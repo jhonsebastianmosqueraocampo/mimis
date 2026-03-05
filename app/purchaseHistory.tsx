@@ -4,20 +4,18 @@ import { Purchase, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import {
-  Button,
-  Card,
-  Chip,
-  Divider,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { Button, Card, Chip, Divider, Text } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
 
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
+import { typography } from "@/theme/typography";
+
 export default function PurchaseHistory() {
   const { ordersHistory } = useFetch();
-  const theme = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -55,17 +53,17 @@ export default function PurchaseHistory() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "#F4B400";
+        return colors.warning;
       case "confirmed":
-        return "#4285F4";
+        return colors.info;
       case "in_transit":
-        return "#9C27B0";
+        return colors.secondary;
       case "delivered":
-        return "#1DB954";
+        return colors.success;
       case "cancelled":
-        return theme.colors.error;
+        return colors.error;
       default:
-        return "#999";
+        return colors.textSecondary;
     }
   };
 
@@ -82,7 +80,7 @@ export default function PurchaseHistory() {
   return (
     <PrivateLayout>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text variant="titleLarge" style={styles.title}>
+        <Text style={[g.titleLarge, styles.title]}>
           🧾 Historial de compras
         </Text>
 
@@ -95,7 +93,13 @@ export default function PurchaseHistory() {
               onPress={() => setFilter(filter === s ? null : s)}
               style={{
                 backgroundColor:
-                  filter === s ? getStatusColor(s) + "22" : "#f1f1f1",
+                  filter === s
+                    ? getStatusColor(s) + "22"
+                    : colors.surfaceVariant,
+              }}
+              textStyle={{
+                color: filter === s ? getStatusColor(s) : colors.textSecondary,
+                fontFamily: typography.body.fontFamily,
               }}
             >
               {s.replace("_", " ")}
@@ -105,7 +109,7 @@ export default function PurchaseHistory() {
 
         {filteredPurchases.length === 0 ? (
           <View style={styles.empty}>
-            <Text variant="titleMedium">No hay resultados</Text>
+            <Text style={g.subtitle}>No hay resultados</Text>
           </View>
         ) : (
           filteredPurchases.map((purchase) => (
@@ -122,7 +126,7 @@ export default function PurchaseHistory() {
                   }}
                   textStyle={{
                     color: getStatusColor(purchase.status ?? ""),
-                    fontWeight: "600",
+                    fontFamily: typography.subtitle.fontFamily,
                   }}
                 >
                   {purchase.status?.replace("_", " ")}
@@ -133,13 +137,13 @@ export default function PurchaseHistory() {
                 {new Date(purchase.date).toLocaleDateString()}
               </Text>
 
-              <Divider style={{ marginVertical: 10 }} />
+              <Divider style={styles.divider} />
 
               {purchase.items.map((item, idx) => (
                 <View key={idx} style={styles.itemRow}>
-                  <Text style={{ fontWeight: "600" }}>{item.name}</Text>
+                  <Text style={styles.itemName}>{item.name}</Text>
+
                   <View style={styles.itemDetailRow}>
-                    {/* Círculo de color */}
                     <View
                       style={[styles.colorDot, { backgroundColor: item.color }]}
                     />
@@ -148,13 +152,14 @@ export default function PurchaseHistory() {
                       Talla {item.size} · x{item.quantity}
                     </Text>
                   </View>
+
                   <Text style={styles.price}>
                     {(item.price * item.quantity).toLocaleString()} pts
                   </Text>
                 </View>
               ))}
 
-              <Divider style={{ marginVertical: 10 }} />
+              <Divider style={styles.divider} />
 
               <Text style={styles.total}>
                 Total: {purchase.totalPoints.toLocaleString()} pts
@@ -165,7 +170,7 @@ export default function PurchaseHistory() {
 
         <Button
           mode="contained"
-          style={{ marginTop: 20 }}
+          style={styles.button}
           onPress={() => navigation.navigate("store" as never)}
         >
           Seguir comprando
@@ -176,27 +181,29 @@ export default function PurchaseHistory() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 40 },
-  title: { fontWeight: "700", marginBottom: 12 },
+  container: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
 
-  searchInput: {
-    backgroundColor: "#f2f2f2",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
+  title: {
+    marginBottom: spacing.md,
   },
 
   filterRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
 
   card: {
-    marginBottom: 16,
-    padding: 14,
-    borderRadius: 16,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   header: {
@@ -206,57 +213,64 @@ const styles = StyleSheet.create({
   },
 
   orderId: {
-    fontWeight: "700",
-    fontSize: 15,
+    ...typography.subtitle,
   },
 
   date: {
-    color: "#777",
-    fontSize: 13,
-    marginTop: 4,
+    ...typography.small,
+    marginTop: spacing.xs,
+  },
+
+  divider: {
+    marginVertical: spacing.sm,
   },
 
   itemRow: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
 
-  itemDetail: {
-    color: "#666",
-    fontSize: 13,
+  itemName: {
+    fontFamily: typography.subtitle.fontFamily,
+    color: colors.textPrimary,
   },
 
   price: {
-    fontWeight: "600",
-    marginTop: 2,
+    fontFamily: typography.subtitle.fontFamily,
+    marginTop: spacing.xs,
+    color: colors.textPrimary,
   },
 
   total: {
     textAlign: "right",
-    fontWeight: "700",
-    fontSize: 15,
+    ...typography.subtitle,
   },
 
   empty: {
-    marginTop: 40,
+    marginTop: spacing.xl,
     alignItems: "center",
   },
+
   itemDetailRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
 
   colorDot: {
     width: 14,
     height: 14,
-    borderRadius: 7,
-    marginRight: 8,
+    borderRadius: radius.round,
+    marginRight: spacing.sm,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
   },
 
   itemDetailText: {
-    color: "#666",
-    fontSize: 13,
+    ...typography.small,
+  },
+
+  button: {
+    marginTop: spacing.lg,
+    borderRadius: radius.md,
   },
 });

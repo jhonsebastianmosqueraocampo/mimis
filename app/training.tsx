@@ -7,7 +7,7 @@ import { Alert, Dimensions, Linking, ScrollView, View } from "react-native";
 import { ActivityIndicator, Card, Divider, Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 type Video = {
   id: string;
@@ -155,7 +155,7 @@ export default function Training() {
           Entrenamientos en general
         </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {videosGenerales.map((video, idx) => (
+          {videosGenerales.map((video) => (
             <Card
               key={video.id}
               style={{

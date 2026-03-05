@@ -3,6 +3,7 @@ import { Linking, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Chip, Text } from "react-native-paper";
 
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
 import { Fixture, PreMatchStats, swiperItem, VideoYoutube } from "@/types";
 import FixtureLineups from "./FixtureLineups";
 import Loading from "./Loading";
@@ -201,8 +202,8 @@ export default function MatchPreview({
             variant="titleMedium"
             style={{
               textAlign: "center",
-              backgroundColor: "#f5f5f5",
-              color: "#222",
+              backgroundColor: colors.background,
+              color: colors.textPrimary,
               padding: 8,
               borderRadius: 8,
               fontFamily: "BubbleSans",
@@ -215,8 +216,8 @@ export default function MatchPreview({
           <Button
             icon="youtube"
             mode="contained"
-            buttonColor="#e53935"
-            textColor="#fff"
+            buttonColor={colors.error}
+            textColor={colors.textOnPrimary}
             style={{ marginTop: 8 }}
             onPress={() =>
               Linking.openURL(
@@ -242,12 +243,15 @@ export default function MatchPreview({
             mode={selectedItem.id === item.id ? "flat" : "outlined"}
             style={{
               backgroundColor:
-                selectedItem.id === item.id ? "#1DB954" : "transparent",
-              borderColor: "#1DB954",
+                selectedItem.id === item.id ? colors.primary : colors.border,
+              borderColor: colors.primary,
               marginRight: 8,
             }}
             textStyle={{
-              color: selectedItem.id === item.id ? "#fff" : "#000",
+              color:
+                selectedItem.id === item.id
+                  ? colors.textOnPrimary
+                  : colors.textPrimary,
             }}
           >
             {item.name.toUpperCase()}
@@ -258,7 +262,7 @@ export default function MatchPreview({
       <View>
         <Text
           variant="titleSmall"
-          style={{ fontWeight: "bold", color: "#333" }}
+          style={{ fontWeight: "bold", color: colors.textPrimary }}
         >
           {selectedItem.name.toUpperCase()}
         </Text>
@@ -271,7 +275,7 @@ export default function MatchPreview({
           ) : (
             <Text
               variant="titleSmall"
-              style={{ fontWeight: "bold", color: "#333" }}
+              style={{ fontWeight: "bold", color: colors.textPrimary }}
             >
               Pronto estarán listas las entrevistas del partido
             </Text>
@@ -294,7 +298,13 @@ export default function MatchPreview({
           ) : stats ? (
             <MatchHistoryPreview stats={stats} />
           ) : (
-            <Text style={{ textAlign: "center", marginTop: 20, color: "gray" }}>
+            <Text
+              style={{
+                textAlign: "center",
+                marginTop: 20,
+                color: colors.textSecondary,
+              }}
+            >
               No hay historial disponible
             </Text>
           ))}

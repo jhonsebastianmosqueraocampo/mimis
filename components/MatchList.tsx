@@ -1,12 +1,13 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { colors } from "@/theme/colors";
+import { MaterialIcons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Avatar, Card, Chip, Divider } from "react-native-paper";
 
@@ -47,21 +48,33 @@ type MatchListProps = {
 const getStatusIcon = (status: MatchStatus) => {
   switch (status) {
     case "live":
-      return <MaterialIcons name="play-circle-filled" size={20} color="red" />;
+      return (
+        <MaterialIcons
+          name="play-circle-filled"
+          size={20}
+          color={colors.error}
+        />
+      );
     case "finished":
-      return <MaterialIcons name="check-circle" size={20} color="#1DB954" />;
+      return (
+        <MaterialIcons name="check-circle" size={20} color={colors.primary} />
+      );
     case "scheduled":
     default:
-      return <MaterialIcons name="access-time" size={20} color="#666" />;
+      return (
+        <MaterialIcons
+          name="access-time"
+          size={20}
+          color={colors.textSecondary}
+        />
+      );
   }
 };
 
 const renderLegLabel = (leg?: "first" | "second") => {
   if (!leg) return null;
   return (
-    <Chip style={styles.legChip}>
-      {leg === "first" ? "Ida" : "Vuelta"}
-    </Chip>
+    <Chip style={styles.legChip}>{leg === "first" ? "Ida" : "Vuelta"}</Chip>
   );
 };
 
@@ -75,7 +88,10 @@ export default function MatchList({ matchList }: MatchListProps) {
   const renderMatches = (matches: Match[]) => (
     <>
       {matches.map((match) => (
-        <TouchableOpacity key={match.id} onPress={() => handleMatchClick(match.id)}>
+        <TouchableOpacity
+          key={match.id}
+          onPress={() => handleMatchClick(match.id)}
+        >
           <Card style={styles.card}>
             <Card.Content>
               <View style={styles.headerRow}>
@@ -89,9 +105,15 @@ export default function MatchList({ matchList }: MatchListProps) {
                 <Chip
                   style={[
                     styles.statusChip,
-                    { backgroundColor: match.status === "live" ? "#e53935" : "#1DB954" },
+                    {
+                      backgroundColor:
+                        match.status === "live" ? colors.error : colors.primary,
+                    },
                   ]}
-                  textStyle={{ color: "#fff", fontWeight: "bold" }}
+                  textStyle={{
+                    color: colors.textOnPrimary,
+                    fontWeight: "bold",
+                  }}
                 >
                   {match.status.toUpperCase()}
                 </Chip>
@@ -99,8 +121,13 @@ export default function MatchList({ matchList }: MatchListProps) {
 
               <View style={styles.teamsRow}>
                 <View style={styles.teamInfo}>
-                  <Avatar.Image source={{ uri: match.homeTeam.logoUrl }} size={36} />
-                  <Text numberOfLines={1} style={styles.teamName}>{match.homeTeam.name}</Text>
+                  <Avatar.Image
+                    source={{ uri: match.homeTeam.logoUrl }}
+                    size={36}
+                  />
+                  <Text numberOfLines={1} style={styles.teamName}>
+                    {match.homeTeam.name}
+                  </Text>
                 </View>
                 <View style={styles.scoresColumn}>
                   <Text style={styles.score}>
@@ -111,14 +138,23 @@ export default function MatchList({ matchList }: MatchListProps) {
                   </Text>
                 </View>
                 <View style={styles.teamInfo}>
-                  <Avatar.Image source={{ uri: match.awayTeam.logoUrl }} size={36} />
-                  <Text numberOfLines={1} style={styles.teamName}>{match.awayTeam.name}</Text>
+                  <Avatar.Image
+                    source={{ uri: match.awayTeam.logoUrl }}
+                    size={36}
+                  />
+                  <Text numberOfLines={1} style={styles.teamName}>
+                    {match.awayTeam.name}
+                  </Text>
                 </View>
               </View>
 
               <Divider style={{ marginVertical: 8 }} />
               <View style={styles.stadiumRow}>
-                <MaterialIcons name="location-on" size={16} color="#888" />
+                <MaterialIcons
+                  name="location-on"
+                  size={16}
+                  color={colors.textSecondary}
+                />
                 <Text style={styles.stadium}>{match.stadium}</Text>
               </View>
             </Card.Content>
@@ -193,9 +229,9 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     borderRadius: 12,
-    borderColor: "#1DB954",
+    borderColor: colors.primary,
     borderWidth: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   headerRow: {
     flexDirection: "row",
@@ -211,12 +247,12 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: "#555",
+    color: colors.textSecondary,
     marginLeft: 4,
   },
   legChip: {
     marginLeft: 8,
-    backgroundColor: "#ddd",
+    backgroundColor: colors.surface,
   },
   statusChip: {
     paddingHorizontal: 8,

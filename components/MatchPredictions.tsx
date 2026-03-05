@@ -15,6 +15,7 @@ dayjs.extend(relativeTime);
 
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
 import { PlayerFixtureStats, Prediction } from "@/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AdvancedMatchStats from "./AdvancedMatchStats";
@@ -272,9 +273,8 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
           const formattedDate = matchDate.format("DD MMM YYYY, HH:mm");
           const timeUntil = matchDate.fromNow();
 
-          const bgColor = "#ffffff";
-          const borderColor = "#1DB954";
-          const tagColor = borderColor;
+          const bgColor = colors.background;
+          const borderColor = colors.primary;
 
           return (
             <Card
@@ -294,7 +294,7 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
               <View style={styles.teams}>
                 <View style={styles.team}>
                   <Avatar.Image
-                    style={{ backgroundColor: "transparent" }}
+                    style={{ backgroundColor: colors.background }}
                     size={42}
                     source={{ uri: h2h.teams.home.logo }}
                   />
@@ -306,7 +306,7 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
 
                 <View style={styles.team}>
                   <Avatar.Image
-                    style={{ backgroundColor: "transparent" }}
+                    style={{ backgroundColor: colors.background }}
                     size={42}
                     source={{ uri: h2h.teams.away.logo }}
                   />
@@ -340,7 +340,7 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
           </Text>
         </View>
 
-        <Text style={[styles.vs, { color: "#1DB954" }]}>VS</Text>
+        <Text style={[styles.vs, { color: colors.primary }]}>VS</Text>
 
         <View style={styles.team}>
           <Avatar.Image
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   formText: {
-    color: "#fff",
+    color: colors.textOnPrimary,
     fontWeight: "bold",
     fontSize: 12,
   },
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   xg: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1DB954",
+    color: colors.primary,
   },
   playerCard: {
     flexDirection: "row",
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   exactScore: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1DB954",
+    color: colors.primary,
     textAlign: "center",
   },
   chipWrap: {
@@ -448,14 +448,14 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   accordion: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
     borderRadius: 12,
     marginVertical: 6,
     elevation: 2,
   },
   accordionContent: {
     padding: 12,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: colors.background,
   },
   statLine: {
     fontSize: 13,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 13,
     textAlign: "center",
-    color: "#333",
+    color: colors.textPrimary,
   },
   vs: {
     fontWeight: "bold",
@@ -477,13 +477,13 @@ const styles = StyleSheet.create({
   },
   stadiumText: {
     fontSize: 12,
-    color: "#777",
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 4,
   },
   timeUntil: {
     fontSize: 12,
-    color: "#999",
+    color: colors.textSecondary,
     textAlign: "center",
   },
   card: {

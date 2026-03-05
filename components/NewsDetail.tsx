@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { NewsItem } from "@/types";
 import React from "react";
 import {
@@ -14,7 +18,6 @@ import {
 import { Portal } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-const GREEN = "#2ecc71";
 const { width } = Dimensions.get("window");
 
 type Props = {
@@ -35,7 +38,7 @@ export default function NewsDetail({ visible, news, onClose }: Props) {
                 📰 detalle de la noticia Noticia
               </Text>
               <TouchableOpacity onPress={onClose}>
-                <Icon name="close" size={26} color="#fff" />
+                <Icon name="close" size={26} color={colors.textOnPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -110,21 +113,21 @@ export default function NewsDetail({ visible, news, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.surface,
   },
 
   modalContainer: {
     flex: 1,
-    backgroundColor: "#f7f7f7",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    borderTopLeftRadius: radius.xl ?? 20,
+    borderTopRightRadius: radius.xl ?? 20,
     overflow: "hidden",
   },
 
   header: {
-    backgroundColor: GREEN,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -132,9 +135,9 @@ const styles = StyleSheet.create({
   },
 
   headerText: {
-    fontSize: 18,
+    ...typography.title,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.textOnPrimary,
   },
 
   container: {
@@ -147,61 +150,62 @@ const styles = StyleSheet.create({
   },
 
   infoBlock: {
-    padding: 16,
-    backgroundColor: "#fff",
+    padding: spacing.md,
+    backgroundColor: colors.surface,
   },
 
   urlText: {
-    color: GREEN,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: spacing.xs ?? 4,
+    ...typography.small,
+    color: colors.primary,
   },
 
   metaText: {
-    color: "#555",
-    fontSize: 14,
+    ...typography.body,
+    color: colors.textSecondary,
   },
 
   dateText: {
-    color: "#999",
-    fontSize: 12,
-    marginTop: 4,
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: spacing.xs ?? 4,
   },
 
   sectionTitle: {
-    fontSize: 17,
+    ...typography.body,
     fontWeight: "700",
-    color: GREEN,
-    marginTop: 20,
-    marginBottom: 6,
-    paddingHorizontal: 16,
+    color: colors.primary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs ?? 6,
+    paddingHorizontal: spacing.md,
   },
 
   paragraph: {
-    fontSize: 15,
-    color: "#333",
+    ...typography.body,
+    color: colors.textPrimary,
     lineHeight: 22,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
   },
 
   carouselContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
   },
 
   carouselItem: {
-    width: width - 48,
-    marginRight: 12,
+    width: width - spacing.xl * 2,
+    marginRight: spacing.sm,
   },
 
   carouselImage: {
     width: "100%",
     height: 200,
-    borderRadius: 14,
+    borderRadius: radius.md,
   },
 
   urlSmall: {
-    color: "#666",
-    fontSize: 12,
-    marginTop: 6,
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: spacing.xs ?? 6,
   },
 });

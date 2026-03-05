@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   comments: string[];
@@ -29,15 +33,15 @@ export default function CommentsCarousel({ comments, onClick }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: 'rgb(29, 185, 84)',
-    borderRadius: 8,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radius.sm,
   },
+
   text: {
-    color: '#fff',
-    fontStyle: 'italic',
-    fontFamily: 'sans-serif',
-    overflow: 'hidden',
+    ...typography.body,
+    color: colors.textOnPrimary,
+    fontStyle: "italic",
   },
 });

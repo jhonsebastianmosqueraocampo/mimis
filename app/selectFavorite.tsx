@@ -1,6 +1,9 @@
 import Loading from "@/components/Loading";
 import { useAuth } from "@/hooks/AuthContext";
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
 import {
   Coach,
   Country,
@@ -27,7 +30,7 @@ import {
 } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 
-const primaryColor = "#1DB954";
+const primaryColor = colors.primary;
 
 export default function SelectFavorite() {
   const { user } = useAuth();
@@ -249,15 +252,13 @@ export default function SelectFavorite() {
       contentContainerStyle={{ paddingBottom: 40 }}
       showsVerticalScrollIndicator={false}
     >
-      <Text variant="titleLarge" style={styles.title}>
-        👋 ¡Hola, {user?.nickName}!
-      </Text>
-      <Text variant="titleMedium" style={styles.subtitle}>
+      <Text style={g.titleLarge}>👋 ¡Hola, {user?.nickName}!</Text>
+      <Text style={[g.subtitle, { marginBottom: spacing.lg }]}>
         Selecciona tus {steps[step].toLowerCase()} favoritos
       </Text>
       <ProgressBar
         progress={step / 3}
-        color={primaryColor}
+        color={colors.primary}
         style={{ height: 6, borderRadius: 4, marginBottom: 16 }}
       />
 
@@ -267,10 +268,14 @@ export default function SelectFavorite() {
         <View key={step} style={{ padding: 16 }}>
           {selectedFavorites[currentKey].length > 0 && (
             <Button
-              mode="contained-tonal"
+              mode="contained"
               icon="eye"
               onPress={() => setVisible(true)}
-              style={{ alignSelf: "flex-start", marginBottom: 16 }}
+              style={{
+                alignSelf: "flex-start",
+                marginBottom: 16,
+                backgroundColor: primaryColor,
+              }}
             >
               Ver seleccionados ({selectedFavorites[currentKey].length})
             </Button>
@@ -726,7 +731,12 @@ export default function SelectFavorite() {
         ) : (
           <View style={{ width: 80 }} />
         )}
-        <Button onPress={handleSkip} mode="text" icon="close">
+        <Button
+          onPress={handleSkip}
+          mode="text"
+          icon="close"
+          textColor={colors.textSecondary}
+        >
           Omitir
         </Button>
         <Button
@@ -796,7 +806,7 @@ export default function SelectFavorite() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E8F5E9",
+    backgroundColor: colors.background,
     padding: 16,
   },
   card: {

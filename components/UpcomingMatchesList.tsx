@@ -1,4 +1,5 @@
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
 import { Fixture, swiperItem } from "@/types";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -99,7 +100,7 @@ export default function UpcomingMatchesList({
         value={searchText}
         onChangeText={setSearchText}
         style={styles.searchInput}
-        placeholderTextColor="#888"
+        placeholderTextColor={colors.textSecondary}
       />
 
       {/* Filtro por favoritos */}
@@ -112,7 +113,7 @@ export default function UpcomingMatchesList({
           <Chip
             selected={selectedFavoriteTeam === "ALL"}
             onPress={() => setSelectedFavoriteTeam("ALL")}
-            style={[styles.chip, { backgroundColor: "#FFFBEA" }]}
+            style={[styles.chip, { backgroundColor: colors.surface }]}
             avatar={<Text style={{ fontSize: 16 }}>⭐</Text>}
           >
             Favoritos
@@ -131,7 +132,9 @@ export default function UpcomingMatchesList({
                 styles.chip,
                 {
                   backgroundColor:
-                    selectedFavoriteTeam === eq.title ? "#D6F5D6" : "#F0F0F0",
+                    selectedFavoriteTeam === eq.title
+                      ? colors.success
+                      : colors.surface,
                 },
               ]}
               avatar={
@@ -141,7 +144,7 @@ export default function UpcomingMatchesList({
                     width: 24,
                     height: 24,
                     borderRadius: 12,
-                    backgroundColor: "#fff",
+                    backgroundColor: colors.surface,
                   }}
                 />
               }
@@ -172,8 +175,8 @@ export default function UpcomingMatchesList({
                 const formattedDate = matchDate.format("DD MMM YYYY, HH:mm");
                 const timeUntil = matchDate.fromNow();
 
-                const bgColor = "#ffffff";
-                const borderColor = isHome ? "#1DB954" : "#F78E4F"; // Verde si local, naranja si visitante
+                const bgColor = colors.surface;
+                const borderColor = isHome ? colors.success : colors.info; // Verde si local, naranja si visitante
                 const tagColor = borderColor;
 
                 return (
@@ -247,23 +250,23 @@ const styles = StyleSheet.create({
   roundTitle: {
     fontWeight: "700",
     fontSize: 16,
-    color: "#1B5E20",
+    color: colors.primary,
     marginBottom: 8,
     marginLeft: 4,
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 12,
-    color: "#000",
-    backgroundColor: "#fff",
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   noResults: {
     textAlign: "center",
-    color: "#666",
+    color: colors.textSecondary,
     marginTop: 12,
     fontStyle: "italic",
   },
@@ -303,7 +306,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 13,
     textAlign: "center",
-    color: "#333",
+    color: colors.text,
   },
   vs: {
     fontWeight: "bold",
@@ -311,13 +314,13 @@ const styles = StyleSheet.create({
   },
   stadiumText: {
     fontSize: 12,
-    color: "#777",
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 4,
   },
   timeUntil: {
     fontSize: 12,
-    color: "#999",
+    color: colors.textSecondary,
     textAlign: "center",
   },
   chip: { marginRight: 8, marginBottom: 8 },

@@ -1,6 +1,10 @@
 import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import type { SyntheticMatch } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
@@ -130,7 +134,7 @@ export default function SyntheticMatchScreen() {
 
     if (m.status === "cancelled")
       return (
-        <Text style={[styles.resultMuted, { color: "#e53935" }]}>
+        <Text style={[styles.resultMuted, { color: colors.error }]}>
           Cancelado
         </Text>
       );
@@ -223,7 +227,7 @@ export default function SyntheticMatchScreen() {
       <View style={styles.filterRow}>
         <TextInput
           placeholder="Buscar por equipos, ciudad o cancha..."
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textSecondary}
           value={search}
           onChangeText={setSearch}
           style={[styles.search, { flex: 1 }]}
@@ -235,7 +239,7 @@ export default function SyntheticMatchScreen() {
           <Ionicons
             name={orderAsc ? "arrow-up" : "arrow-down"}
             size={20}
-            color="#1DB954"
+            color={colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -254,7 +258,7 @@ export default function SyntheticMatchScreen() {
       <View style={styles.filterRow}>
         <TextInput
           placeholder="Buscar próximos..."
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.textSecondary}
           value={search}
           onChangeText={setSearch}
           style={[styles.search, { flex: 1 }]}
@@ -292,7 +296,12 @@ export default function SyntheticMatchScreen() {
                 styles.chip,
                 activeTab === tab.key && styles.chipSelected,
               ]}
-              textStyle={{ color: activeTab === tab.key ? "#FFF" : "#000" }}
+              textStyle={{
+                color:
+                  activeTab === tab.key
+                    ? colors.textOnPrimary
+                    : colors.textPrimary,
+              }}
               onPress={() => setActiveTab(tab.key as any)}
             >
               {tab.label}
@@ -312,38 +321,61 @@ export default function SyntheticMatchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 20, fontWeight: "700", marginBottom: 10 },
+  container: {
+    padding: spacing.lg,
+  },
+  title: {
+    ...typography.subtitle,
+    marginBottom: spacing.sm,
+  },
   chipsRow: {
     flexDirection: "row",
     gap: 8,
     marginBottom: 12,
     flexWrap: "wrap",
   },
-  chip: { borderRadius: 20 },
-  chipSelected: { backgroundColor: "#1DB954" },
+  chip: {
+    borderRadius: radius.round,
+  },
+
+  chipSelected: {
+    backgroundColor: colors.primary,
+  },
 
   filterRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  search: { backgroundColor: "#fff", padding: 10, borderRadius: 12 },
+  search: {
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+  },
   orderBtn: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
 
-  card: { marginBottom: 12, padding: 12, borderRadius: 14 },
+  card: {
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+  },
   matchHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  date: { fontSize: 13, color: "#666" },
+  date: {
+    ...typography.small,
+    color: colors.textSecondary,
+  },
 
   youtubeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  youtubeText: { color: "#444", fontSize: 13 },
+  youtubeText: {
+    ...typography.small,
+  },
 
   matchInfo: {
     flexDirection: "row",
@@ -358,23 +390,30 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#eee",
   },
-  vsText: { fontSize: 15, fontWeight: "700" },
+  vsText: {
+    ...typography.subtitle,
+  },
 
   result: {
     textAlign: "center",
-    fontSize: 22,
-    fontWeight: "800",
-    marginTop: 8,
+    ...typography.titleLarge,
+    marginTop: spacing.xs,
   },
   resultMuted: {
     textAlign: "center",
-    fontSize: 14,
-    marginTop: 8,
+    ...typography.body,
+    marginTop: spacing.xs,
     opacity: 0.7,
   },
 
-  location: { marginTop: 8, color: "#444" },
-  mapsLink: { marginTop: 6, color: "#1DB954", fontWeight: "700" },
+  location: {
+    marginTop: spacing.xs,
+    color: colors.textSecondary,
+  },
+  mapsLink: {
+    marginTop: spacing.xs,
+    ...typography.subtitle,
+  },
 
   liveButton: {
     marginTop: 10,
@@ -383,7 +422,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
-  liveButtonText: { color: "#fff", fontWeight: "800" },
+  liveButtonText: {
+    ...typography.subtitle,
+  },
 
-  emptyText: { marginTop: 16, textAlign: "center", opacity: 0.7 },
+  emptyText: {
+    marginTop: spacing.md,
+    textAlign: "center",
+    opacity: 0.7,
+  },
 });

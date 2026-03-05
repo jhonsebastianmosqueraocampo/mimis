@@ -1,3 +1,7 @@
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { AddressForm } from "@/types";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,7 +12,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  View
+  View,
 } from "react-native";
 import {
   Button,
@@ -111,7 +115,7 @@ export function AddressModal({
             <View style={styles.modalBox}>
               {/* HEADER */}
               <View style={styles.header}>
-                <Text style={styles.title}>📍 Dirección de entrega</Text>
+                <Text style={typography.title}>📍 Dirección de entrega</Text>
                 <IconButton icon="close" size={22} onPress={onClose} />
               </View>
 
@@ -274,29 +278,29 @@ const styles = StyleSheet.create({
 
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.background,
     justifyContent: "flex-end",
   },
 
   modalBox: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     height: "85%",
-    paddingHorizontal: 20, // 👈 espacio lateral correcto
-    paddingTop: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
   },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
 
   title: {
-    fontSize: 18,
-    fontWeight: "700",
+    ...typography.title,
+    color: colors.textPrimary,
   },
 
   scroll: {
@@ -304,32 +308,32 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: spacing.lg,
   },
 
   input: {
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
 
   divider: {
-    marginVertical: 12,
+    marginVertical: spacing.sm,
   },
 
   sectionLabel: {
-    marginBottom: 6,
-    opacity: 0.7,
+    marginBottom: spacing.xs,
+    ...typography.small,
   },
 
   row: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm,
   },
 
   footer: {
     flexDirection: "row",
-    gap: 10,
-    paddingVertical: 12,
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.border,
   },
 });

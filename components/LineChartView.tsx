@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { LineChartData } from "@/types";
 import React from "react";
 import { Dimensions } from "react-native";
@@ -17,7 +18,7 @@ export const LineChartView = ({ title, points, labels }: BarChartViewProps) => {
       chartConfig={{
         backgroundGradientFrom: "#fff",
         backgroundGradientTo: "#fff",
-        color: () => "#0FA958",
+        color: () => colors.primary,
       }}
       bezier
       style={{ marginVertical: 8, borderRadius: 16 }}

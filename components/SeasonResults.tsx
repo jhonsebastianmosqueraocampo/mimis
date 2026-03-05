@@ -1,5 +1,9 @@
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { Picker } from "@react-native-picker/picker";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -282,7 +286,7 @@ export default function SeasonResults({
               setSelectedTeam(null);
             }}
             style={styles.picker}
-            dropdownIconColor="#444"
+            dropdownIconColor={colors.textSecondary}
           >
             {competitions.map(({ league }) => (
               <Picker.Item
@@ -301,7 +305,7 @@ export default function SeasonResults({
             selectedValue={selectedSeason}
             onValueChange={(value) => setSelectedSeason(value)}
             style={styles.picker}
-            dropdownIconColor="#444"
+            dropdownIconColor={colors.textSecondary}
           >
             <Picker.Item label={`Actual (${currentYear})`} value={0} />
             {/* envía 0 */}
@@ -332,7 +336,8 @@ export default function SeasonResults({
                 selectedPhase === idx && styles.chipSelected,
               ]}
               textStyle={{
-                color: selectedPhase === idx ? "#fff" : "#000",
+                color:
+                  selectedPhase === idx ? colors.textOnPrimary : colors.text,
               }}
               onPress={() => {
                 setSelectedPhase(idx);
@@ -375,7 +380,9 @@ export default function SeasonResults({
                       ]}
                       textStyle={{
                         color:
-                          selectedItemTournament === item.id ? "#fff" : "#000",
+                          selectedItemTournament === item.id
+                            ? colors.textOnPrimary
+                            : colors.text,
                       }}
                       onPress={() => setSelectedItemTournament(item.id)}
                     >
@@ -418,66 +425,76 @@ export default function SeasonResults({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: spacing.md,
   },
+
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    fontFamily: "goli",
+    ...typography.title,
+    fontWeight: "700",
+    marginBottom: spacing.md,
+    color: colors.textPrimary,
   },
+
   label: {
-    fontSize: 16,
-    marginRight: 8,
+    ...typography.body,
+    marginRight: spacing.xs,
+    color: colors.textPrimary,
   },
+
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
+
   pickerWrapper: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
     justifyContent: "center",
-    marginTop: 6,
+    marginTop: spacing.xs ?? 6,
   },
 
   picker: {
     height: 50,
     width: "100%",
-    color: "#222",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
   },
+
   card: {
-    backgroundColor: "#f5f5f5",
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
+    backgroundColor: colors.surfaceVariant ?? colors.surface,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginTop: spacing.xs,
   },
+
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.xs,
     justifyContent: "flex-start",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
+
   chip: {
-    marginRight: 8,
-    marginBottom: 8,
-    borderColor: "#1DB954",
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
+    borderColor: colors.primary,
   },
+
   chipSelected: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
+
   groupTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    fontFamily: "goli",
+    ...typography.body,
+    fontWeight: "700",
+    marginBottom: spacing.xs,
+    color: colors.textPrimary,
   },
 });

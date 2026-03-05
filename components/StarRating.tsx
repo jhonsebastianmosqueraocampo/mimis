@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import React, { useState } from "react";
 import { GestureResponderEvent, TouchableOpacity, View } from "react-native";
 import { Icon } from "react-native-paper";
@@ -45,7 +46,7 @@ export default function StarRating({
             activeOpacity={editable ? 0.7 : 1}
             onPressIn={(e) => handleTouch(e, i)}
           >
-            <Icon source={icon} size={size} color="#FFD700" />
+            <Icon source={icon} size={size} color={colors.info} />
           </TouchableOpacity>
         );
       })}

@@ -15,6 +15,13 @@ import {
 import { Text } from "react-native-paper";
 import PrivateLayout from "./privateLayout";
 
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { g } from "@/theme/styles";
+import { typography } from "@/theme/typography";
+
 const { width } = Dimensions.get("window");
 
 export default function ResumeAndGoal() {
@@ -30,19 +37,23 @@ export default function ResumeAndGoal() {
 
   useEffect(() => {
     let isMounted = true;
+
     const getFavoriteList = async () => {
       setLoading(true);
+
       try {
         const { success, videosTeams, videosPlayers, message } =
           await getFavoritesVideos();
+
         if (!isMounted) return;
+
         if (success) {
           setEquipos(videosTeams);
           setJugadores(videosPlayers);
         } else {
           setError(message!);
         }
-      } catch (err) {
+      } catch {
         if (isMounted) setError("Error al cargar los videos favoritos");
       } finally {
         if (isMounted) setLoading(false);
@@ -50,6 +61,7 @@ export default function ResumeAndGoal() {
     };
 
     getFavoriteList();
+
     return () => {
       isMounted = false;
     };
@@ -72,7 +84,7 @@ export default function ResumeAndGoal() {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={{ color: "red", fontSize: 16 }}>{error}</Text>
+        <Text style={{ color: colors.error }}>{error}</Text>
       </View>
     );
   }
@@ -84,7 +96,7 @@ export default function ResumeAndGoal() {
   return (
     <PrivateLayout>
       <View style={styles.container}>
-        <Text style={styles.header}>🎥 Videos de tus favoritos</Text>
+        <Text style={g.titleLarge}>🎥 Videos de tus favoritos</Text>
 
         {/* Tabs */}
         <View style={styles.tabs}>
@@ -117,7 +129,7 @@ export default function ResumeAndGoal() {
           </TouchableOpacity>
         </View>
 
-        {/* Galería de videos */}
+        {/* Galería */}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
@@ -129,6 +141,7 @@ export default function ResumeAndGoal() {
                   ? "⚽ No tienes equipos favoritos"
                   : "👤 No tienes jugadores favoritos"}
               </Text>
+
               <Text style={styles.emptySubtitle}>
                 Agrega favoritos para ver sus videos aquí.
               </Text>
@@ -136,7 +149,6 @@ export default function ResumeAndGoal() {
           ) : (
             videosToShow.map((group, groupIndex) => (
               <View key={groupIndex} style={styles.groupContainer}>
-                {/* Nombre del equipo o jugador */}
                 <Text style={styles.groupTitle}>{group.name}</Text>
 
                 {group.videos.length === 0 ? (
@@ -173,7 +185,8 @@ export default function ResumeAndGoal() {
               </View>
             ))
           )}
-          <View style={{ marginVertical: 10, alignItems: "center" }}>
+
+          <View style={{ marginVertical: spacing.sm, alignItems: "center" }}>
             <AdBanner />
           </View>
         </ScrollView>
@@ -182,127 +195,115 @@ export default function ResumeAndGoal() {
   );
 }
 
-const cardWidth = (width - 48) / 2; // dos columnas con margen
+const cardWidth = (width - spacing.lg * 3) / 2;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: spacing.lg,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1e1e1e",
-    marginBottom: 16,
-  },
+
   tabs: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
+
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    marginHorizontal: 6,
-    borderRadius: 20,
-    backgroundColor: "#e6e6e6",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    marginHorizontal: spacing.xs,
+    borderRadius: radius.round,
+    backgroundColor: colors.surfaceVariant,
   },
+
   activeTab: {
-    backgroundColor: "#007AFF",
+    backgroundColor: colors.primary,
   },
+
   tabText: {
-    color: "#333",
-    fontWeight: "600",
+    ...typography.subtitle,
+    color: colors.textSecondary,
   },
+
   activeTabText: {
-    color: "#fff",
+    color: colors.textOnPrimary,
   },
+
   scrollContainer: {
-    paddingBottom: 100,
+    paddingBottom: spacing.xxl,
   },
+
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
+
   card: {
     width: cardWidth,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
+
   thumbnail: {
     width: "100%",
     height: 110,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
+    borderTopLeftRadius: radius.md,
+    borderTopRightRadius: radius.md,
   },
+
   videoTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1e1e1e",
-    paddingHorizontal: 8,
-    marginTop: 6,
+    ...typography.body,
   },
+
   channelTitle: {
-    fontSize: 12,
-    color: "#777",
-    paddingHorizontal: 8,
-    marginBottom: 8,
+    ...typography.small,
   },
-  emptyText: {
-    textAlign: "center",
-    color: "#888",
-    marginTop: 60,
-    fontSize: 16,
+
+  cardContent: {
+    padding: spacing.sm,
   },
+
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
+
   groupContainer: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
 
   groupTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 12,
-    color: "#1e1e1e",
-  },
-
-  cardContent: {
-    padding: 8,
+    ...typography.title,
+    marginBottom: spacing.md,
   },
 
   noVideosText: {
-    fontSize: 14,
-    color: "#888",
-    marginBottom: 8,
+    ...typography.bodySecondary,
+    marginBottom: spacing.sm,
     fontStyle: "italic",
   },
 
   emptyContainer: {
     alignItems: "center",
-    marginTop: 80,
+    marginTop: spacing.xxl,
   },
 
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 8,
+    ...typography.title,
     textAlign: "center",
+    marginBottom: spacing.sm,
   },
 
   emptySubtitle: {
-    fontSize: 14,
-    color: "#777",
+    ...typography.bodySecondary,
     textAlign: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
   },
 });

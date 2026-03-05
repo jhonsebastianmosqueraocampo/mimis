@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { ScrollSectionProps } from "@/types";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CircleSwiperList from "./CircleSwiperList";
@@ -42,11 +43,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1DB954",
+    color: colors.primary,
   },
   seeAll: {
     fontSize: 14,
-    color: "#1DB954",
+    color: colors.primary,
     fontWeight: "600",
   },
 });

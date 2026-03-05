@@ -1,4 +1,9 @@
 import { useFetch } from "@/hooks/FetchContext";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { shadows } from "@/theme/shadows";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LiveMatch, RootStackParamList } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -24,23 +29,43 @@ const StatRow = ({
   const total = Math.max(home + away, 1);
   const left = Math.round((home / total) * 100);
   return (
-    <View style={{ marginBottom: 10 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text>{home}</Text>
-        <Text style={{ fontWeight: "600" }}>{label}</Text>
-        <Text>{away}</Text>
+    <View style={{ marginBottom: spacing.sm }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <Text style={{ ...typography.body }}>{home}</Text>
+
+        <Text
+          style={{
+            ...typography.body,
+            fontWeight: "600",
+            color: colors.textPrimary,
+          }}
+        >
+          {label}
+        </Text>
+
+        <Text style={{ ...typography.body }}>{away}</Text>
       </View>
+
       <View
         style={{
           height: 8,
-          backgroundColor: "#eee",
-          borderRadius: 4,
+          backgroundColor: colors.border,
+          borderRadius: radius.round,
           overflow: "hidden",
-          marginTop: 4,
+          marginTop: spacing.xs,
         }}
       >
         <View
-          style={{ width: `${left}%`, height: 8, backgroundColor: "#2e7d32" }}
+          style={{
+            width: `${left}%`,
+            height: 8,
+            backgroundColor: colors.primary,
+          }}
         />
       </View>
     </View>
@@ -194,7 +219,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
         <Chip
           compact
           icon="clock-outline"
-          style={{ marginTop: 6, backgroundColor: "#e8f5e9" }}
+          style={{ marginTop: 6, backgroundColor: colors.background }}
           textStyle={{ fontWeight: "600" }}
         >
           {live.status.short === "FT"
@@ -220,11 +245,14 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
     <Card
       style={{
         margin: 0,
-        marginTop: 10,
-        marginBottom: 10,
-        borderRadius: 14,
+        marginTop: spacing.sm,
+        marginBottom: spacing.sm,
+        borderRadius: radius.lg,
         elevation: 3,
-        backgroundColor: "#fafafa",
+        backgroundColor: colors.surface,
+        shadowColor: shadows.md.shadowColor,
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
       }}
     >
       <Card.Title title="Partido en vivo" titleVariant="titleMedium" />
@@ -250,10 +278,12 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
               onPress={() => setTab(t.key)}
               style={{
                 marginHorizontal: 4,
-                backgroundColor: tab === t.key ? "#1B5E20" : "rgba(0,0,0,0.08)",
+                backgroundColor:
+                  tab === t.key ? colors.primary : colors.background,
               }}
               textStyle={{
-                color: tab === t.key ? "white" : "#333",
+                color:
+                  tab === t.key ? colors.textOnPrimary : colors.textSecondary,
                 fontWeight: "500",
               }}
             >
@@ -278,7 +308,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                   style={{
                     width: 44,
                     fontWeight: "bold",
-                    color: "#1B5E20",
+                    color: colors.primary,
                   }}
                 >
                   {e.time.elapsed}
@@ -289,7 +319,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                   style={{
                     marginLeft: 8,
                     flexShrink: 1,
-                    color: "#333",
+                    color: colors.textSecondary,
                   }}
                 >
                   <Text style={{ fontWeight: "600" }}>{e.team?.name}</Text> •{" "}
@@ -318,7 +348,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
 
         {tab === "dynamic" && (
           <View style={{ marginTop: 8 }}>
-            <Text style={{ marginBottom: 8, color: "gray" }}>
+            <Text style={{ marginBottom: 8, color: colors.textSecondary }}>
               Último evento:{" "}
               {lastEvent
                 ? `${lastEvent.time.elapsed}' • ${lastEvent.team?.name} • ${
@@ -329,10 +359,10 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
             <View
               style={{
                 borderWidth: 1,
-                borderColor: "#ccc",
+                borderColor: colors.border,
                 borderRadius: 12,
                 minHeight: 260,
-                backgroundColor: "#0b6623",
+                backgroundColor: colors.primary,
               }}
             >
               <DynamicMatchView fixtureId={fixtureId} live={live} />
@@ -345,7 +375,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
             {goals.length === 0 ? (
               <Text
                 style={{
-                  color: "gray",
+                  color: colors.textSecondary,
                   fontStyle: "italic",
                   textAlign: "center",
                   marginVertical: 10,
@@ -370,7 +400,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                     <Text
                       style={{
                         fontWeight: "bold",
-                        color: "#1B5E20",
+                        color: colors.primary,
                       }}
                     >
                       {g.time.elapsed}
@@ -392,7 +422,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                       ellipsizeMode="tail"
                       style={{
                         flexShrink: 1,
-                        color: "#333",
+                        color: colors.textSecondary,
                         fontSize: 13,
                       }}
                     >
@@ -407,7 +437,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                       </Text>
                       {g.assist?.name ? (
                         <Text
-                          style={{ color: "#555" }}
+                          style={{ color: colors.textSecondary }}
                           onPress={() =>
                             handlePlayer(g.assist?.id?.toString() ?? "")
                           }
@@ -416,7 +446,10 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
                           (asist. {g.assist?.name})
                         </Text>
                       ) : null}
-                      <Text style={{ color: "#777" }}> — {g.team?.name}</Text>
+                      <Text style={{ color: colors.textSecondary }}>
+                        {" "}
+                        — {g.team?.name}
+                      </Text>
                     </Text>
                   </View>
                 </View>
@@ -441,7 +474,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
 
         {tab === "rating" && (
           <View style={{ marginVertical: 8 }}>
-            <Text style={{ color: "gray", textAlign: "center" }}>
+            <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
               Califica a los jugadores
             </Text>
             <Divider style={{ marginVertical: 8 }} />
@@ -454,7 +487,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
             {statsCombined.length === 0 ? (
               <Text
                 style={{
-                  color: "gray",
+                  color: colors.textSecondary,
                   fontStyle: "italic",
                   textAlign: "center",
                 }}

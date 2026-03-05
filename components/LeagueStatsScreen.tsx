@@ -1,5 +1,9 @@
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { PlayerStat, StatsByCategory } from "@/types";
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -218,44 +222,72 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F7F8" },
-  content: { padding: 12, gap: 12 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  sectionTitle: { marginBottom: 8, fontWeight: "600" },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  content: {
+    padding: spacing.sm,
+    gap: spacing.sm,
+  },
+
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  sectionTitle: {
+    ...typography.body,
+    marginBottom: spacing.xs,
+    fontWeight: "600",
+    color: colors.textPrimary,
+  },
+
   switcherCard: {
-    borderRadius: 16,
+    borderRadius: radius.lg,
     elevation: 2,
+    backgroundColor: colors.surface,
   },
+
   tableCard: {
-    borderRadius: 16,
+    borderRadius: radius.lg,
     elevation: 3,
+    backgroundColor: colors.surface,
   },
+
   errorCard: {
-    backgroundColor: "#d9534f",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    backgroundColor: colors.error,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs ?? 6,
   },
+
   chipContainer: {
     flexDirection: "row",
   },
+
   tabBar: {
-    marginVertical: 12,
+    marginVertical: spacing.sm,
   },
+
   chip: {
-    marginRight: 8,
-    borderColor: "#1DB954",
+    marginRight: spacing.xs,
+    borderColor: colors.border,
     borderWidth: 1,
     backgroundColor: "transparent",
   },
+
   firstChip: {
-    marginLeft: 12,
+    marginLeft: spacing.sm,
   },
 
   lastChip: {
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
+
   chipSelected: {
-    backgroundColor: "#1DB954",
+    backgroundColor: colors.primary,
   },
 });

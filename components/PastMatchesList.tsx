@@ -1,4 +1,8 @@
 import AdBanner from "@/services/ads/AdBanner";
+import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { Fixture, swiperItem } from "@/types";
 import dayjs from "dayjs";
 import React, { useMemo, useState } from "react";
@@ -235,63 +239,121 @@ export default function PastMatchesList({
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 16 },
+  container: {
+    marginBottom: spacing.md,
+  },
+
   title: {
-    fontWeight: "bold",
-    fontSize: 18,
-    marginBottom: 12,
-    color: "#000",
-  },
-  roundTitle: {
+    ...typography.title,
     fontWeight: "700",
-    fontSize: 16,
-    color: "#1B5E20",
-    marginBottom: 8,
-    marginLeft: 4,
+    marginBottom: spacing.sm,
+    color: colors.textPrimary,
   },
+
+  roundTitle: {
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.primary,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xs ?? 4,
+  },
+
   searchInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 12,
-    color: "#000",
-    backgroundColor: "#fff",
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.sm,
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
   },
+
   noResults: {
+    ...typography.body,
     textAlign: "center",
-    color: "#666",
-    marginTop: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
     fontStyle: "italic",
   },
-  scroll: { paddingRight: 4 },
-  card: { padding: 12, borderRadius: 12, marginBottom: 10 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between" },
-  date: { fontWeight: "500" },
-  tag: { fontSize: 12, color: "#666" },
-  divider: { marginVertical: 8 },
+
+  scroll: {
+    paddingRight: spacing.xs ?? 4,
+  },
+
+  card: {
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+  },
+
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  date: {
+    ...typography.small,
+    fontWeight: "500",
+    color: colors.textPrimary,
+  },
+
+  tag: {
+    ...typography.small,
+    color: colors.textSecondary,
+  },
+
+  divider: {
+    marginVertical: spacing.xs,
+  },
+
   teamsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
-  teamBlock: { alignItems: "center", width: 80 },
-  teamName: { marginTop: 4, fontSize: 12, textAlign: "center" },
-  result: { fontWeight: "bold", fontSize: 16 },
+
+  teamBlock: {
+    alignItems: "center",
+    width: 80,
+  },
+
+  teamName: {
+    marginTop: spacing.xs ?? 4,
+    ...typography.small,
+    textAlign: "center",
+    color: colors.textPrimary,
+  },
+
+  result: {
+    ...typography.body,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+
   stadiumRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 4,
-    marginTop: 4,
+    gap: spacing.xs ?? 4,
+    marginTop: spacing.xs ?? 4,
   },
-  stadiumText: { fontSize: 12, color: "#666", marginLeft: 4 },
-  chip: { marginRight: 8, marginBottom: 8 },
+
+  stadiumText: {
+    ...typography.small,
+    color: colors.textSecondary,
+    marginLeft: spacing.xs ?? 4,
+  },
+
+  chip: {
+    marginRight: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+
   chipsRowHorizontal: {
     flexDirection: "row",
     alignItems: "center",
-    paddingRight: 12,
+    paddingRight: spacing.sm,
   },
 });
