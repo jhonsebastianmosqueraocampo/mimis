@@ -196,13 +196,7 @@ export default function Cart() {
   };
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (productsStore.length === 0) {

@@ -1,5 +1,6 @@
 import { AuthProvider } from "@/hooks/AuthContext";
 import { FetchProvider } from "@/hooks/FetchContext";
+import { FootballProvider } from "@/hooks/FootballContext";
 import { InsideProvider } from "@/hooks/InsideContext";
 import { StoreProvider } from "@/hooks/storeContext";
 import { Stack } from "expo-router";
@@ -31,16 +32,18 @@ export default function Layout() {
         >
           <AuthProvider>
             <FetchProvider>
-              <InsideProvider>
-                <StoreProvider>
-                  <PaperProvider theme={theme}>
-                    {/* 🔹 Este View garantiza que el Stack siempre tenga 100 % del alto visible */}
-                    <View style={{ flex: 1 }}>
-                      <Stack screenOptions={{ headerShown: false }} />
-                    </View>
-                  </PaperProvider>
-                </StoreProvider>
-              </InsideProvider>
+              <FootballProvider>
+                <InsideProvider>
+                  <StoreProvider>
+                    <PaperProvider theme={theme}>
+                      {/* 🔹 Este View garantiza que el Stack siempre tenga 100 % del alto visible */}
+                      <View style={{ flex: 1 }}>
+                        <Stack screenOptions={{ headerShown: false }} />
+                      </View>
+                    </PaperProvider>
+                  </StoreProvider>
+                </InsideProvider>
+              </FootballProvider>
             </FetchProvider>
           </AuthProvider>
         </SafeAreaView>

@@ -74,13 +74,7 @@ export default function TeamSeasonAnalysis({
 
   // Loading mientras genera
   if (loading) {
-    return (
-      <Loading
-        visible={true}
-        title="Generando análisis inteligente..."
-        subtitle="Estamos procesando estadísticas y resultados"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   //  Si hubo error

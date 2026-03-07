@@ -95,13 +95,7 @@ export default function MatchPredictions({ fixtureId }: MatchPredictionsProps) {
   }, [fixtureId]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const renderForm = (form: string[]) => (

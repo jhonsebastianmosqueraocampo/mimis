@@ -63,14 +63,7 @@ export default function MatchPostVideos({
     };
   }, []);
 
-  if (loading)
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+  if (loading) return <Loading visible={loading} />;
 
   const openVideo = (id: string) => {
     Linking.openURL(`https://www.youtube.com/watch?v=${id}`);

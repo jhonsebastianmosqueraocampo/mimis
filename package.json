@@ -50,6 +50,7 @@
     "expo-updates": "~0.28.17",
     "expo-video": "~2.2.2",
     "expo-web-browser": "~14.2.0",
+    "lodash.debounce": "^4.0.8",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",

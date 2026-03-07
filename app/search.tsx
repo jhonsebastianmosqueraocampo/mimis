@@ -111,14 +111,7 @@ export default function Search() {
     }
   };
 
-  if (loading)
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+  if (loading) return <Loading visible={loading} />;
 
   const filteredLeagues = leagues.filter((l) =>
     l.league.name.toLowerCase().includes(search.toLowerCase()),

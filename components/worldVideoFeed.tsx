@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/AuthContext";
 import { useFetch } from "@/hooks/FetchContext";
 import { showInterstitial } from "@/services/ads/interstitial";
 import { loadRewardedAd, showRewardedAd } from "@/services/ads/rewarded";
@@ -32,6 +33,7 @@ export default function WorldVideoFeed({
   setLimitAdsPerDay,
 }: Props) {
   const { descountLimitAdsPerDayAndAddPoint } = useFetch();
+  const { setUser } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(
     videos.findIndex((s) => s.id === item.id),
   );
@@ -142,14 +144,25 @@ export default function WorldVideoFeed({
   const handleReward = () => {
     showRewardedAd(async () => {
       try {
-        const { success, limit, message } =
+        const { success, limit, points, xp, message } =
           await descountLimitAdsPerDayAndAddPoint();
         if (success) {
           setLimitAdsPerDay(limit);
+          console.log(
+            `Recompensa obtenida: ${points} pts, ${xp} xp. Limite restante: ${limit}`,
+          );
+          setUser((prev) => {
+            if (!prev) return prev;
+
+            return {
+              ...prev,
+              points: points ?? prev.points,
+              xp: xp ?? prev.xp,
+            };
+          });
         }
-        console.log("Usuario ganó puntos 🎉");
       } catch (error) {
-        console.log("Error aplicando recompensa", error);
+        console.log("Error al obtener recompensa:", error);
       }
     });
   };

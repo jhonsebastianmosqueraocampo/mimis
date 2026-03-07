@@ -128,13 +128,7 @@ export default function Favorites() {
   }, []);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando favoritos"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   /* =============================

@@ -50,8 +50,8 @@ export type NewModalProps = BooleanStateProps & {
 export type NotificationSettingProps = SwiperListProps & {
   labelDescription: string;
   settingSelectedTitle: string;
-  handleChange: (event: string) => void;
-  selectedSettingsValue: string;
+  handleChange: (event: "todos" | "personalizado") => void;
+  selectedSettingsValue: "todos" | "personalizado";
   selectedItems: swiperItem[];
   handleToggle: (team: swiperItem) => void;
 };
@@ -202,7 +202,6 @@ export type RootStackParamList = {
   betInvite: { id: string } | undefined;
   bets: undefined;
   liveBet: { id: string };
-  registerSyntheticMatch: undefined;
   countries: undefined;
   search: undefined;
   earnPoints: undefined;
@@ -407,6 +406,7 @@ export type User = {
   points: number;
   xp: number;
   level: string;
+  fromGame: boolean;
 
   betsWon: number;
   betsLost: number;
@@ -427,6 +427,7 @@ export type NotificationItem = {
   body: string;
   receivedAt: Date;
   read: boolean;
+  img?: string;
 };
 
 export type Fixture = {
@@ -1856,4 +1857,76 @@ export type QuestionQuiz = {
 export type FunFact = {
   text: string;
   createdAt: string;
+};
+
+export type TeamSearch = {
+  teamId: number;
+  leagueId?: number;
+  name: string;
+  logo?: string;
+  country?: string;
+  updatedAt?: string;
+};
+
+export type LeagueSearch = {
+  league: {
+    id: number;
+    name: string;
+    type: string;
+    logo?: string;
+  };
+
+  country: {
+    name: string;
+    code?: string;
+    flag?: string;
+  };
+
+  lastUpdate: string;
+};
+
+export type PlayerSearch = {
+  playerId: number;
+  firstname?: string;
+  lastname?: string;
+  name: string;
+  age?: number;
+  nationality?: string;
+  photo?: string;
+
+  team?: {
+    id?: number;
+    name?: string;
+    logo?: string;
+  };
+};
+
+export interface SearchResults {
+  players: PlayerSearch[];
+  teams: TeamSearch[];
+  leagues: LeagueSearch[];
+}
+
+export type TrendingItem = {
+  itemId: number;
+  name: string;
+  photo?: string;
+  nationality?: string;
+  teamName?: string;
+  teamLogo?: string;
+  type: "player" | "team" | "coach";
+  searches: number;
+};
+
+export type TrendingResults = {
+  players: TrendingItem[];
+  teams: TrendingItem[];
+  coaches: TrendingItem[];
+};
+
+export type NotificationSetting = {
+  teamMode: "todos" | "personalizado";
+  teams: swiperItem[];
+  playerMode: "todos" | "personalizado";
+  players: swiperItem[];
 };

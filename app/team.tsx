@@ -107,13 +107,7 @@ export default function TeamScreen() {
   };
 
   if (loadingNews || loadingTeam) {
-    return (
-      <Loading
-        visible={loadingNews || loadingTeam}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loadingNews || loadingTeam} />;
   }
 
   return (

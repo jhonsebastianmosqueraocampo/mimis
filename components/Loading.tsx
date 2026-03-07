@@ -1,50 +1,87 @@
-import React, { useEffect, useRef } from "react";
+import { useFootball } from "@/hooks/FootballContext";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, Image, StyleSheet, Text, View } from "react-native";
-import { ActivityIndicator, Modal, Portal, useTheme } from "react-native-paper";
+import { Modal, Portal, useTheme } from "react-native-paper";
 
 type Props = {
   visible: boolean;
-  title?: string;
-  subtitle?: string;
 };
 
-export default function Loading({
-  visible,
-  title = "Cargando…",
-  subtitle = "Estamos organizando la alineación ideal",
-}: Props) {
+export default function Loading({ visible }: Props) {
+  const { facts, matchesToday } = useFootball();
   const theme = useTheme();
 
-  // Animación suave del “progress bar”
-  const progress = useRef(new Animated.Value(0)).current;
+  const [index, setIndex] = useState(0);
+  const [isFact, setIsFact] = useState(true);
+  const [progress, setProgress] = useState(0);
 
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const logoPulse = useRef(new Animated.Value(1)).current;
+
+  // alternar contenido
   useEffect(() => {
     if (!visible) return;
 
-    progress.setValue(0);
-    const loop = Animated.loop(
+    const interval = setInterval(() => {
       Animated.sequence([
-        Animated.timing(progress, {
-          toValue: 1,
-          duration: 1100,
-          useNativeDriver: false,
-        }),
-        Animated.timing(progress, {
+        Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 900,
-          useNativeDriver: false,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      setIsFact((prev) => !prev);
+      setIndex((prev) => prev + 1);
+      setProgress((prev) => (prev + 1) % 10);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [visible]);
+
+  // pulso del logo
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoPulse, {
+          toValue: 1.05,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoPulse, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
         }),
       ]),
-    );
+    ).start();
+  }, []);
 
-    loop.start();
-    return () => loop.stop();
-  }, [visible, progress]);
+  const fact = facts[index % facts.length];
+  const match = matchesToday[index % matchesToday.length];
+  const fixture = match
+    ? {
+        home: match.teams.home.name,
+        away: match.teams.away.name,
+        league: match.league.name,
+        time: match.fixture.status.elapsed,
+      }
+    : null;
 
-  const widthInterpolate = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["18%", "92%"],
-  });
+  const messages = [
+    "Preparando el estadio...",
+    "Calentando jugadores...",
+    "Revisando el VAR...",
+    "Cargando estadísticas...",
+    "El partido está por comenzar...",
+  ];
+
+  const message = messages[index % messages.length];
 
   return (
     <Portal>
@@ -53,7 +90,6 @@ export default function Loading({
         dismissable={false}
         contentContainerStyle={styles.modalWrap}
       >
-        {/* Backdrop “card” */}
         <View
           style={[
             styles.card,
@@ -63,69 +99,80 @@ export default function Loading({
             },
           ]}
         >
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <View
-              style={[
-                styles.logoWrap,
-                { backgroundColor: theme.colors.secondaryContainer },
-              ]}
-            >
-              <Image
-                source={require("@/assets/field.jpg")}
-                style={styles.logo}
-                resizeMode="cover"
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: theme.colors.onSurface }]}>
-                {title}
-              </Text>
-              <Text
-                style={[
-                  styles.subtitle,
-                  { color: theme.colors.onSurfaceVariant },
-                ]}
-                numberOfLines={2}
-              >
-                {subtitle}
-              </Text>
-            </View>
-          </View>
-
-          {/* Indicator */}
-          <View style={styles.indicatorRow}>
-            <ActivityIndicator animating size="small" />
-            <Text
-              style={[styles.hint, { color: theme.colors.onSurfaceVariant }]}
-            >
-              Procesando…
-            </Text>
-          </View>
-
-          {/* Progress bar fake */}
-          <View
-            style={[
-              styles.track,
-              { backgroundColor: theme.colors.surfaceVariant },
-            ]}
-          >
-            <Animated.View
-              style={[
-                styles.bar,
-                {
-                  width: widthInterpolate,
-                  backgroundColor: theme.colors.primary,
-                },
-              ]}
+          {/* Logo */}
+          <Animated.View style={{ transform: [{ scale: logoPulse }] }}>
+            <Image
+              source={require("@/assets/logo/mimis-logo.png")}
+              style={styles.logo}
             />
+          </Animated.View>
+
+          <Text style={[styles.brand, { color: theme.colors.primary }]}>
+            MIMIS
+          </Text>
+
+          {/* CONTENT */}
+          <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+            {isFact ? (
+              <>
+                <Text
+                  style={[styles.sectionTitle, { color: theme.colors.primary }]}
+                >
+                  ¿Sabías que?
+                </Text>
+                <Text style={[styles.fact, { color: theme.colors.onSurface }]}>
+                  {fact.text}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text
+                  style={[styles.sectionTitle, { color: theme.colors.primary }]}
+                >
+                  Partido de hoy ⚽
+                </Text>
+                <Text
+                  style={[styles.fixture, { color: theme.colors.onSurface }]}
+                >
+                  {fixture?.home} vs {fixture?.away}
+                </Text>
+                <Text
+                  style={[
+                    styles.fixtureSub,
+                    { color: theme.colors.onSurfaceVariant },
+                  ]}
+                >
+                  {fixture?.time} • {fixture?.league}
+                </Text>
+              </>
+            )}
+          </Animated.View>
+
+          {/* PROGRESS */}
+          <View style={styles.progressRow}>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.block,
+                  {
+                    backgroundColor:
+                      i <= progress
+                        ? theme.colors.primary
+                        : theme.colors.surfaceVariant,
+                  },
+                ]}
+              />
+            ))}
+
+            {/* balón */}
+            <Text style={[styles.ball, { left: progress * 20 + 2 }]}>⚽</Text>
           </View>
 
           <Text
-            style={[styles.micro, { color: theme.colors.onSurfaceVariant }]}
+            style={[styles.message, { color: theme.colors.onSurfaceVariant }]}
           >
-            Esto puede tardar unos segundos.
+            {message}
           </Text>
         </View>
       </Modal>
@@ -134,73 +181,78 @@ export default function Loading({
 }
 
 const styles = StyleSheet.create({
-  modalWrap: {
-    padding: 18,
-  },
+  modalWrap: { padding: 20 },
+
   card: {
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 20,
+    padding: 22,
     borderWidth: 1,
-    // sombra iOS
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    // sombra Android
-    elevation: 8,
-  },
-  headerRow: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    elevation: 10,
   },
-  logoWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 14,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   logo: {
-    width: 54,
-    height: 54,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
   },
-  title: {
+
+  brand: {
+    marginTop: 6,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+
+  content: {
+    alignItems: "center",
+    marginVertical: 12,
+    minHeight: 80,
+  },
+
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 6,
+  },
+
+  fact: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+
+  fixture: {
     fontSize: 16,
     fontWeight: "800",
-    marginBottom: 2,
   },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "500",
+
+  fixtureSub: {
+    fontSize: 12,
+    marginTop: 2,
   },
-  indicatorRow: {
+
+  progressRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 14,
+    gap: 6,
+    marginTop: 12,
+    position: "relative",
   },
-  hint: {
+
+  block: {
+    width: 16,
+    height: 8,
+    borderRadius: 3,
+  },
+
+  ball: {
+    position: "absolute",
+    top: -14,
+    fontSize: 16,
+  },
+
+  message: {
+    marginTop: 10,
     fontSize: 12,
     fontWeight: "600",
-    opacity: 0.9,
-  },
-  track: {
-    height: 8,
-    borderRadius: 999,
-    overflow: "hidden",
-    marginTop: 12,
-  },
-  bar: {
-    height: "100%",
-    borderRadius: 999,
-  },
-  micro: {
-    marginTop: 10,
-    fontSize: 11,
-    opacity: 0.8,
-    fontWeight: "500",
   },
 });

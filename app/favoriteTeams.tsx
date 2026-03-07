@@ -45,13 +45,7 @@ export default function FavoriteTeams() {
   }, []);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando equipos favoritos"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const actionTeams = (id: string) => {

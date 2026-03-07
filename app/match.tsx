@@ -107,13 +107,7 @@ export default function Match() {
   }, [isFinished, visibleTabs, matchState]);
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando partido"
-        subtitle="Preparando información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

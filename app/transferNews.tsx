@@ -75,13 +75,7 @@ export default function TransferNews() {
   const hasMore = paginatedNews.length < filteredAndSortedNews.length;
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const actionGeneralListNews = (id: string) => console.log(id);

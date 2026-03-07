@@ -93,13 +93,7 @@ export default function Coach() {
   }, [id]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando entrenadores"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const actionGeneralListNews = (id: string) => console.log(id);

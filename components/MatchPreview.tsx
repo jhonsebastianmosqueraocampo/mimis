@@ -95,7 +95,7 @@ export default function MatchPreview({
       const now = new Date();
       const diffMs = matchDate.getTime() - now.getTime();
       const diffHours = diffMs / (1000 * 60 * 60);
-      if (diffHours <= 24 && diffHours > 0) {
+      if (diffHours <= 24) {
         try {
           const { success, videos, message } = await getVideoFromYoutube(query);
 
@@ -161,13 +161,7 @@ export default function MatchPreview({
   }, [fixtureId]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const actionInterviews = (id: string) => {
@@ -290,11 +284,7 @@ export default function MatchPreview({
           stats && <MatchAnalysisPreview stats={stats} fixtureId={fixtureId} />}
         {selectedItem.name.toLowerCase() === "historial de resultados" &&
           (statsLoading ? (
-            <Loading
-              visible
-              title="Cargando historial"
-              subtitle="Consultando enfrentamientos previos"
-            />
+            <Loading visible={statsLoading} />
           ) : stats ? (
             <MatchHistoryPreview stats={stats} />
           ) : (
@@ -311,7 +301,7 @@ export default function MatchPreview({
         {selectedItem.name.toLowerCase() === "alineaciones" && (
           <FixtureLineups fixtureId={fixtureId} status={STATUS} />
         )}
-        {selectedItem.name.toLowerCase() === "Suma puntos y gana" && (
+        {selectedItem.name.toLowerCase() === "suma puntos y gana" && (
           <PenaltyGameSwipe />
         )}
       </View>

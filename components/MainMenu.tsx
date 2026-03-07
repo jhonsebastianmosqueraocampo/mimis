@@ -1,9 +1,8 @@
 import { useAuth } from "@/hooks/AuthContext";
-import { useFetch } from "@/hooks/FetchContext";
 import { useInside } from "@/hooks/InsideContext";
 import { ProductStore, RootStackParamList } from "@/types";
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   findNodeHandle,
   Linking,
@@ -42,14 +41,13 @@ type MainMenuProps = {
 };
 
 export default function MainMenu({ productsStore }: MainMenuProps) {
-  const { getUserPoints } = useFetch();
+  const { user } = useAuth();
   const { logout } = useAuth();
   const { notifications, markAllAsRead } = useInside();
 
   const [openMainDrawer, setOpenMainDrawer] = useState(false);
   const [active, setActive] = useState("index");
   const [visibleMenu, setVisibleMenu] = useState(false);
-  const [userPoints, setUserPoints] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const [visibleNotifications, setVisibleNotifications] = useState(false);
@@ -60,34 +58,6 @@ export default function MainMenu({ productsStore }: MainMenuProps) {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadUserPoints = async () => {
-      setLoading(true);
-
-      try {
-        const { success, points } = await getUserPoints();
-
-        if (!mounted) return;
-
-        if (success) {
-          setUserPoints(points);
-        }
-      } catch (err) {
-        console.error("❌ Error cargando puntos:", err);
-      }
-
-      setLoading(false);
-    };
-
-    loadUserPoints();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const openMenu = () => {
     const handle = findNodeHandle(iconRef.current);
@@ -127,13 +97,7 @@ export default function MainMenu({ productsStore }: MainMenuProps) {
   const cartCount = productsStore.length;
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando datos"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (
@@ -267,7 +231,7 @@ export default function MainMenu({ productsStore }: MainMenuProps) {
                 ]}
               >
                 <Text style={[g.subtitle, { color: "#FFF" }]}>
-                  {userPoints}
+                  {user?.points}
                 </Text>
               </View>
 
@@ -317,13 +281,7 @@ export default function MainMenu({ productsStore }: MainMenuProps) {
         </View>
       </Appbar.Header>
 
-      {openMainDrawer && (
-        <MainDrawer
-          active={active}
-          setActive={setActive}
-          setOpenMainDrawer={setOpenMainDrawer}
-        />
-      )}
+      {openMainDrawer && <MainDrawer setOpenMainDrawer={setOpenMainDrawer} />}
 
       <NotificationDrawer
         open={visibleNotifications}

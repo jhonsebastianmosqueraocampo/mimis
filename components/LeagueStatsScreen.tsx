@@ -94,13 +94,7 @@ export default function LeagueStatsScreen({ leagueId }: Props) {
   const pageSlice = dataForSelected.slice(from, to);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (error) {

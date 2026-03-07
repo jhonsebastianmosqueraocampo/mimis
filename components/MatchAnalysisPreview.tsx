@@ -81,13 +81,7 @@ export default function MatchAnalysisPreview({
   const summary = analysis?.summary;
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Generando análisis"
-        subtitle="Esto puede tardar unos segundos…"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

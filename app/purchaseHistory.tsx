@@ -68,13 +68,7 @@ export default function PurchaseHistory() {
   };
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando compras"
-        subtitle="Un momento por favor"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

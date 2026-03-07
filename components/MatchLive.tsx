@@ -159,13 +159,7 @@ export default function MatchLive({ fixtureId }: MatchLiveProps) {
   }
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (!live) {

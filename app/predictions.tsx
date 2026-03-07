@@ -73,13 +73,7 @@ export default function PredictionsFull() {
   };
 
   if (loading && !refreshing) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (error || predictionOdds.length === 0) {

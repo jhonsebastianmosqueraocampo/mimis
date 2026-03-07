@@ -122,11 +122,7 @@ export default function Player() {
 
   if (loadingInfoPlayer || loadingNews || loadingSeasons) {
     return (
-      <Loading
-        visible={loadingInfoPlayer || loadingNews || loadingSeasons}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
+      <Loading visible={loadingInfoPlayer || loadingNews || loadingSeasons} />
     );
   }
 

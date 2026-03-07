@@ -10,7 +10,6 @@ let rewarded: RewardedAd | null = null;
 
 export const loadRewardedAd = () => {
   rewarded = RewardedAd.createForAdRequest(adUnitId);
-
   rewarded.load();
 };
 
@@ -21,14 +20,22 @@ export const showRewardedAd = (onReward: () => void) => {
 
   if (!rewarded) return;
 
+  const unsubscribeLoaded = rewarded.addAdEventListener(
+    RewardedAdEventType.LOADED,
+    () => {
+      rewarded?.show();
+      unsubscribeLoaded();
+    },
+  );
+
   const unsubscribeReward = rewarded.addAdEventListener(
     RewardedAdEventType.EARNED_REWARD,
     () => {
       onReward();
       unsubscribeReward();
-      loadRewardedAd(); // precarga el siguiente
+      loadRewardedAd();
     },
   );
 
-  rewarded.show();
+  rewarded.load();
 };

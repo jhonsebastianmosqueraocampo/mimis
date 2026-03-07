@@ -126,13 +126,7 @@ export default function Countries() {
   }, [activeTab, selectedCountry]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando países"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const filteredCountries = countries.filter((c) =>

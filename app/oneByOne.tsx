@@ -157,13 +157,7 @@ export default function OneByOne() {
   };
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando análisis"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

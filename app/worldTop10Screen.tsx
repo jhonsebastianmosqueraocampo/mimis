@@ -179,13 +179,7 @@ export default function WorldTop10Screen() {
   }, [feedList, initialVideo]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

@@ -192,7 +192,7 @@ export default function NewsForm({
   };
 
   if (loading) {
-    return <Loading visible title="Cargando" subtitle="Guardando noticia…" />;
+    return <Loading visible={loading} />;
   }
 
   // ==========================

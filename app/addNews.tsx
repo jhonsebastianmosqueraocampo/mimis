@@ -3,14 +3,19 @@ import NewsForm from "@/components/NewsForm";
 import { useFetch } from "@/hooks/FetchContext";
 import { NewsItem } from "@/types";
 import React, { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { Button, Card, Text } from "react-native-paper";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import PrivateLayout from "./privateLayout";
 
+import { colors } from "@/theme/colors";
 import { g } from "@/theme/styles";
 import { sx } from "@/theme/sx";
-import { colors } from "@/theme/colors";
 
 export default function AddNews() {
   const { getUsersNews, deleteUsersNews } = useFetch();
@@ -76,19 +81,15 @@ export default function AddNews() {
   };
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando noticias"
-        subtitle="Estamos obteniendo las noticias"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (error) {
     return (
       <PrivateLayout>
-        <Text style={[g.body, { color: colors.error, marginVertical: 20 } as any]}>
+        <Text
+          style={[g.body, { color: colors.error, marginVertical: 20 } as any]}
+        >
           {error}
         </Text>
       </PrivateLayout>
@@ -98,9 +99,13 @@ export default function AddNews() {
   return (
     <PrivateLayout>
       <View style={g.screen}>
-
         {/* Encabezado */}
-        <Text style={[g.titleLarge, sx({ mb: 20, center: true, color: colors.primary }) as any]}>
+        <Text
+          style={[
+            g.titleLarge,
+            sx({ mb: 20, center: true, color: colors.primary }) as any,
+          ]}
+        >
           📰 Noticias creadas
         </Text>
 
@@ -117,12 +122,9 @@ export default function AddNews() {
 
         {/* Listado */}
         <ScrollView showsVerticalScrollIndicator={false}>
-
           {news.map((n) => (
             <Card key={n.id} style={[g.card, sx({ mb: 16 })] as any}>
-
               <View style={g.row}>
-
                 {/* Imagen */}
                 <Image
                   source={{ uri: n.fotoPrincipal }}
@@ -136,26 +138,17 @@ export default function AddNews() {
 
                 {/* Info */}
                 <View style={{ flex: 1, justifyContent: "center" }}>
-
-                  <Text style={g.subtitle}>
-                    {n.titulo}
-                  </Text>
+                  <Text style={g.subtitle}>{n.titulo}</Text>
 
                   <Text style={[g.small, sx({ mt: 4 })] as any}>
                     Entidad: {n.entidad}
                   </Text>
-
                 </View>
 
                 {/* Acciones */}
                 <View style={[sx({ center: true }) as any, { gap: 14 }]}>
-
                   <TouchableOpacity onPress={() => handleEdit(n)}>
-                    <Icon
-                      name="pencil"
-                      size={24}
-                      color={colors.primary}
-                    />
+                    <Icon name="pencil" size={24} color={colors.primary} />
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => handleDelete(n.id!)}>
@@ -165,14 +158,10 @@ export default function AddNews() {
                       color={colors.error}
                     />
                   </TouchableOpacity>
-
                 </View>
-
               </View>
-
             </Card>
           ))}
-
         </ScrollView>
 
         {/* Modal */}
@@ -184,7 +173,6 @@ export default function AddNews() {
             setNews={setNews}
           />
         )}
-
       </View>
     </PrivateLayout>
   );

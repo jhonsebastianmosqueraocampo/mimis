@@ -65,7 +65,6 @@ export default function CreateBetScreen() {
 
       try {
         const { success, predictionOdds, message } = await getPredictionOdds();
-
         if (!isMounted) return;
 
         if (success) setPredictionOdds(predictionOdds!);
@@ -83,16 +82,6 @@ export default function CreateBetScreen() {
       isMounted = false;
     };
   }, []);
-
-  if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Creando la apuesta"
-        subtitle="Pronto tendrás la información"
-      />
-    );
-  }
 
   const handleCreateBet = async () => {
     try {
@@ -120,6 +109,10 @@ export default function CreateBetScreen() {
     navigation.navigate("team", { id });
   };
 
+  if (loading) {
+    return <Loading visible={loading} />;
+  }
+
   return (
     <PrivateLayout>
       <ScrollView style={sx({ p: 16 }) as any}>
@@ -134,98 +127,7 @@ export default function CreateBetScreen() {
                 style={{ marginBottom: 12 }}
               />
 
-              {predictionOdds
-                .filter((item) => {
-                  if (!searchQuery.trim()) return true;
-                  const query = searchQuery.toLowerCase();
-
-                  return (
-                    item.fixture.teams.home.name
-                      .toLowerCase()
-                      .includes(query) ||
-                    item.fixture.teams.away.name.toLowerCase().includes(query)
-                  );
-                })
-                .map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => setSelectedMatch(item)}
-                  >
-                    <Card
-                      style={[
-                        shadows.sm,
-                        {
-                          marginBottom: 12,
-                          padding: 12,
-                          borderRadius: radius.md,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          sx({ row: true, center: true }) as any,
-                          { justifyContent: "space-between" },
-                        ]}
-                      >
-                        <View style={{ alignItems: "center", flex: 1 }}>
-                          <Image
-                            source={{ uri: item.fixture.teams.home.logo }}
-                            style={{ width: 50, height: 50 }}
-                          />
-
-                          <Text style={g.body}>
-                            {item.fixture.teams.home.name}
-                          </Text>
-                        </View>
-
-                        <View style={{ alignItems: "center" }}>
-                          <Text style={[g.subtitle, { color: colors.primary }]}>
-                            VS
-                          </Text>
-
-                          <Text style={g.caption}>
-                            {new Date(item.fixture.date).toLocaleTimeString(
-                              [],
-                              { hour: "2-digit", minute: "2-digit" },
-                            )}
-                          </Text>
-                        </View>
-
-                        <View style={{ alignItems: "center", flex: 1 }}>
-                          <Image
-                            source={{ uri: item.fixture.teams.away.logo }}
-                            style={{ width: 50, height: 50 }}
-                          />
-
-                          <Text style={g.body}>
-                            {item.fixture.teams.away.name}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View
-                        style={[
-                          sx({ row: true, center: true }) as any,
-                          { justifyContent: "space-between", marginTop: 8 },
-                        ]}
-                      >
-                        <View style={[sx({ row: true, center: true }) as any]}>
-                          <Image
-                            source={{ uri: item.fixture.league.logo }}
-                            style={{ width: 20, height: 20, marginRight: 6 }}
-                          />
-                          <Text style={g.caption}>
-                            {item.fixture.league.name}
-                          </Text>
-                        </View>
-
-                        <Text style={g.caption}>{item.fixture.venue.name}</Text>
-                      </View>
-                    </Card>
-                  </TouchableOpacity>
-                ))}
-
-              {predictionOdds.length === 0 && (
+              {!predictionOdds || predictionOdds.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 40 }}>
                   <Text style={g.subtitle}>
                     ⚽ Aún no hay partidos disponibles
@@ -239,6 +141,103 @@ export default function CreateBetScreen() {
                     Revisa la hora del encuentro
                   </Text>
                 </View>
+              ) : (
+                predictionOdds
+                  .filter((item) => {
+                    if (!searchQuery.trim()) return true;
+                    const query = searchQuery.toLowerCase();
+
+                    return (
+                      item.fixture.teams.home.name
+                        .toLowerCase()
+                        .includes(query) ||
+                      item.fixture.teams.away.name.toLowerCase().includes(query)
+                    );
+                  })
+                  .map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => setSelectedMatch(item)}
+                    >
+                      <Card
+                        style={[
+                          shadows.sm,
+                          {
+                            marginBottom: 12,
+                            padding: 12,
+                            borderRadius: radius.md,
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            sx({ row: true, center: true }) as any,
+                            { justifyContent: "space-between" },
+                          ]}
+                        >
+                          <View style={{ alignItems: "center", flex: 1 }}>
+                            <Image
+                              source={{ uri: item.fixture.teams.home.logo }}
+                              style={{ width: 50, height: 50 }}
+                            />
+
+                            <Text style={g.body}>
+                              {item.fixture.teams.home.name}
+                            </Text>
+                          </View>
+
+                          <View style={{ alignItems: "center" }}>
+                            <Text
+                              style={[g.subtitle, { color: colors.primary }]}
+                            >
+                              VS
+                            </Text>
+
+                            <Text style={g.caption}>
+                              {new Date(item.fixture.date).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" },
+                              )}
+                            </Text>
+                          </View>
+
+                          <View style={{ alignItems: "center", flex: 1 }}>
+                            <Image
+                              source={{ uri: item.fixture.teams.away.logo }}
+                              style={{ width: 50, height: 50 }}
+                            />
+
+                            <Text style={g.body}>
+                              {item.fixture.teams.away.name}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View
+                          style={[
+                            sx({ row: true, center: true }) as any,
+                            { justifyContent: "space-between", marginTop: 8 },
+                          ]}
+                        >
+                          <View
+                            style={[sx({ row: true, center: true }) as any]}
+                          >
+                            <Image
+                              source={{ uri: item.fixture.league.logo }}
+                              style={{ width: 20, height: 20, marginRight: 6 }}
+                            />
+                            <Text style={g.caption}>
+                              {item.fixture.league.name}
+                            </Text>
+                          </View>
+
+                          <Text style={g.caption}>
+                            {item.fixture.venue.name}
+                          </Text>
+                        </View>
+                      </Card>
+                    </TouchableOpacity>
+                  ))
               )}
             </Card.Content>
           </Card>

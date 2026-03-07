@@ -190,13 +190,7 @@ export default function LiveBetScreen() {
   ========================= */
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando apuesta"
-        subtitle="Preparando el partido"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (!bet) return null;

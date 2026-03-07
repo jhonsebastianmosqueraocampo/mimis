@@ -42,13 +42,7 @@ export default function Bets() {
   }, []);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando apuestas"
-        subtitle="Estamos trabajando en las apuestas"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const activeBets = (bets ?? []).filter((b) => {

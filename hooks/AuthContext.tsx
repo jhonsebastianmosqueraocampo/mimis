@@ -22,6 +22,7 @@ type GoogleUser = {
 type AuthContextType = {
   user: User | null;
   login: (userData: User) => Promise<{ success: boolean; message?: string }>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   register: (userData: User) => Promise<{ success: boolean; message?: string }>;
   registerWithGoogle: (
     googleUser: GoogleUser,
@@ -160,6 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         login,
         register,
         registerWithGoogle,

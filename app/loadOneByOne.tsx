@@ -147,7 +147,7 @@ export default function LoadOneByOne() {
   );
 
   if (loading) {
-    return <Loading visible title="Cargando" subtitle="Preparando datos" />;
+    return <Loading visible={loading} />;
   }
 
   if (showForm) {

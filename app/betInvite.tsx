@@ -307,14 +307,7 @@ export default function JoinBetScreen() {
     }
   };
 
-  if (loading)
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando apuestas"
-        subtitle="Estamos trabajando en las apuestas"
-      />
-    );
+  if (loading) return <Loading visible={loading} />;
   if (error) {
     return (
       <PrivateLayout>

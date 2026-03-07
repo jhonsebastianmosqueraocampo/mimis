@@ -1,5 +1,8 @@
+import { useAuth } from "@/hooks/AuthContext";
+import { useFetch } from "@/hooks/FetchContext";
+import { loadRewardedAd, showRewardedAd } from "@/services/ads/rewarded";
 import * as Haptics from "expo-haptics";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -13,8 +16,16 @@ import { Button, Card, ProgressBar, Text } from "react-native-paper";
 const { width } = Dimensions.get("window");
 
 type Dir = "left" | "center" | "right";
+const GOAL_HEIGHT = 220;
+const GOAL_LINE_Y = -GOAL_HEIGHT + 90;
 
 export default function PenaltyGameSwipe() {
+  const { user, setUser } = useAuth();
+  const { descountLimitAdsPerDayAndAddPoint } = useFetch();
+  useEffect(() => {
+    loadRewardedAd();
+  }, []);
+
   const MAX_SHOTS = 5;
 
   const [score, setScore] = useState(0);
@@ -22,6 +33,23 @@ export default function PenaltyGameSwipe() {
   const [message, setMessage] = useState("");
   const [shooting, setShooting] = useState(false);
   const [keeperDir, setKeeperDir] = useState<Dir>("center");
+  const [overlay, setOverlay] = useState<"goal" | "save" | null>(null);
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      if (shooting) return;
+
+      const randomDir =
+        directions[Math.floor(Math.random() * directions.length)];
+
+      Animated.timing(keeperX, {
+        toValue: keeperTargetX(randomDir),
+        duration: 700,
+        useNativeDriver: true,
+      }).start();
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [shooting]);
 
   // Animated values (RN core)
   const ballXY = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -94,13 +122,14 @@ export default function PenaltyGameSwipe() {
     // Mueve portero
     Animated.timing(keeperX, {
       toValue: keeperTargetX(keeperChoice),
-      duration: 260,
+      duration: 180,
       useNativeDriver: true,
     }).start();
 
     // Anima balón (x depende del swipe, y sube fijo; potencia afecta un poquito)
-    const ballToX = clamp(dx / 2, -110, 110);
-    const ballToY = -220 - power01 * 20;
+    const GOAL_WIDTH = 200;
+    const ballToX = clamp(dx / 2, -GOAL_WIDTH / 2, GOAL_WIDTH / 2);
+    const ballToY = GOAL_LINE_Y - power01 * 10;
 
     Animated.timing(ballXY, {
       toValue: { x: ballToX, y: ballToY },
@@ -115,15 +144,17 @@ export default function PenaltyGameSwipe() {
       const saved = resolveShot(shotDir, keeperChoice, power01);
 
       if (saved) {
+        setOverlay("save");
         setMessage("🧤 ¡Atajada del portero!");
         Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Warning
+          Haptics.NotificationFeedbackType.Warning,
         ).catch(() => {});
       } else {
         setScore((prev) => prev + 1);
+        setOverlay("goal");
         setMessage("⚽ ¡GOOOOL!");
         Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success
+          Haptics.NotificationFeedbackType.Success,
         ).catch(() => {});
       }
 
@@ -131,6 +162,7 @@ export default function PenaltyGameSwipe() {
       setTimeout(() => {
         resetPositions();
         setShooting(false);
+        setOverlay(null);
       }, 650);
     }, 560);
   };
@@ -157,7 +189,7 @@ export default function PenaltyGameSwipe() {
           if (!shooting) resetPositions();
         },
       }),
-    [shooting, shots]
+    [shooting, shots],
   );
 
   const resetGame = () => {
@@ -173,89 +205,159 @@ export default function PenaltyGameSwipe() {
 
   const gameOver = shots >= MAX_SHOTS;
   const win = score >= 3;
+  const ballScale = ballXY.y.interpolate({
+    inputRange: [GOAL_LINE_Y, 0],
+    outputRange: [0.55, 1],
+    extrapolate: "clamp",
+  });
+
+  const handleReward = () => {
+    showRewardedAd(async () => {
+      try {
+        const { success, points, xp, fromGame } =
+          await descountLimitAdsPerDayAndAddPoint("game");
+        if (success) {
+          setUser((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              points: points ?? prev.points,
+              xp: xp ?? prev.xp,
+              fromGame: fromGame ?? prev.fromGame,
+            };
+          });
+        }
+      } catch (error) {
+        return;
+      } finally {
+        loadRewardedAd();
+      }
+    });
+  };
 
   return (
     <Card style={styles.container}>
-      <Card.Content style={styles.content}>
-        <Text variant="titleLarge" style={styles.title}>
-          ⚽ Tanda de Penales
-        </Text>
+      {user?.fromGame ? (
+        <View style={styles.alreadyPlayedBox}>
+          <Text style={styles.alreadyPlayedTitle}>⚽ Tanda ya jugada</Text>
 
-        <View style={styles.topRow}>
-          <View style={styles.scorePill}>
-            <Text style={styles.scoreText}>Goles</Text>
-            <Text style={styles.scoreValue}>
-              {score} / {shots}
-            </Text>
-          </View>
+          <Text style={styles.alreadyPlayedText}>
+            Ya reclamaste la recompensa del mini-juego hoy.
+          </Text>
 
-          <View style={styles.scorePill}>
-            <Text style={styles.scoreText}>Portero</Text>
-            <Text style={styles.scoreValue}>
-              {keeperDir === "left"
-                ? "⬅️"
-                : keeperDir === "right"
-                  ? "➡️"
-                  : "⏺️"}
-            </Text>
-          </View>
+          <Text style={styles.alreadyPlayedHint}>
+            Vuelve mañana para jugar otra vez y ganar más puntos.
+          </Text>
         </View>
+      ) : (
+        <Card.Content style={styles.content}>
+          <Text variant="titleLarge" style={styles.title}>
+            ⚽ Tanda de Penales
+          </Text>
+          <Text style={styles.rewardInfo}>
+            🎮 Gracias por jugar. Al finalizar la tanda recibirás **1 punto de
+            recompensa**.
+          </Text>
 
-        <ProgressBar progress={progress} style={styles.progress} />
+          <View style={styles.topRow}>
+            <View style={styles.scorePill}>
+              <Text style={styles.scoreText}>Goles</Text>
+              <Text style={styles.scoreValue}>
+                {score} / {shots}
+              </Text>
+            </View>
 
-        <View style={styles.goalArea}>
-          <Image
-            source={{ uri: "https://i.imgur.com/wR9EJmV.png" }}
-            style={styles.goal}
-          />
+            <View style={styles.scorePill}>
+              <Text style={styles.scoreText}>Portero</Text>
+              <Text style={styles.scoreValue}>
+                {keeperDir === "left"
+                  ? "⬅️"
+                  : keeperDir === "right"
+                    ? "➡️"
+                    : "⏺️"}
+              </Text>
+            </View>
+          </View>
 
-          {/* Portero */}
-          <Animated.Image
-            source={{ uri: "https://i.imgur.com/Z3A7mSh.png" }}
-            style={[styles.keeper, { transform: [{ translateX: keeperX }] }]}
-          />
+          <ProgressBar progress={progress} style={styles.progress} />
 
-          {/* Balón (con gesto) */}
-          <View style={styles.ballTouchArea} {...panResponder.panHandlers}>
-            <Animated.Image
-              source={{ uri: "https://i.imgur.com/jcF5u8J.png" }}
-              style={[
-                styles.ball,
-                { transform: ballXY.getTranslateTransform() },
-              ]}
+          <View style={styles.goalArea}>
+            <Image
+              source={require("@/assets/game/field.png")}
+              style={styles.goal}
             />
-            <Text style={styles.hint}>
-              {gameOver
-                ? "Fin de la tanda"
-                : shooting
-                  ? "Disparando..."
-                  : "Desliza para patear (izq/centro/der) ↑ potencia"}
-            </Text>
+
+            {/* Portero */}
+            <Animated.Image
+              source={require("@/assets/game/goalkeeper.png")}
+              style={[styles.keeper, { transform: [{ translateX: keeperX }] }]}
+            />
+
+            {/* Balón (con gesto) */}
+            <View style={styles.ballTouchArea} {...panResponder.panHandlers}>
+              <Animated.Image
+                source={require("@/assets/game/ball.png")}
+                style={[
+                  styles.ball,
+                  {
+                    transform: [
+                      ...ballXY.getTranslateTransform(),
+                      { scale: ballScale },
+                    ],
+                  },
+                ]}
+              />
+              <Text style={styles.hint}>
+                {gameOver
+                  ? "Fin de la tanda"
+                  : shooting
+                    ? "Disparando..."
+                    : "Desliza para patear (izq/centro/der) ↑ potencia"}
+              </Text>
+            </View>
+            {overlay && (
+              <View style={styles.overlay}>
+                <Text
+                  style={overlay === "goal" ? styles.goalText : styles.saveText}
+                >
+                  {overlay === "goal" ? "GOOOL!" : "ATAJADA"}
+                </Text>
+              </View>
+            )}
           </View>
-        </View>
 
-        {!!message && <Text style={styles.message}>{message}</Text>}
+          {!!message && <Text style={styles.message}>{message}</Text>}
 
-        {gameOver ? (
-          <View style={styles.resultBox}>
-            <Text style={styles.resultTitle}>
-              {win ? "🏆 ¡Ganaste la tanda!" : "😢 Perdiste la tanda"}
-            </Text>
-            <Button mode="contained" onPress={resetGame} style={styles.btn}>
-              Reintentar
+          {gameOver ? (
+            <View style={styles.resultBox}>
+              <Text style={styles.resultTitle}>
+                {win ? "🏆 ¡Gran tanda!" : "👏 Buen intento"}
+              </Text>
+
+              <Text style={styles.rewardMessage}>
+                🎁 Reclama tu recompensa viendo un video.
+              </Text>
+
+              <Button
+                mode="contained"
+                onPress={handleReward}
+                style={styles.rewardBtn}
+              >
+                Reclamar recompensa
+              </Button>
+            </View>
+          ) : (
+            <Button
+              mode="outlined"
+              disabled={shooting}
+              onPress={resetGame}
+              style={styles.btnSecondary}
+            >
+              Reiniciar
             </Button>
-          </View>
-        ) : (
-          <Button
-            mode="outlined"
-            disabled={shooting}
-            onPress={resetGame}
-            style={styles.btnSecondary}
-          >
-            Reiniciar
-          </Button>
-        )}
-      </Card.Content>
+          )}
+        </Card.Content>
+      )}
     </Card>
   );
 }
@@ -266,6 +368,32 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     overflow: "hidden",
     elevation: 6,
+  },
+  alreadyPlayedBox: {
+    marginTop: 10,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    backgroundColor: "rgba(0,0,0,0.03)",
+    alignItems: "center",
+  },
+
+  alreadyPlayedTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+
+  alreadyPlayedText: {
+    fontSize: 13,
+    opacity: 0.8,
+  },
+
+  alreadyPlayedHint: {
+    marginTop: 6,
+    fontSize: 12,
+    opacity: 0.6,
   },
   content: {
     alignItems: "center",
@@ -312,20 +440,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     marginTop: 6,
+    overflow: "hidden",
   },
   goal: {
     width: "100%",
-    height: "100%",
+    height: GOAL_HEIGHT,
     resizeMode: "contain",
     position: "absolute",
-    opacity: 0.95,
+    top: 0,
   },
   keeper: {
-    width: 84,
-    height: 84,
+    width: 110,
+    height: 110,
     resizeMode: "contain",
     position: "absolute",
-    top: 78,
+    top: GOAL_HEIGHT * 0.25,
   },
   ballTouchArea: {
     position: "absolute",
@@ -336,8 +465,8 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   ball: {
-    width: 44,
-    height: 44,
+    width: 50,
+    height: 50,
   },
   hint: {
     marginTop: 10,
@@ -372,5 +501,47 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 14,
     marginTop: 10,
+  },
+  rewardInfo: {
+    textAlign: "center",
+    fontSize: 13,
+    opacity: 0.75,
+    marginBottom: 10,
+  },
+  rewardMessage: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  overlay: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+
+  goalText: {
+    fontSize: 42,
+    fontWeight: "900",
+    color: "#4CAF50",
+    textShadowColor: "black",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+
+  saveText: {
+    fontSize: 38,
+    fontWeight: "900",
+    color: "#FF5252",
+    textShadowColor: "black",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  rewardBtn: {
+    marginTop: 10,
+    width: "100%",
+    borderRadius: 14,
   },
 });

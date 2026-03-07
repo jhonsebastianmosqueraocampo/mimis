@@ -72,13 +72,7 @@ export default function ResumeAndGoal() {
   }, [activeTab, equipos, jugadores]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   if (error) {

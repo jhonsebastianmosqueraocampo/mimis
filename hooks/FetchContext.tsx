@@ -20,6 +20,7 @@ import {
   LiveMatch,
   NationalLeague,
   NewsItem,
+  NotificationSetting,
   OneByOneType,
   PlayerB,
   PlayerCareer,
@@ -29,6 +30,7 @@ import {
   PreMatchStats,
   Product,
   Purchase,
+  SearchResults,
   SelectionBet,
   setBet,
   ShortItem,
@@ -40,6 +42,7 @@ import {
   TeamStanding,
   TeamSummary,
   TodayQuizResponse,
+  TrendingResults,
   UpdateSyntheticMatchDTO,
   User,
   UserPlayerRating,
@@ -858,9 +861,15 @@ type FetchContextType = {
     limit: number;
     message?: string;
   }>;
-  descountLimitAdsPerDayAndAddPoint: (isRetry?: boolean) => Promise<{
+  descountLimitAdsPerDayAndAddPoint: (
+    from?: string,
+    isRetry?: boolean,
+  ) => Promise<{
     success: boolean;
     limit: number;
+    points: number;
+    xp: number;
+    fromGame: boolean;
     message?: string;
   }>;
   invitationSyntheticMatch: (isRetry?: boolean) => Promise<{
@@ -929,6 +938,31 @@ type FetchContextType = {
     hasMore: boolean;
     success: boolean;
     message?: string;
+  }>;
+  searchGlobal: (
+    query: string,
+    isRetry?: boolean,
+  ) => Promise<{
+    results: SearchResults;
+    success: boolean;
+    message?: string;
+  }>;
+  getTrendingItems: (isRetry?: boolean) => Promise<{
+    results: TrendingResults;
+    success: boolean;
+    message?: string;
+  }>;
+  saveNotificationSettings: (
+    payload: NotificationSetting,
+    isRetry?: boolean,
+  ) => Promise<{
+    success: boolean;
+    message?: string;
+  }>;
+  getNotificationSettings: (isRetry?: boolean) => Promise<{
+    success: boolean;
+    message?: string;
+    settings?: NotificationSetting;
   }>;
 };
 
@@ -3921,7 +3955,7 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch(`${apiUrl}/syntheticMatch/`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `${token}`,
         },
       });
 
@@ -6768,16 +6802,22 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const descountLimitAdsPerDayAndAddPoint = async (
+    from: string = "ads",
     isRetry?: boolean,
   ): Promise<{
     success: boolean;
     limit: number;
+    points: number;
+    xp: number;
+    fromGame: boolean;
     message?: string;
   }> => {
     let token = (await AsyncStorage.getItem("accessToken")) || "";
+    console.log(from);
     try {
+      console.log(from);
       const response = await fetch(
-        `${apiUrl}/user/descountLimitAdsPerDayAndAddPoint`,
+        `${apiUrl}/user/descountLimitAdsPerDayAndAddPoint/${from}`,
         {
           method: "GET",
           headers: {
@@ -6789,11 +6829,14 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 403 && !isRetry) {
         try {
           await refreshToken();
-          return await descountLimitAdsPerDayAndAddPoint(true);
+          return await descountLimitAdsPerDayAndAddPoint(from, true);
         } catch (error) {
           return {
             success: false,
             limit: 0,
+            points: 0,
+            xp: 0,
+            fromGame: false,
             message: "Iniciar sesión",
           };
         }
@@ -6805,17 +6848,23 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         return {
           success: false,
           limit: 0,
+          points: 0,
+          xp: 0,
+          fromGame: false,
           message: data.message,
         };
       }
 
-      const { limit } = data;
+      const { limit, points, xp, fromGame } = data;
 
-      return { success: true, limit };
+      return { success: true, limit, points, xp, fromGame };
     } catch (error: any) {
       return {
         success: false,
         limit: 0,
+        points: 0,
+        xp: 0,
+        fromGame: false,
         message: error.message,
       };
     }
@@ -7228,6 +7277,238 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const searchGlobal = async (
+    query: string,
+    isRetry?: boolean,
+  ): Promise<{
+    results: SearchResults;
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/search/list?q=${encodeURIComponent(query)}`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await searchGlobal(query, true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            results: {
+              players: [],
+              teams: [],
+              leagues: [],
+            },
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          results: {
+            players: [],
+            teams: [],
+            leagues: [],
+          },
+        };
+      }
+
+      return {
+        success: true,
+        results: {
+          players: data.players ?? [],
+          teams: data.teams ?? [],
+          leagues: data.leagues ?? [],
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        results: {
+          players: [],
+          teams: [],
+          leagues: [],
+        },
+      };
+    }
+  };
+
+  const getTrendingItems = async (
+    isRetry?: boolean,
+  ): Promise<{
+    results: TrendingResults;
+    success: boolean;
+    message?: string;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(`${apiUrl}/trending/getTrending`, {
+        method: "GET",
+        headers: {
+          authorization: token,
+        },
+      });
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getTrendingItems(true);
+        } catch {
+          return {
+            success: false,
+            message: "Iniciar sesión",
+            results: {
+              players: [],
+              teams: [],
+              coaches: [],
+            },
+          };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return {
+          success: false,
+          message: data.message,
+          results: {
+            players: [],
+            teams: [],
+            coaches: [],
+          },
+        };
+      }
+
+      const items = data.items ?? [];
+
+      const players = items.filter((i: any) => i.type === "player");
+      const teams = items.filter((i: any) => i.type === "team");
+      const coaches = items.filter((i: any) => i.type === "coach");
+
+      return {
+        success: true,
+        results: {
+          players,
+          teams,
+          coaches,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message,
+        results: {
+          players: [],
+          teams: [],
+          coaches: [],
+        },
+      };
+    }
+  };
+
+  const saveNotificationSettings = async (
+    payload: NotificationSetting,
+    isRetry?: boolean,
+  ): Promise<{ success: boolean; message?: string }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/notification/saveNotificationSettings`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: token,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await saveNotificationSettings(payload, true);
+        } catch {
+          return { success: false, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
+
+  const getNotificationSettings = async (
+    isRetry?: boolean,
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    settings?: NotificationSetting;
+  }> => {
+    const token = (await AsyncStorage.getItem("accessToken")) || "";
+
+    try {
+      const response = await fetch(
+        `${apiUrl}/notification/getNotificationSettings`,
+        {
+          method: "GET",
+          headers: {
+            authorization: token,
+          },
+        },
+      );
+
+      if (response.status === 403 && !isRetry) {
+        try {
+          await refreshToken();
+          return await getNotificationSettings(true);
+        } catch {
+          return { success: false, message: "Iniciar sesión" };
+        }
+      }
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        return { success: false, message: data.message };
+      }
+
+      return {
+        success: true,
+        settings: data.settings,
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
+
   return (
     <FetchContext.Provider
       value={{
@@ -7346,6 +7627,10 @@ export const FetchProvider = ({ children }: { children: ReactNode }) => {
         loadQuiz,
         createFunFact,
         getFunFacts,
+        searchGlobal,
+        getTrendingItems,
+        saveNotificationSettings,
+        getNotificationSettings,
       }}
     >
       {children}

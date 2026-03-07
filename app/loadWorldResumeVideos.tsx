@@ -240,13 +240,7 @@ export default function LoadWorldResumeVideos() {
   const uniqueWeeks = Array.from(new Set(videos.map((v) => v.week)));
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

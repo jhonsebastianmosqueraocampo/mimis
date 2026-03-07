@@ -28,11 +28,6 @@ export default function NotificationSetting({
   const [visible, setVisible] = useState(false);
   const theme = useTheme();
 
-  const controlProps = (value: string) => ({
-    status: selectedSettingsValue === value ? "checked" : "unchecked",
-    onPress: () => handleChange(value),
-  });
-
   return (
     <>
       <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
@@ -41,7 +36,9 @@ export default function NotificationSetting({
         </Text>
 
         <RadioButton.Group
-          onValueChange={handleChange}
+          onValueChange={(value) =>
+            handleChange(value as "todos" | "personalizado")
+          }
           value={selectedSettingsValue}
         >
           <View style={styles.radioRow}>

@@ -142,13 +142,7 @@ export default function TournamentScreen() {
   }, [id]);
 
   if (loadingLeague || loadingFavs || loadingNews) {
-    return (
-      <Loading
-        visible={loadingLeague || loadingFavs || loadingNews}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loadingLeague || loadingFavs || loadingNews} />;
   }
 
   return (

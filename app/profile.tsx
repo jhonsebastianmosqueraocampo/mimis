@@ -53,6 +53,9 @@ export default function Profile() {
     getSyntheticMatches,
     getUser,
     invitationSyntheticMatch,
+    getTrendingItems,
+    getNotificationSettings,
+    saveNotificationSettings,
   } = useFetch();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -67,11 +70,16 @@ export default function Profile() {
   const [matchFilter, setMatchFilter] = useState<"scheduled" | "finished">(
     "scheduled",
   );
-  const [loading, setLoading] = useState(true);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [loadingSyntheticMatches, setLoadingSyntheticMatches] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(false);
+  const [loadingTrending, setLoadingTrending] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(false);
 
   // Selecciones notificaciones
-  const [selectedTeamSettingsValue, setSelectedTeamSettingsValue] =
-    useState("todos");
+  const [selectedTeamSettingsValue, setSelectedTeamSettingsValue] = useState<
+    "todos" | "personalizado"
+  >("todos");
   const [selectedTeamSettings, setSelectedTeamSettings] = useState<
     swiperItem[]
   >([]);
@@ -79,11 +87,14 @@ export default function Profile() {
     swiperItem[]
   >([]);
   const [selectedPlayerSettingsValue, setSelectedPlayerSettingsValue] =
-    useState("todos");
+    useState<"todos" | "personalizado">("todos");
 
   const [snackVisible, setSnackVisible] = useState(false);
   const [snackMessage, setSnackMessage] = useState("");
   const [snackType, setSnackType] = useState<"success" | "error">("success");
+  const [trendingPlayers, setTrendingPlayers] = useState<swiperItem[]>([]);
+  const [trendingTeams, setTrendingTeams] = useState<swiperItem[]>([]);
+  const [trendingCoaches, setTrendingCoaches] = useState<swiperItem[]>([]);
 
   // Modal historial
   const [showModal, setShowModal] = useState(false);
@@ -92,7 +103,7 @@ export default function Profile() {
   useEffect(() => {
     let mounted = true;
     const loadFavorites = async () => {
-      setLoading(true);
+      setLoadingFavorites(true);
       try {
         const { success, teams, players, leagues, coaches } =
           await getFavorites();
@@ -134,11 +145,11 @@ export default function Profile() {
       } catch (err) {
         console.error("❌ Error cargando favoritos:", err);
       }
-      setLoading(false);
+      setLoadingFavorites(false);
     };
 
     const syntheticMatches = async () => {
-      setLoading(true);
+      setLoadingSyntheticMatches(true);
       try {
         const { success, matches } = await getSyntheticMatches();
         if (!mounted) return;
@@ -148,11 +159,11 @@ export default function Profile() {
       } catch (err) {
         console.error("❌ Error cargando favoritos:", err);
       }
-      setLoading(false);
+      setLoadingSyntheticMatches(false);
     };
 
     const userBack = async () => {
-      setLoading(true);
+      setLoadingUser(true);
       try {
         const { success, user } = await getUser();
         if (!mounted) return;
@@ -162,12 +173,87 @@ export default function Profile() {
       } catch (err) {
         console.error("❌ Error cargando favoritos:", err);
       }
-      setLoading(false);
+      setLoadingUser(false);
+    };
+
+    const loadTrending = async () => {
+      setLoadingTrending(true);
+      try {
+        const { success, results } = await getTrendingItems();
+
+        if (success) {
+          setTrendingPlayers(
+            results.players.map((p: any) => ({
+              id: p.itemId.toString(),
+              title: p.name,
+              img: p.photo,
+              pathTo: `/player/${p.itemId}`,
+            })),
+          );
+
+          setTrendingTeams(
+            results.teams.map((t: any) => ({
+              id: t.itemId.toString(),
+              title: t.name,
+              img: t.photo,
+              pathTo: `/team/${t.itemId}`,
+            })),
+          );
+
+          setTrendingCoaches(
+            results.coaches.map((c: any) => ({
+              id: c.itemId.toString(),
+              title: c.name,
+              img: c.photo,
+              pathTo: `/coach/${c.itemId}`,
+            })),
+          );
+        }
+      } catch (error) {
+        console.log("Error loading trending", error);
+      } finally {
+        setLoadingTrending(false);
+      }
+    };
+
+    const loadSettings = async () => {
+      setLoadingSettings(true);
+      try {
+        const { success, settings } = await getNotificationSettings();
+
+        if (!success) return;
+
+        setSelectedTeamSettingsValue(settings?.teamMode ?? "todos");
+        setSelectedTeamSettings(
+          settings!.teams.map((t) => ({
+            id: t.id,
+            title: t.title,
+            img: t.img || "",
+            pathTo: `/team/${t.id}`,
+          })),
+        );
+
+        setSelectedPlayerSettingsValue(settings?.playerMode ?? "todos");
+        setSelectedTeamSettings(
+          settings!.teams.map((t) => ({
+            id: t.id,
+            title: t.title,
+            img: t.img || "",
+            pathTo: `/team/${t.id}`,
+          })),
+        );
+      } catch (err) {
+        console.log("Error loading notification settings", err);
+      } finally {
+        setLoadingSettings(false);
+      }
     };
 
     userBack();
     syntheticMatches();
     loadFavorites();
+    loadTrending();
+    loadSettings();
 
     return () => {
       mounted = false;
@@ -184,27 +270,33 @@ export default function Profile() {
   const allMatches = [...scheduledMatches, ...finishedMatches];
 
   // Handlers notificaciones
-  const handleTeamChange = (event: string) => {
-    setSelectedTeamSettingsValue(event);
-    if (event === "todos") setSelectedTeamSettings(equipos);
+  const handleTeamChange = (value: "todos" | "personalizado") => {
+    setSelectedTeamSettingsValue(value);
+
+    if (value === "todos") {
+      setSelectedTeamSettings(equipos);
+    }
   };
   const handleTeamToggle = (team: swiperItem) => {
-    setSelectedTeamSettings((prev) =>
-      prev.find((t) => t.id === team.id)
-        ? prev.filter((t) => t.id !== team.id)
-        : [...prev, team],
-    );
+    setSelectedTeamSettings((prev) => {
+      const exists = prev.some((t) => t.id === team.id);
+      return exists ? prev.filter((t) => t.id !== team.id) : [...prev, team];
+    });
   };
-  const handlePlayerChange = (event: string) => {
-    setSelectedPlayerSettingsValue(event);
-    if (event === "todos") setSelectedPlayerSettings(jugadores);
+  const handlePlayerChange = (value: "todos" | "personalizado") => {
+    setSelectedPlayerSettingsValue(value);
+
+    if (value === "todos") {
+      setSelectedPlayerSettings(jugadores);
+    }
   };
   const handlePlayerToggle = (player: swiperItem) => {
-    setSelectedPlayerSettings((prev) =>
-      prev.find((p) => p.id === player.id)
+    setSelectedPlayerSettings((prev) => {
+      const exists = prev.some((p) => p.id === player.id);
+      return exists
         ? prev.filter((p) => p.id !== player.id)
-        : [...prev, player],
-    );
+        : [...prev, player];
+    });
   };
   const actionNotification = (id: string) => console.log(id);
 
@@ -286,12 +378,48 @@ export default function Profile() {
 
   const benefits = levelBenefits[level] ?? [];
 
-  if (loading) {
+  const handleSaveNotifications = async () => {
+    try {
+      const res = await saveNotificationSettings({
+        teamMode: selectedTeamSettingsValue,
+        teams: selectedTeamSettings,
+        playerMode: selectedPlayerSettingsValue,
+        players: selectedPlayerSettings,
+      });
+
+      if (!res.success) {
+        setSnackType("error");
+        setSnackMessage(res.message || "Error guardando configuración");
+        setSnackVisible(true);
+        return;
+      }
+
+      setSnackType("success");
+      setSnackMessage("Configuración guardada correctamente 🔔");
+      setSnackVisible(true);
+    } catch (error) {
+      setSnackType("error");
+      setSnackMessage("Error inesperado");
+      setSnackVisible(true);
+    }
+  };
+
+  if (
+    loadingFavorites ||
+    loadingSyntheticMatches ||
+    loadingUser ||
+    loadingTrending ||
+    loadingSettings
+  ) {
     return (
       <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
+        visible={
+          loadingFavorites ||
+          loadingSyntheticMatches ||
+          loadingUser ||
+          loadingTrending ||
+          loadingSettings
+        }
       />
     );
   }
@@ -440,6 +568,35 @@ export default function Profile() {
           </Card.Content>
         </Card>
 
+        {/* --- TRENDING MIMIS --- */}
+
+        {trendingPlayers.length > 0 && (
+          <ScrollSection
+            title="Jugadores más buscados"
+            list={trendingPlayers}
+            shape="circle"
+            action={(id) => handlePlayer(id)}
+          />
+        )}
+
+        {trendingTeams.length > 0 && (
+          <ScrollSection
+            title="Equipos más buscados"
+            list={trendingTeams}
+            shape="circle"
+            action={(id) => handleTeam(id)}
+          />
+        )}
+
+        {trendingCoaches.length > 0 && (
+          <ScrollSection
+            title="Entrenadores más buscados"
+            list={trendingCoaches}
+            shape="circle"
+            action={(id) => handleCoach(id)}
+          />
+        )}
+
         {/* --- HISTORIAL MIMIS --- */}
         <Card style={styles.section}>
           <Card.Title title="⚽ Historial MIMIS" />
@@ -587,6 +744,14 @@ export default function Profile() {
           handleChange={handlePlayerChange}
           action={actionNotification}
         />
+
+        <Button
+          mode="contained"
+          onPress={handleSaveNotifications}
+          style={{ margin: 16 }}
+        >
+          Guardar configuración
+        </Button>
 
         {/* --- FAVORITOS --- */}
         {equipos.length > 0 && (

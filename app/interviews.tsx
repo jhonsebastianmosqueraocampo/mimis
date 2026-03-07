@@ -142,13 +142,7 @@ export default function Interviews() {
   }, []);
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando entrevistas"
-        subtitle="Buscando contenido para ti"
-      />
-    );
+    return <Loading visible />;
   }
 
   return (

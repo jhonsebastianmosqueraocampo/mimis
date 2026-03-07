@@ -88,13 +88,7 @@ export default function FixtureLineups({
   }, [fixtureId, shouldFetch]);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const hasLineups = finalLineups.length > 0;

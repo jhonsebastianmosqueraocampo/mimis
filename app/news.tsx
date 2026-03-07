@@ -58,13 +58,7 @@ export default function News() {
   }, [news, search, dateFilter]);
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando noticias"
-        subtitle="Buscando información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

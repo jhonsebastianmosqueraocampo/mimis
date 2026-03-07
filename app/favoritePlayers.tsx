@@ -44,13 +44,7 @@ export default function FavoritePlayers() {
   }, []);
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando jugadores favoritos"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const actionPlayer = (id: string) => {

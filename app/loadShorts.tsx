@@ -133,13 +133,7 @@ export default function LoadShorts() {
   ];
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando shorts"
-        subtitle="Preparando contenido"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (

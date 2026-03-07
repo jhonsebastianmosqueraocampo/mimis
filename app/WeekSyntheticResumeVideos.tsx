@@ -182,11 +182,7 @@ export default function WeekSyntheticResumeVideos() {
 
         {/* GRID - dos columnas con scroll */}
         {loading ? (
-          <Loading
-            visible={loading}
-            title="Cargando"
-            subtitle="Pronto tendrás la información"
-          />
+          <Loading visible={loading} />
         ) : filtered.length === 0 ? (
           <Text>No hay videos para esta semana</Text>
         ) : (

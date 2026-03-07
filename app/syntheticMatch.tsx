@@ -107,13 +107,7 @@ export default function SyntheticMatchScreen() {
   );
 
   if (loading) {
-    return (
-      <Loading
-        visible
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   const formatDate = (iso?: string) => {

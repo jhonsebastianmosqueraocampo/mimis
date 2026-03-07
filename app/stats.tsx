@@ -2,6 +2,9 @@ import Loading from "@/components/Loading";
 import { useFetch } from "@/hooks/FetchContext";
 import AdBanner from "@/services/ads/AdBanner";
 import { colors } from "@/theme/colors";
+import { radius } from "@/theme/radius";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 import { LeagueB, RootStackParamList, Team } from "@/types";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -18,9 +21,6 @@ import {
 } from "react-native-paper";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import PrivateLayout from "./privateLayout";
-import { spacing } from "@/theme/spacing";
-import { typography } from "@/theme/typography";
-import { radius } from "@/theme/radius";
 
 const currentYear = new Date().getFullYear();
 
@@ -173,14 +173,7 @@ export default function Stats() {
     navigation.navigate("team", { id });
   };
 
-  if (loading)
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+  if (loading) return <Loading visible={loading} />;
 
   return (
     <PrivateLayout>
@@ -594,23 +587,23 @@ export default function Stats() {
 
 const styles = StyleSheet.create({
   leagueRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  paddingVertical: spacing.sm,
-  gap: spacing.sm,
-},
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
 
-leagueName: {
-  ...typography.subtitle,
-},
+  leagueName: {
+    ...typography.subtitle,
+  },
 
-leagueCountry: {
-  ...typography.small,
-},
+  leagueCountry: {
+    ...typography.small,
+  },
 
-leagueButton: {
-  borderRadius: radius.round,
-  paddingHorizontal: spacing.sm,
-},
+  leagueButton: {
+    borderRadius: radius.round,
+    paddingHorizontal: spacing.sm,
+  },
 });

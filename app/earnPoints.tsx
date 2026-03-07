@@ -54,13 +54,7 @@ export default function EarnPoints() {
   };
 
   if (loading) {
-    return (
-      <Loading
-        visible={loading}
-        title="Cargando puntos"
-        subtitle="Pronto tendrás la información"
-      />
-    );
+    return <Loading visible={loading} />;
   }
 
   return (
