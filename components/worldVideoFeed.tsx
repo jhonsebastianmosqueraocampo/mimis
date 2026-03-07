@@ -34,11 +34,16 @@ export default function WorldVideoFeed({
 }: Props) {
   const { descountLimitAdsPerDayAndAddPoint } = useFetch();
   const { setUser } = useAuth();
-  const [currentIndex, setCurrentIndex] = useState(
+  const initialIndex = Math.max(
+    0,
     videos.findIndex((s) => s.id === item.id),
   );
 
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
   const videoRef = useRef<any>(null);
+  const isSwiping = useRef(false);
+  const nextVideoRef = useRef<any>(null);
   const [paused, setPaused] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -71,12 +76,15 @@ export default function WorldVideoFeed({
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => {
-        return Math.abs(g.dy) > 25;
+        return Math.abs(g.dy) > 40 && Math.abs(g.dx) < 50;
       },
+
       onPanResponderRelease: (_, g) => {
-        if (g.dy < -100) {
+        if (isSwiping.current) return;
+
+        if (g.dy < -80) {
           goNext();
-        } else if (g.dy > 100) {
+        } else if (g.dy > 80) {
           goPrev();
         }
       },
@@ -100,15 +108,22 @@ export default function WorldVideoFeed({
     if (
       status.durationMillis &&
       status.positionMillis >= status.durationMillis - 200 &&
-      !paused
+      !paused &&
+      !isSwiping.current
     ) {
       goNext();
     }
   };
 
   const goNext = () => {
+    if (isSwiping.current) return;
+
     setCurrentIndex((i) => {
       if (i >= videos.length - 1) return i;
+
+      videoRef.current?.pauseAsync();
+
+      isSwiping.current = true;
 
       viewCounter.current += 1;
 
@@ -127,10 +142,24 @@ export default function WorldVideoFeed({
 
       return i + 1;
     });
+
+    setTimeout(() => {
+      isSwiping.current = false;
+    }, 400);
   };
 
   const goPrev = () => {
+    if (isSwiping.current) return;
+
+    videoRef.current?.pauseAsync();
+
+    isSwiping.current = true;
+
     setCurrentIndex((i) => Math.max(0, i - 1));
+
+    setTimeout(() => {
+      isSwiping.current = false;
+    }, 400);
   };
 
   const formatTime = (millis: number) => {
@@ -190,6 +219,16 @@ export default function WorldVideoFeed({
               isMuted={muted}
               onPlaybackStatusUpdate={handleProgress}
             />
+
+            {videos.length > currentIndex + 1 && (
+              <Video
+                ref={nextVideoRef}
+                source={{ uri: videos[currentIndex + 1].video }}
+                style={{ width: 0, height: 0 }}
+                shouldPlay={false}
+                isMuted
+              />
+            )}
 
             {/* Botón cerrar */}
             <View style={styles.closeBtnContainer}>

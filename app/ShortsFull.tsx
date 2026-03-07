@@ -9,6 +9,7 @@ import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import { ShortItem } from "@/types";
 import { ResizeMode, Video } from "expo-av";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -52,6 +53,8 @@ export default function ShortsFull({
   );
 
   const videoRef = useRef<any>(null);
+  const isSwiping = useRef(false);
+  const nextVideoRef = useRef<any>(null);
   const [paused, setPaused] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [likeLoading, setLikeLoading] = useState(false);
@@ -71,6 +74,10 @@ export default function ShortsFull({
   useEffect(() => {
     setControlsVisible(true);
     setPaused(false);
+
+    setProgress(0);
+    setCurrentTime(0);
+
     videoRef.current?.playAsync();
   }, [currentIndex]);
 
@@ -87,12 +94,16 @@ export default function ShortsFull({
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => {
         if (showComments) return false;
-        return Math.abs(g.dy) > 25;
+
+        return Math.abs(g.dy) > 40 && Math.abs(g.dx) < 40;
       },
+
       onPanResponderRelease: (_, g) => {
-        if (g.dy < -100) {
+        if (isSwiping.current) return;
+
+        if (g.dy < -80) {
           goNext();
-        } else if (g.dy > 100) {
+        } else if (g.dy > 80) {
           goPrev();
         }
       },
@@ -150,13 +161,18 @@ export default function ShortsFull({
     if (
       status.durationMillis &&
       status.positionMillis >= status.durationMillis - 200 &&
-      !paused
+      !paused &&
+      !isSwiping.current
     ) {
       goNext();
     }
   };
 
   const goNext = () => {
+    if (isSwiping.current) return;
+    videoRef.current?.pauseAsync();
+    isSwiping.current = true;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentIndex((i) => {
       if (i >= shorts.length - 1) return i;
 
@@ -177,10 +193,22 @@ export default function ShortsFull({
 
       return i + 1;
     });
+
+    setTimeout(() => {
+      isSwiping.current = false;
+    }, 400);
   };
 
   const goPrev = () => {
+    if (isSwiping.current) return;
+    videoRef.current?.pauseAsync();
+    isSwiping.current = true;
+
     setCurrentIndex((i) => Math.max(0, i - 1));
+
+    setTimeout(() => {
+      isSwiping.current = false;
+    }, 400);
   };
 
   const formatTime = (millis: number) => {
@@ -237,6 +265,16 @@ export default function ShortsFull({
               isMuted={muted}
               onPlaybackStatusUpdate={handleProgress}
             />
+
+            {shorts.length > currentIndex + 1 && (
+              <Video
+                ref={nextVideoRef}
+                source={{ uri: shorts[currentIndex + 1].video }}
+                style={{ width: 0, height: 0 }}
+                shouldPlay={false}
+                isMuted
+              />
+            )}
 
             {/* Botón cerrar */}
             <View style={styles.closeBtnContainer}>
